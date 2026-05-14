@@ -2,6 +2,11 @@ export type ModelType = 'image-supervised' | 'image-classifier' | 'image-unsuper
 export type ModelStatus = 'idle' | 'loading' | 'training' | 'trained' | 'error'
 export type TestStatus = 'idle' | 'running' | 'done' | 'error'
 
+export interface ClusterResult {
+  itemId: string
+  clusterId: number
+}
+
 export interface ModelBlock {
   id: string
   type: 'model'
@@ -15,6 +20,8 @@ export interface ModelBlock {
   testLinkedBlockId: string | null
   testStatus: TestStatus
   testResults: TestResult[] | null
+  clusterCount: number | null
+  clusterResults: ClusterResult[] | null
 }
 
 export interface TrainedModel {

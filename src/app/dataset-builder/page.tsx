@@ -19,14 +19,17 @@ import ValidationPanel from '@/components/validation/ValidationPanel'
 import SplitBlock from '@/components/split/SplitBlock'
 import BlockInspector from '@/components/inspector/BlockInspector'
 import ModelInspector from '@/components/inspector/ModelInspector'
+import RLInspector from '@/components/inspector/RLInspector'
 import BadgeToast from '@/components/gamification/BadgeToast'
 import BadgeCollection from '@/components/gamification/BadgeCollection'
 import EducationalOverlay from '@/components/feedback/EducationalOverlay'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
+import ClusterResultsModal from '@/components/inspector/ClusterResultsModal'
 import LabellingModal from '@/components/inspector/LabellingModal'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
+import { useRLStore } from '@/store/useRLStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
@@ -47,6 +50,7 @@ export default function DatasetBuilderPage() {
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
+  const rlBlocks = useRLStore((s) => s.rlBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -68,6 +72,9 @@ export default function DatasetBuilderPage() {
         modelBlocks: saved.modelBlocks ?? [],
         trainedModels: saved.trainedModels ?? [],
       })
+      if (saved.rlBlocks) {
+        useRLStore.setState({ rlBlocks: saved.rlBlocks })
+      }
     }
 
     if (firstVisit) setShowEducationalOverlay(true)
@@ -86,8 +93,9 @@ export default function DatasetBuilderPage() {
       savedDatasets,
       modelBlocks,
       trainedModels,
+      rlBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -141,12 +149,12 @@ export default function DatasetBuilderPage() {
         )}
       </DragOverlay>
 
-      <div className="min-h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         <TopNav />
 
         <div className="flex flex-1 gap-4 p-4 overflow-hidden">
           {/* Left panel — Data Bank + My Datasets + My Models */}
-          <div className="flex-shrink-0 w-72 flex flex-col gap-3 overflow-hidden">
+          <div className="flex-shrink-0 w-72 flex flex-col gap-3 overflow-hidden min-h-0">
             <DataBank />
             <BadgeCollection />
           </div>
@@ -161,7 +169,9 @@ export default function DatasetBuilderPage() {
 
           {/* Right panel — Model Inspector, Block Inspector, or Validation + Split */}
           <div className="flex-shrink-0 w-80 flex flex-col gap-3 overflow-y-auto">
-            {selectedBlockId && selectedBlockType === 'model' ? (
+            {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
+              <RLInspector key={selectedBlockId} />
+            ) : selectedBlockId && selectedBlockType === 'model' ? (
               <ModelInspector key={selectedBlockId} />
             ) : selectedBlockId ? (
               <BlockInspector key={selectedBlockId} />
@@ -178,6 +188,7 @@ export default function DatasetBuilderPage() {
       <BadgeToast />
       <EducationalOverlay />
       <TestResultsModal />
+      <ClusterResultsModal />
       <LabellingModal />
     </DndContext>
   )

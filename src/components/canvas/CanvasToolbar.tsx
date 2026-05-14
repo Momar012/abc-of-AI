@@ -3,9 +3,10 @@
 import { useDraggable } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
+import { useRLStore } from '@/store/useRLStore'
 import GlowButton from '@/components/ui/GlowButton'
 
-type BlockType = 'labelled' | 'unlabelled' | 'model'
+type BlockType = 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld'
 
 function DraggablePaletteItem({
   blockType,
@@ -40,6 +41,7 @@ export default function CanvasToolbar() {
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlock = useModelStore((s) => s.addModelBlock)
+  const addRLBlock = useRLStore((s) => s.addRLBlock)
 
   return (
     <div className="flex items-center gap-2 p-2 glass-card-dark rounded-xl flex-wrap">
@@ -52,6 +54,9 @@ export default function CanvasToolbar() {
       </DraggablePaletteItem>
       <DraggablePaletteItem blockType="model" variant="secondary" onClick={addModelBlock}>
         🤖 Model
+      </DraggablePaletteItem>
+      <DraggablePaletteItem blockType="rl-gridworld" variant="secondary" onClick={addRLBlock}>
+        🎮 RL Gridworld
       </DraggablePaletteItem>
     </div>
   )

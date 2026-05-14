@@ -13,8 +13,9 @@ interface UIState {
   firstVisit: boolean
   showEducationalOverlay: boolean
   selectedBlockId: string | null
-  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | null
+  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | null
   testResultsModalBlockId: string | null
+  clusterResultsModalBlockId: string | null
   labellingModalBlockId: string | null
   selectedBankItemIds: string[]
 
@@ -23,10 +24,12 @@ interface UIState {
   earnBadge: (badgeId: string) => void
   setFirstVisitSeen: () => void
   setShowEducationalOverlay: (show: boolean) => void
-  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model') => void
+  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld') => void
   clearSelectedBlock: () => void
   openTestResultsModal: (blockId: string) => void
   closeTestResultsModal: () => void
+  openClusterResultsModal: (blockId: string) => void
+  closeClusterResultsModal: () => void
   openLabellingModal: (blockId: string) => void
   closeLabellingModal: () => void
   toggleBankItemSelection: (id: string) => void
@@ -41,6 +44,7 @@ export const useUIStore = create<UIState>((set) => ({
   selectedBlockId: null,
   selectedBlockType: null,
   testResultsModalBlockId: null,
+  clusterResultsModalBlockId: null,
   labellingModalBlockId: null,
   selectedBankItemIds: [],
 
@@ -68,6 +72,9 @@ export const useUIStore = create<UIState>((set) => ({
 
   openTestResultsModal: (blockId) => set({ testResultsModalBlockId: blockId }),
   closeTestResultsModal: () => set({ testResultsModalBlockId: null }),
+
+  openClusterResultsModal: (blockId) => set({ clusterResultsModalBlockId: blockId }),
+  closeClusterResultsModal: () => set({ clusterResultsModalBlockId: null }),
 
   openLabellingModal: (blockId) => set({ labellingModalBlockId: blockId }),
   closeLabellingModal: () => set({ labellingModalBlockId: null }),

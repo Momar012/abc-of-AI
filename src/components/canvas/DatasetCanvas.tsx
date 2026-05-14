@@ -18,11 +18,13 @@ import { useDndMonitor, useDroppable } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useRLStore } from '@/store/useRLStore'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
 import DataSplitNode from './nodes/DataSplitNode'
 import ModelBlockNode from './nodes/ModelBlockNode'
+import RLGridworldNode from './nodes/RLGridworldNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 
@@ -32,6 +34,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlock = useModelStore((s) => s.addModelBlock)
   const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
+  const addRLBlock = useRLStore((s) => s.addRLBlock)
   const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
   const addToast = useUIStore((s) => s.addToast)
 
@@ -53,6 +56,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         if (blockType === 'labelled') addLabelledBlock(flowPos)
         else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
         else if (blockType === 'model') addModelBlock(flowPos)
+        else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
         return
       }
 
@@ -82,6 +86,7 @@ const nodeTypes = {
   validation: ValidationResultNode,
   split: DataSplitNode,
   model: ModelBlockNode,
+  'rl-gridworld': RLGridworldNode,
 }
 
 const edgeTypes = {
@@ -96,6 +101,8 @@ export default function DatasetCanvas() {
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const updateModelBlockPosition = useModelStore((s) => s.updateModelBlockPosition)
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
+  const rlBlocks = useRLStore((s) => s.rlBlocks)
+  const updateRLBlockPosition = useRLStore((s) => s.updateRLBlockPosition)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -140,8 +147,17 @@ export default function DatasetCanvas() {
           data: { block: b },
         } as Node
       }),
+      ...rlBlocks.map((b) => {
+        const existing = current.find((n) => n.id === b.id)
+        return {
+          id: b.id,
+          type: 'rl-gridworld',
+          position: existing?.position ?? b.position,
+          data: { block: b },
+        } as Node
+      }),
     ])
-  }, [labelledBlocks, unlabelledBlocks, modelBlocks, setRfNodes])
+  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, setRfNodes])
 
   // Sync model linkedBlockIds → RF edges
   useEffect(() => {
@@ -180,6 +196,8 @@ export default function DatasetCanvas() {
         if (change.type === 'position' && !change.dragging && change.position) {
           if (modelBlocks.some((b) => b.id === change.id)) {
             updateModelBlockPosition(change.id, change.position)
+          } else if (rlBlocks.some((b) => b.id === change.id)) {
+            updateRLBlockPosition(change.id, change.position)
           } else {
             const type = labelledBlocks.some((b) => b.id === change.id) ? 'labelled' : 'unlabelled'
             updateBlockPosition(change.id, type, change.position)
@@ -187,7 +205,7 @@ export default function DatasetCanvas() {
         }
       }
     },
-    [labelledBlocks, modelBlocks, updateBlockPosition, updateModelBlockPosition, setRfNodes]
+    [labelledBlocks, modelBlocks, rlBlocks, updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition, setRfNodes]
   )
 
   const onConnect = useCallback(

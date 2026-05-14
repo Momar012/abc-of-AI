@@ -1,5 +1,6 @@
 import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, SavedDataset } from '@/types/dataset'
 import { ModelBlock, TrainedModel } from '@/types/model'
+import { RLGridworldBlock } from '@/types/rl'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -13,6 +14,7 @@ interface PersistedState {
   savedDatasets: SavedDataset[]
   modelBlocks?: ModelBlock[]
   trainedModels?: TrainedModel[]
+  rlBlocks?: RLGridworldBlock[]
 }
 
 export function saveToLocalStorage(state: {
@@ -25,6 +27,7 @@ export function saveToLocalStorage(state: {
   savedDatasets: SavedDataset[]
   modelBlocks: ModelBlock[]
   trainedModels: TrainedModel[]
+  rlBlocks: RLGridworldBlock[]
 }) {
   try {
     const toSave: PersistedState = {
@@ -35,8 +38,9 @@ export function saveToLocalStorage(state: {
       earnedBadges: state.earnedBadges,
       currentDatasetName: state.currentDatasetName,
       savedDatasets: state.savedDatasets,
-      modelBlocks: state.modelBlocks.map(({ testResults: _, ...rest }) => rest as ModelBlock),
+      modelBlocks: state.modelBlocks.map(({ testResults: _t, clusterResults: _c, ...rest }) => rest as ModelBlock),
       trainedModels: state.trainedModels,
+      rlBlocks: state.rlBlocks.map(({ agentPos: _p, agentPath: _a, ...rest }) => rest as RLGridworldBlock),
     }
     localStorage.setItem(KEY, JSON.stringify(toSave))
   } catch {
@@ -75,12 +79,20 @@ export function loadFromLocalStorage(): PersistedState | null {
       currentDatasetName: parsed.currentDatasetName ?? 'My Dataset',
       savedDatasets,
       modelBlocks: (parsed.modelBlocks ?? []).map((b) => ({
+        ...b,
+        clusterCount: b.clusterCount ?? null,
         testLinkedBlockId: null,
         testStatus: 'idle' as const,
-        ...b,
-        testResults: null, // never persist test results — regenerate on demand
+        testResults: null,
+        clusterResults: null,
       })),
       trainedModels: parsed.trainedModels ?? [],
+      rlBlocks: (parsed.rlBlocks ?? []).map((b) => ({
+        ...b,
+        agentPos: null,
+        agentPath: [],
+        trainingStatus: b.trainingStatus === 'training' ? 'paused' as const : b.trainingStatus,
+      })),
     }
   } catch {
     return null

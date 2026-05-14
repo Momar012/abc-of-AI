@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { trainImageSupervisedModel, runInference } from '@/lib/trainModel'
+import { trainImageSupervisedModel, runInference, clusterImages } from '@/lib/trainModel'
 import { TrainedModel, ModelType, TestResult } from '@/types/model'
 
 const MODEL_CATALOG = [
@@ -27,8 +27,8 @@ const MODEL_CATALOG = [
     type: 'image-unsupervised' as ModelType,
     name: 'Image Unsupervised',
     icon: '🧩',
-    description: 'Find patterns and group similar images without labels.',
-    available: false,
+    description: 'Group similar images automatically — no labels needed. Uses K-means + MobileNet.',
+    available: true,
   },
 ]
 
@@ -37,6 +37,7 @@ export default function ModelInspector() {
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const addToast = useUIStore((s) => s.addToast)
   const openTestResultsModal = useUIStore((s) => s.openTestResultsModal)
+  const openClusterResultsModal = useUIStore((s) => s.openClusterResultsModal)
 
   const block = useModelStore((s) => s.modelBlocks.find((b) => b.id === selectedBlockId))
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
@@ -61,10 +62,19 @@ export default function ModelInspector() {
 
   if (!block) return null
 
-  const linkedBlock = labelledBlocks.find((b) => b.id === block.linkedBlockId)
+  const linkedLabelledBlock = labelledBlocks.find((b) => b.id === block.linkedBlockId)
+  const linkedUnlabelledBlock = unlabelledBlocks.find((b) => b.id === block.linkedBlockId)
+  // For unsupervised, allow linking to either labelled or unlabelled blocks
+  const linkedBlock = block.modelType === 'image-unsupervised'
+    ? (linkedLabelledBlock ?? linkedUnlabelledBlock)
+    : linkedLabelledBlock
   const testLabelledBlock = labelledBlocks.find((b) => b.id === block.testLinkedBlockId)
   const testUnlabelledBlock = unlabelledBlocks.find((b) => b.id === block.testLinkedBlockId)
-  const isTrainable = !!linkedBlock && linkedBlock.labels.filter((l) => l.itemIds.length > 0).length >= 2
+  const isTrainable = !!linkedBlock && (block.modelType === 'image-unsupervised'
+    ? ('labels' in linkedBlock
+        ? linkedBlock.labels.some((l) => l.itemIds.length > 0) || linkedBlock.itemIds.length > 0
+        : linkedBlock.itemIds.length > 0)
+    : (linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).length ?? 0) >= 2)
   const isWorking = block.status === 'loading' || block.status === 'training'
   const isTesting = block.testStatus === 'running'
 
@@ -90,9 +100,9 @@ export default function ModelInspector() {
     ? trainedModels.find((m) => m.id === block.trainedModelId)
     : null
 
-  // Label color map from training block
+  // Label color map from training block (only for labelled blocks)
   const labelColorMap: Record<string, string> = {}
-  if (linkedBlock) {
+  if (linkedBlock && 'labels' in linkedBlock) {
     for (const l of linkedBlock.labels) labelColorMap[l.id] = l.color
   }
 
@@ -106,8 +116,47 @@ export default function ModelInspector() {
       })()
     : null
 
-  const handleTrain = async () => {
+  const handleCluster = async () => {
     if (!linkedBlock) return
+    const k = block.clusterCount ?? 3
+
+    // Collect all image items from the linked block
+    const allItemIds = 'labels' in linkedBlock
+      ? [...linkedBlock.itemIds, ...linkedBlock.labels.flatMap((l) => l.itemIds)]
+      : [...linkedBlock.itemIds]
+    const imageItems = allItemIds
+      .map((id) => bankItems.find((i) => i.id === id))
+      .filter((i): i is NonNullable<typeof i> => !!i && i.type === 'image' && !!i.content)
+      .map((i) => ({ itemId: i.id, content: i.content! }))
+
+    if (!imageItems.length) {
+      addToast('⚠ No images found in the linked block.', 'warn')
+      return
+    }
+
+    setProgressStep(0)
+    setProgressTotal(100)
+    setProgressMessage('Starting…')
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
+
+    try {
+      const result = await clusterImages(imageItems, k, (message, step, total) => {
+        setProgressMessage(message)
+        setProgressStep(step)
+        setProgressTotal(total)
+        if (step > 2) updateModelBlock(block.id, { status: 'training' })
+      })
+      updateModelBlock(block.id, { status: 'trained', clusterResults: result })
+      addToast(`🧩 Grouped ${imageItems.length} images into ${k} clusters!`, 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Clustering failed'
+      updateModelBlock(block.id, { status: 'error', errorMessage: msg })
+      addToast(`❌ ${msg}`, 'warn')
+    }
+  }
+
+  const handleTrain = async () => {
+    if (!linkedLabelledBlock) return
     setProgressStep(0)
     setProgressTotal(100)
     setProgressMessage('Starting…')
@@ -115,7 +164,7 @@ export default function ModelInspector() {
 
     try {
       const result = await trainImageSupervisedModel(
-        linkedBlock,
+        linkedLabelledBlock,
         bankItems,
         (message, step, total) => {
           setProgressMessage(message)
@@ -253,43 +302,56 @@ export default function ModelInspector() {
               <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/30 flex flex-col gap-1.5">
                 <p className="text-xs text-emerald-400 font-body font-semibold">✓ Connected</p>
                 <p className="text-xs text-white/70 font-body">{linkedBlock.name}</p>
-                <div className="flex flex-wrap gap-1">
-                  {linkedBlock.labels.filter((l) => l.itemIds.length > 0).map((label) => (
-                    <span
-                      key={label.id}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-body"
-                      style={{
-                        background: `${label.color}22`,
-                        border: `1px solid ${label.color}55`,
-                        color: label.color,
-                      }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />
-                      {label.name} ({label.itemIds.length})
-                    </span>
-                  ))}
-                </div>
-                {!isTrainable && (
-                  <p className="text-xs text-amber-400/80 font-body mt-0.5">
-                    ⚠ Need at least 2 labels with images assigned.
+                {block.modelType === 'image-unsupervised' ? (
+                  <p className="text-xs text-white/50 font-body">
+                    {'labels' in linkedBlock
+                      ? `${linkedBlock.itemIds.length + linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} images`
+                      : `${linkedBlock.itemIds.length} images`}
                   </p>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-1">
+                      {linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).map((label) => (
+                        <span
+                          key={label.id}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-body"
+                          style={{
+                            background: `${label.color}22`,
+                            border: `1px solid ${label.color}55`,
+                            color: label.color,
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />
+                          {label.name} ({label.itemIds.length})
+                        </span>
+                      ))}
+                    </div>
+                    {!isTrainable && (
+                      <p className="text-xs text-amber-400/80 font-body mt-0.5">
+                        ⚠ Need at least 2 labels with images assigned.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ) : (
               <div className="p-2 rounded-lg bg-white/5 border border-white/10">
                 <p className="text-xs text-white/40 font-body leading-relaxed">
-                  🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.
+                  {block.modelType === 'image-unsupervised'
+                    ? <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled or 📦 Unlabelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
+                    : <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
+                  }
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* Step 3: Train */}
+        {/* Step 3: Train / Cluster */}
         {block.modelType && block.linkedBlockId && (
           <div className="px-4 py-3 border-b border-white/8">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider mb-2">
-              3 · Train
+              {block.modelType === 'image-unsupervised' ? '3 · Cluster' : '3 · Train'}
             </p>
 
             {block.status === 'error' && block.errorMessage && (
@@ -311,45 +373,108 @@ export default function ModelInspector() {
               </div>
             )}
 
-            {block.status === 'trained' && (
-              <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
-                <p className="text-xs text-emerald-400 font-body font-semibold">✓ Training complete!</p>
-                {linkedBlock && (
-                  <p className="text-xs text-white/50 font-body mt-0.5">
-                    {linkedBlock.labels.filter((l) => l.itemIds.length > 0).length} labels ·{' '}
-                    {linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} images trained
-                  </p>
+            {block.modelType === 'image-unsupervised' ? (
+              <>
+                {/* k-picker */}
+                {!isWorking && (
+                  <div className="mb-3 flex flex-col gap-1.5">
+                    <p className="text-xs text-white/50 font-body">Number of groups:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[2, 3, 4, 5, 6, 7, 8].map((n) => {
+                        const selected = (block.clusterCount ?? 3) === n
+                        return (
+                          <button
+                            key={n}
+                            onClick={() => updateModelBlock(block.id, {
+                              clusterCount: n,
+                              clusterResults: null,
+                              status: block.status === 'trained' ? 'idle' : block.status,
+                            })}
+                            className={`w-8 h-8 rounded-full text-sm font-heading font-bold transition-all ${
+                              selected
+                                ? 'bg-violet-600 text-white'
+                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 )}
-              </div>
-            )}
 
-            <button
-              onClick={handleTrain}
-              disabled={!isTrainable || isWorking}
-              className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
-                isWorking
-                  ? 'bg-white/10 text-white/40 cursor-not-allowed'
-                  : isTrainable
-                  ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                  : 'bg-white/10 text-white/30 cursor-not-allowed'
-              }`}
-            >
-              {isWorking
-                ? block.status === 'loading'
-                  ? '⚙️ Loading AI…'
-                  : '🔄 Training…'
-                : block.status === 'trained'
-                ? '🔁 Retrain'
-                : '🚀 Train Model'}
-            </button>
+                {block.status === 'trained' && block.clusterResults && (
+                  <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-400 font-body font-semibold">
+                      ✓ {block.clusterResults.length} images grouped into {block.clusterCount ?? 3} clusters
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCluster}
+                  disabled={!isTrainable || isWorking}
+                  className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isWorking
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : isTrainable
+                      ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+                >
+                  {isWorking
+                    ? block.status === 'loading'
+                      ? '⚙️ Loading AI…'
+                      : '🔄 Clustering…'
+                    : block.status === 'trained' && block.clusterResults
+                    ? '🔁 Re-cluster'
+                    : '🧩 Cluster Images'}
+                </button>
+              </>
+            ) : (
+              <>
+                {block.status === 'trained' && (
+                  <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-400 font-body font-semibold">✓ Training complete!</p>
+                    {linkedLabelledBlock && (
+                      <p className="text-xs text-white/50 font-body mt-0.5">
+                        {linkedLabelledBlock.labels.filter((l) => l.itemIds.length > 0).length} labels ·{' '}
+                        {linkedLabelledBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} images trained
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleTrain}
+                  disabled={!isTrainable || isWorking}
+                  className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isWorking
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : isTrainable
+                      ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+                >
+                  {isWorking
+                    ? block.status === 'loading'
+                      ? '⚙️ Loading AI…'
+                      : '🔄 Training…'
+                    : block.status === 'trained'
+                    ? '🔁 Retrain'
+                    : '🚀 Train Model'}
+                </button>
+              </>
+            )}
           </div>
         )}
 
-        {/* Step 4: Save trained model */}
+        {/* Step 4: Name result (both supervised and unsupervised) */}
         {block.status === 'trained' && (
           <div className="px-4 py-4 border-b border-white/8 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
-              4 · Save to My Models
+              {block.modelType === 'image-unsupervised' ? '4 · Name Your Result' : '4 · Save to My Models'}
             </p>
             <input
               value={saveName}
@@ -360,9 +485,8 @@ export default function ModelInspector() {
             />
             <button
               onClick={() => {
-                if (!block.trainedModelId) return
                 const name = saveName.trim() || block.name
-                renameTrainedModel(block.trainedModelId, name)
+                if (block.trainedModelId) renameTrainedModel(block.trainedModelId, name)
                 updateModelBlock(block.id, { name })
                 addToast(`💾 "${name}" saved!`, 'success')
               }}
@@ -370,14 +494,36 @@ export default function ModelInspector() {
             >
               💾 Save Name
             </button>
-            <p className="text-xs text-white/30 font-body text-center">
-              Check the 🤖 My Models tab in the left panel
+            {block.modelType !== 'image-unsupervised' && (
+              <p className="text-xs text-white/30 font-body text-center">
+                Check the 🤖 My Models tab in the left panel
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Step 5: Explore Clusters (unsupervised) or Test Model (supervised) */}
+        {block.status === 'trained' && block.modelType === 'image-unsupervised' && block.clusterResults && (
+          <div className="px-4 py-4 flex flex-col gap-2">
+            <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
+              5 · Explore Clusters
             </p>
+            <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/30">
+              <p className="text-xs text-violet-300 font-body font-semibold">
+                ✓ {block.clusterResults.length} images grouped into {block.clusterCount ?? 3} clusters
+              </p>
+            </div>
+            <button
+              onClick={() => openClusterResultsModal(block.id)}
+              className="w-full py-2 rounded-lg bg-violet-600/80 hover:bg-violet-500/80 text-white text-sm font-heading font-semibold transition-colors"
+            >
+              🔍 View Clusters
+            </button>
           </div>
         )}
 
         {/* Step 5: Test with test set */}
-        {block.status === 'trained' && (
+        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
               5 · Test Model
