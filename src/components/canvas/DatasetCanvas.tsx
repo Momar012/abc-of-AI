@@ -17,6 +17,7 @@ import ReactFlow, {
 import { useDndMonitor, useDroppable } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
+import { useUIStore } from '@/store/useUIStore'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -30,25 +31,45 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlock = useModelStore((s) => s.addModelBlock)
+  const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
+  const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
+  const addToast = useUIStore((s) => s.addToast)
 
   useDndMonitor({
     onDragEnd(event) {
-      if (event.active.data.current?.type !== 'block-palette') return
       if (!event.over || event.over.id !== 'canvas-drop') return
+      const dragType = event.active.data.current?.type
 
       const translated = event.active.rect.current.translated
       if (!translated || !canvasRef.current) return
-
       const bounds = canvasRef.current.getBoundingClientRect()
       const flowPos = project({
         x: translated.left + translated.width / 2 - bounds.left,
         y: translated.top + translated.height / 2 - bounds.top,
       })
 
-      const blockType = event.active.data.current?.blockType
-      if (blockType === 'labelled') addLabelledBlock(flowPos)
-      else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
-      else if (blockType === 'model') addModelBlock(flowPos)
+      if (dragType === 'block-palette') {
+        const blockType = event.active.data.current?.blockType
+        if (blockType === 'labelled') addLabelledBlock(flowPos)
+        else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
+        else if (blockType === 'model') addModelBlock(flowPos)
+        return
+      }
+
+      if (dragType === 'trained-model') {
+        const model = event.active.data.current?.model
+        if (model) addModelBlockFromSaved(model, flowPos)
+        return
+      }
+
+      if (dragType === 'saved-dataset') {
+        const dataset = event.active.data.current?.dataset
+        if (dataset) {
+          addDatasetToCanvas(dataset.id, flowPos)
+          addToast(`📂 "${dataset.name}" loaded!`, 'success')
+        }
+        return
+      }
     },
   })
 

@@ -5,7 +5,6 @@ import { DragStartEvent, DragEndEvent } from '@dnd-kit/core'
 import { DataItem, SavedDataset } from '@/types/dataset'
 import { TrainedModel } from '@/types/model'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { useModelStore } from '@/store/useModelStore'
 import { useUIStore } from '@/store/useUIStore'
 
 export function useDragFromBank() {
@@ -15,11 +14,8 @@ export function useDragFromBank() {
 
   const addItemToBlock = useDatasetStore((s) => s.addItemToBlock)
   const assignItemToUnlabelled = useDatasetStore((s) => s.assignItemToUnlabelled)
-  const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
-  const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
   const earnBadge = useUIStore((s) => s.earnBadge)
-  const addToast = useUIStore((s) => s.addToast)
 
   const handleDragStart = (event: DragStartEvent) => {
     const dragType = event.active.data.current?.type
@@ -41,23 +37,12 @@ export function useDragFromBank() {
     // Handle trained-model drag onto canvas
     if (active.data.current?.type === 'trained-model') {
       setActiveTrainedModel(null)
-      if (over?.id === 'canvas-drop') {
-        const model = active.data.current?.model as TrainedModel
-        if (model) addModelBlockFromSaved(model)
-      }
       return
     }
 
     // Handle saved-dataset drag onto canvas
     if (active.data.current?.type === 'saved-dataset') {
       setActiveSavedDataset(null)
-      if (over?.id === 'canvas-drop') {
-        const dataset = active.data.current?.dataset as SavedDataset
-        if (dataset) {
-          addDatasetToCanvas(dataset.id)
-          addToast(`📂 "${dataset.name}" loaded!`, 'success')
-        }
-      }
       return
     }
 

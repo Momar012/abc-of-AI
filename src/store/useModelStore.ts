@@ -7,7 +7,7 @@ interface ModelState {
   trainedModels: TrainedModel[]
 
   addModelBlock: (pos?: { x: number; y: number }) => void
-  addModelBlockFromSaved: (model: TrainedModel) => void
+  addModelBlockFromSaved: (model: TrainedModel, pos?: { x: number; y: number }) => void
   removeModelBlock: (id: string) => void
   updateModelBlock: (id: string, updates: Partial<ModelBlock>) => void
   updateModelBlockPosition: (id: string, pos: { x: number; y: number }) => void
@@ -40,14 +40,14 @@ export const useModelStore = create<ModelState>((set) => ({
       ],
     })),
 
-  addModelBlockFromSaved: (model) =>
+  addModelBlockFromSaved: (model, pos?) =>
     set((s) => ({
       modelBlocks: [
         ...s.modelBlocks,
         {
           id: uuid(),
           type: 'model',
-          position: { x: 300 + s.modelBlocks.length * 40, y: 200 + s.modelBlocks.length * 40 },
+          position: pos ?? { x: 300 + s.modelBlocks.length * 40, y: 200 + s.modelBlocks.length * 40 },
           name: model.name,
           modelType: model.modelType,
           linkedBlockId: null,

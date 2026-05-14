@@ -61,7 +61,7 @@ interface DatasetState {
   setDatasetName: (name: string) => void
   saveCurrentDataset: () => void
   loadSavedDataset: (id: string) => void
-  addDatasetToCanvas: (id: string) => void
+  addDatasetToCanvas: (id: string, pos?: { x: number; y: number }) => void
   deleteSavedDataset: (id: string) => void
 }
 
@@ -331,7 +331,7 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       }
     }),
 
-  addDatasetToCanvas: (id) =>
+  addDatasetToCanvas: (id, pos?) =>
     set((s) => {
       const saved = s.savedDatasets.find((d) => d.id === id)
       if (!saved) return s
@@ -350,10 +350,18 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       const n = s.labelledBlocks.length + s.unlabelledBlocks.length
       const offset = { x: n * 50, y: n * 30 }
 
+      const allSaved = [...saved.labelledBlocks, ...saved.unlabelledBlocks]
+      const minX = allSaved.length ? Math.min(...allSaved.map((b) => b.position.x)) : 0
+      const minY = allSaved.length ? Math.min(...allSaved.map((b) => b.position.y)) : 0
+      const blockPos = (b: { position: { x: number; y: number } }) =>
+        pos
+          ? { x: pos.x + (b.position.x - minX), y: pos.y + (b.position.y - minY) }
+          : { x: b.position.x + offset.x, y: b.position.y + offset.y }
+
       const newLabelled: LabelledDatasetBlock[] = saved.labelledBlocks.map((b) => ({
         ...b,
         id: uuid(),
-        position: { x: b.position.x + offset.x, y: b.position.y + offset.y },
+        position: blockPos(b),
         itemIds: b.itemIds.map((iid) => itemIdMap[iid] ?? iid),
         labels: b.labels.map((l) => ({
           ...l,
@@ -365,7 +373,7 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       const newUnlabelled: UnlabelledDatasetBlock[] = saved.unlabelledBlocks.map((b) => ({
         ...b,
         id: uuid(),
-        position: { x: b.position.x + offset.x, y: b.position.y + offset.y },
+        position: blockPos(b),
         itemIds: b.itemIds.map((iid) => itemIdMap[iid] ?? iid),
       }))
 
