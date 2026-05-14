@@ -34,7 +34,7 @@ export default function DataBankUploader() {
           addBankItem({ type: 'text', name: file.name, content: text })
           added++
         } else {
-          addToast(`Skipped "${file.name}" — only images and .txt files are supported`, 'warn')
+          addToast(`Skipped "${file.name}" (only images and .txt files are supported)`, 'warn')
         }
       }
 

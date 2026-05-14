@@ -33,7 +33,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 function GettingStartedPanel() {
   const steps = [
     { emoji: '📸', step: '1', title: 'Feed it photos', body: 'Upload some cat photos and some dog photos using the panel on the left. Try at least 5 of each!' },
-    { emoji: '🗂️', step: '2', title: 'Teach it the names', body: 'Drag a Labelled block onto the canvas. Make two labels — Cat 🐱 and Dog 🐶 — then sort your photos into them.' },
+    { emoji: '🗂️', step: '2', title: 'Teach it the names', body: 'Drag a Labelled block onto the canvas. Make two labels: Cat 🐱 and Dog 🐶, then sort your photos into them.' },
     { emoji: '🤖', step: '3', title: 'Add a Brain', body: 'Drag a Model block onto the canvas. Double-click it, link it to your labelled block, and pick Image Supervised.' },
     { emoji: '🚀', step: '4', title: 'Train it!', body: 'Hit Train Model and watch your AI learn! More photos = smarter AI 🧠' },
     { emoji: '🎯', step: '5', title: 'Can you trick it?', body: "Drop in a photo it's never seen. Does it guess Cat or Dog? Try to fool it! 😄" },
@@ -55,7 +55,7 @@ function GettingStartedPanel() {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-heading font-bold text-white">
-              Step {step} — {title}
+              Step {step}: {title}
             </p>
             <p className="text-xs text-white/55 font-body leading-relaxed mt-0.5">{body}</p>
           </div>

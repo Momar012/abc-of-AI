@@ -58,7 +58,7 @@ export default function TestResultsModal() {
           <div className="flex items-center gap-3">
             <span className="text-lg">🔬</span>
             <div>
-              <p className="text-sm font-heading font-bold text-white">Test Results — {block.name}</p>
+              <p className="text-sm font-heading font-bold text-white">Test Results: {block.name}</p>
               <p className="text-xs text-white/40 font-body">{results.length} images evaluated</p>
             </div>
           </div>

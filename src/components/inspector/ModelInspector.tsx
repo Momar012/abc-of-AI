@@ -27,7 +27,7 @@ const MODEL_CATALOG = [
     type: 'image-unsupervised' as ModelType,
     name: 'Image Unsupervised',
     icon: '🧩',
-    description: 'Group similar images automatically — no labels needed. Uses K-means + MobileNet.',
+    description: 'Group similar images automatically. No labels needed. Uses K-means + MobileNet.',
     available: true,
   },
 ]
@@ -213,9 +213,9 @@ export default function ModelInspector() {
       if (hasGT) {
         const correct = enriched.filter((r) => r.predictedLabel === r.actualLabel).length
         const pct = Math.round((correct / enriched.length) * 100)
-        addToast(`🔬 Test complete — ${pct}% accurate (${correct}/${enriched.length})`, 'success')
+        addToast(`🔬 Test complete: ${pct}% accurate (${correct}/${enriched.length})`, 'success')
       } else {
-        addToast(`🔬 Test complete — ${enriched.length} images classified!`, 'success')
+        addToast(`🔬 Test complete: ${enriched.length} images classified!`, 'success')
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Testing failed'
@@ -540,7 +540,7 @@ export default function ModelInspector() {
                 {/* Test set info */}
                 <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex flex-col gap-1">
                   <p className="text-xs text-amber-300 font-body font-semibold">
-                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} — {testItems.length} image{testItems.length !== 1 ? 's' : ''}
+                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} · {testItems.length} image{testItems.length !== 1 ? 's' : ''}
                   </p>
                   {testLabelledBlock && (
                     <div className="flex flex-wrap gap-1">

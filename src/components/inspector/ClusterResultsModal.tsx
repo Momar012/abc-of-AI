@@ -41,7 +41,7 @@ export default function ClusterResultsModal() {
             <span className="text-lg">🧩</span>
             <div>
               <p className="text-sm font-heading font-bold text-white">
-                Clusters — {block.name}
+                Clusters: {block.name}
               </p>
               <p className="text-xs text-white/40 font-body">
                 {block.clusterResults.length} images grouped into {k} clusters

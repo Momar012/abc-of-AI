@@ -13,13 +13,13 @@ function getRLNote(block: RLGridworldBlock): string {
   const pct = episodes > 0 ? currentEpisode / episodes : 0
 
   if (inspectorStep === 1) {
-    return "The maze is the agent's world. It can't see the whole map — it only knows where it is right now."
+    return "The maze is the agent's world. It can't see the whole map. It only knows where it is right now."
   }
   if (inspectorStep === 2) {
-    return "The reward is the only way the agent knows it did something good. Try a big reward — does it learn faster? Try zero penalty — does it take the long way around?"
+    return "The reward is the only way the agent knows it did something good. Try a big reward: does it learn faster? Try zero penalty: does it take the long way around?"
   }
   if (inspectorStep === 3) {
-    return "Make a guess! There's no wrong answer — we're just building your intuition about how long it takes AI to learn."
+    return "Make a guess! There's no wrong answer. We're just building your intuition about how long it takes AI to learn."
   }
 
   if (trainingStatus === 'idle' || trainingStatus === 'paused') {
@@ -27,14 +27,14 @@ function getRLNote(block: RLGridworldBlock): string {
   }
   if (trainingStatus === 'done') {
     if (bestSteps !== null) {
-      return `The arrows show what the agent learned — the best move from every cell. This is called a "policy." It figured this out entirely on its own!`
+      return `The arrows show what the agent learned: the best move from every cell. This is called a "policy." It figured this out entirely on its own!`
     }
     return "Training complete! The agent explored your maze and built a map of which moves pay off."
   }
 
   // During training
   if (currentEpisode <= 5) {
-    return "🎲 Pure chaos right now! The agent picks moves completely randomly — it doesn't know anything yet."
+    return "🎲 Pure chaos right now! The agent picks moves completely randomly. It doesn't know anything yet."
   }
   if (firstGoalEpisode !== null && currentEpisode === firstGoalEpisode) {
     return "🎉 It found the goal for the first time! It'll remember this was a good path and try to repeat it."
@@ -47,7 +47,7 @@ function getRLNote(block: RLGridworldBlock): string {
     return "🧭 The path is getting smoother. It's starting to trust what it learned over random guessing."
   }
   if (pct < 0.9) {
-    return "🔒 Almost done exploring. Now it mostly follows what it knows works — with just a little randomness to stay curious."
+    return "🔒 Almost done exploring. Now it mostly follows what it knows works, with just a little randomness to stay curious."
   }
   return "✅ Final stretch! The agent is nearly fully trained. Watch the path stabilise."
 }

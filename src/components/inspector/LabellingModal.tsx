@@ -42,7 +42,7 @@ export default function LabellingModal() {
           <div className="flex items-center gap-3">
             <span className="text-lg">🏷️</span>
             <div>
-              <p className="text-sm font-heading font-bold text-white">Label — {block.name}</p>
+              <p className="text-sm font-heading font-bold text-white">Label: {block.name}</p>
               <p className="text-xs text-white/40 font-body">{allRows.length} items</p>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function LabellingModal() {
                             className="flex-1 text-xs font-body bg-white/10 border border-white/15 text-white rounded-lg px-2 py-1 outline-none focus:border-violet-400 cursor-pointer"
                             style={{ colorScheme: 'dark' }}
                           >
-                            <option value="" style={{ background: '#1e1b4b', color: 'white' }}>— no label —</option>
+                            <option value="" style={{ background: '#1e1b4b', color: 'white' }}>no label</option>
                             {block.labels.map((label) => (
                               <option key={label.id} value={label.id} style={{ background: '#1e1b4b', color: 'white' }}>
                                 {label.name}
