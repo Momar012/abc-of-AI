@@ -32,7 +32,7 @@ import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
 export default function DatasetBuilderPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-  const { activeItem, activeTrainedModel, handleDragStart, handleDragEnd, selectionCount } = useDragFromBank()
+  const { activeItem, activeTrainedModel, activeSavedDataset, handleDragStart, handleDragEnd, selectionCount } = useDragFromBank()
 
   const bankItems = useDatasetStore((s) => s.bankItems)
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
@@ -127,6 +127,16 @@ export default function DatasetBuilderPage() {
             <span className="text-base">🤖</span>
             <span className="text-sm font-heading font-bold text-white">{activeTrainedModel.name}</span>
             <span className="text-xs text-emerald-400 font-body">✓ Trained</span>
+          </div>
+        )}
+        {activeSavedDataset && (
+          <div
+            className="glass-card px-3 py-2 flex items-center gap-2 shadow-xl"
+            style={{ border: '1px solid rgba(139,92,246,0.4)', pointerEvents: 'none' }}
+          >
+            <span className="text-base">💾</span>
+            <span className="text-sm font-heading font-bold text-white">{activeSavedDataset.name}</span>
+            <span className="text-xs text-violet-400 font-body">drop to load</span>
           </div>
         )}
       </DragOverlay>

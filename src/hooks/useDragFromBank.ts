@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { DragStartEvent, DragEndEvent } from '@dnd-kit/core'
-import { DataItem } from '@/types/dataset'
+import { DataItem, SavedDataset } from '@/types/dataset'
 import { TrainedModel } from '@/types/model'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
@@ -11,17 +11,24 @@ import { useUIStore } from '@/store/useUIStore'
 export function useDragFromBank() {
   const [activeItem, setActiveItem] = useState<DataItem | null>(null)
   const [activeTrainedModel, setActiveTrainedModel] = useState<TrainedModel | null>(null)
+  const [activeSavedDataset, setActiveSavedDataset] = useState<SavedDataset | null>(null)
 
   const addItemToBlock = useDatasetStore((s) => s.addItemToBlock)
   const assignItemToUnlabelled = useDatasetStore((s) => s.assignItemToUnlabelled)
+  const loadSavedDataset = useDatasetStore((s) => s.loadSavedDataset)
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
   const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
   const earnBadge = useUIStore((s) => s.earnBadge)
+  const addToast = useUIStore((s) => s.addToast)
 
   const handleDragStart = (event: DragStartEvent) => {
     const dragType = event.active.data.current?.type
     if (dragType === 'trained-model') {
       setActiveTrainedModel(event.active.data.current?.model as TrainedModel)
+      return
+    }
+    if (dragType === 'saved-dataset') {
+      setActiveSavedDataset(event.active.data.current?.dataset as SavedDataset)
       return
     }
     const item = event.active.data.current?.item as DataItem | undefined
@@ -37,6 +44,19 @@ export function useDragFromBank() {
       if (over?.id === 'canvas-drop') {
         const model = active.data.current?.model as TrainedModel
         if (model) addModelBlockFromSaved(model)
+      }
+      return
+    }
+
+    // Handle saved-dataset drag onto canvas
+    if (active.data.current?.type === 'saved-dataset') {
+      setActiveSavedDataset(null)
+      if (over?.id === 'canvas-drop') {
+        const dataset = active.data.current?.dataset as SavedDataset
+        if (dataset) {
+          loadSavedDataset(dataset.id)
+          addToast(`📂 "${dataset.name}" loaded!`, 'success')
+        }
       }
       return
     }
@@ -79,5 +99,5 @@ export function useDragFromBank() {
 
   const selectionCount = useUIStore((s) => s.selectedBankItemIds.length)
 
-  return { activeItem, activeTrainedModel, handleDragStart, handleDragEnd, selectionCount }
+  return { activeItem, activeTrainedModel, activeSavedDataset, handleDragStart, handleDragEnd, selectionCount }
 }
