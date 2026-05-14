@@ -39,7 +39,7 @@ export default function EducationalOverlay() {
             </p>
             <p className="text-white/60 font-body text-sm leading-relaxed mb-6">
               Before an AI can recognize a cat or understand a sentence, it needs to see
-              <em> thousands</em> of examples. You're about to build your very own dataset —
+              <em> thousands</em> of examples. You&apos;re about to build your very own dataset —
               the first step to creating any AI!
             </p>
 
@@ -58,7 +58,7 @@ export default function EducationalOverlay() {
             </div>
 
             <GlowButton size="lg" onClick={dismiss} className="w-full justify-center">
-              🚀 Let's Build!
+              🚀 Let&apos;s Build!
             </GlowButton>
           </motion.div>
         </motion.div>
