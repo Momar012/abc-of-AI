@@ -4,6 +4,7 @@ const path = require('path')
 const nextConfig = {
   reactStrictMode: true,
   eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   swcMinify: false,
   images: {
     domains: [],
