@@ -35,7 +35,7 @@ export default function EducationalOverlay() {
               Welcome to the abc of AI
             </h2>
             <p className="text-white/70 font-body leading-relaxed mb-2">
-              Did you know that <span className="text-violet-400 font-semibold">AI learns from data?</span>
+            🧒👧<span className="text-violet-400 font-semibold">AI Sandbox for Kids</span>
             </p>
             <p className="text-white/60 font-body text-sm leading-relaxed mb-6">
             In this playground, you’ll learn by building, experimenting, and teaching AI step by step, just like real AI creators do.

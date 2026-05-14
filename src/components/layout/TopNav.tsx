@@ -6,9 +6,9 @@ export default function TopNav() {
       <div className="flex items-center gap-3">
         <span className="text-2xl">🤖</span>
         <span className="font-heading font-extrabold text-lg bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
-          ABCAI
+          abc of AI
         </span>
-        <span className="text-white/30 text-sm hidden sm:inline">Dataset Builder</span>
+        <span className="text-white/30 text-sm hidden sm:inline">AI Sandbox for Kids</span>
       </div>
     </header>
   )

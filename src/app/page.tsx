@@ -22,7 +22,7 @@ export default function Home() {
         </h1>
 
         <p className="text-xl text-white/80 mb-3 font-heading font-semibold">
-        Build, train, and experiment with AI
+        AI Sandbox for Kids
         </p>
 
         <p className="text-white/60 mb-10 leading-relaxed">
