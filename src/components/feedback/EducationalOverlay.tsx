@@ -38,17 +38,17 @@ export default function EducationalOverlay() {
               Did you know that <span className="text-violet-400 font-semibold">AI learns from data?</span>
             </p>
             <p className="text-white/60 font-body text-sm leading-relaxed mb-6">
-              Before an AI can recognize a cat or understand a sentence, it needs to see
-              <em> thousands</em> of examples. You&apos;re about to build your very own dataset —
-              the first step to creating any AI!
+            In this playground, you’ll learn by building, experimenting, and teaching AI step by step, just like real AI creators do.
+              
             </p>
 
             <div className="flex flex-col gap-2 mb-6 text-left">
               {[
-                ['📁', 'Upload images or text to your Data Bank'],
-                ['🏷️', 'Drag items into labels to teach the AI'],
-                ['✅', 'Validate your dataset quality'],
-                ['✂️', 'Split the data for training and testing'],
+                ['🧠', 'Discover how machines learn from data'],
+                ['📸', 'Create and organise your own datasets'],
+                ['🏷️', 'Teach AI using labels and examples'],
+                ['🧪', 'Train models and test their predictions'],
+                ['🚀', 'Explore the world of AI through play'],
               ].map(([icon, text]) => (
                 <div key={text} className="flex items-center gap-3 text-sm text-white/70 font-body">
                   <span className="text-xl">{icon}</span>

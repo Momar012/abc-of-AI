@@ -22,12 +22,11 @@ export default function Home() {
         </h1>
 
         <p className="text-xl text-white/80 mb-3 font-heading font-semibold">
-          Learn how AI learns!
+        Build, train, and experiment with AI
         </p>
 
         <p className="text-white/60 mb-10 leading-relaxed">
-          Become a real AI scientist. Collect data, add labels, and build your
-          very own dataset — the first step to training any AI!
+        A fun and simple way for kids to build datasets, train AI models, and explore how machines learn.
         </p>
 
         <motion.button
