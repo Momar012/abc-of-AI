@@ -15,7 +15,7 @@ export function useDragFromBank() {
 
   const addItemToBlock = useDatasetStore((s) => s.addItemToBlock)
   const assignItemToUnlabelled = useDatasetStore((s) => s.assignItemToUnlabelled)
-  const loadSavedDataset = useDatasetStore((s) => s.loadSavedDataset)
+  const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
   const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
   const earnBadge = useUIStore((s) => s.earnBadge)
@@ -54,7 +54,7 @@ export function useDragFromBank() {
       if (over?.id === 'canvas-drop') {
         const dataset = active.data.current?.dataset as SavedDataset
         if (dataset) {
-          loadSavedDataset(dataset.id)
+          addDatasetToCanvas(dataset.id)
           addToast(`📂 "${dataset.name}" loaded!`, 'success')
         }
       }

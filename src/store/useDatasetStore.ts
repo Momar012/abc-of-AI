@@ -61,6 +61,7 @@ interface DatasetState {
   setDatasetName: (name: string) => void
   saveCurrentDataset: () => void
   loadSavedDataset: (id: string) => void
+  addDatasetToCanvas: (id: string) => void
   deleteSavedDataset: (id: string) => void
 }
 
@@ -327,6 +328,51 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         splitConfig: saved.splitConfig,
         currentDatasetName: saved.name,
         validationResult: null,
+      }
+    }),
+
+  addDatasetToCanvas: (id) =>
+    set((s) => {
+      const saved = s.savedDatasets.find((d) => d.id === id)
+      if (!saved) return s
+
+      const itemIdMap: Record<string, string> = {}
+      const newBankItems: DataItem[] = saved.bankItems.map((item) => {
+        const newId = uuid()
+        itemIdMap[item.id] = newId
+        let thumbnailUrl: string | undefined
+        if (item.type === 'image' && item.content) {
+          try { thumbnailUrl = URL.createObjectURL(base64ToBlob(item.content, 'image/jpeg')) } catch {}
+        }
+        return { ...item, id: newId, addedAt: Date.now(), thumbnailUrl }
+      })
+
+      const n = s.labelledBlocks.length + s.unlabelledBlocks.length
+      const offset = { x: n * 50, y: n * 30 }
+
+      const newLabelled: LabelledDatasetBlock[] = saved.labelledBlocks.map((b) => ({
+        ...b,
+        id: uuid(),
+        position: { x: b.position.x + offset.x, y: b.position.y + offset.y },
+        itemIds: b.itemIds.map((iid) => itemIdMap[iid] ?? iid),
+        labels: b.labels.map((l) => ({
+          ...l,
+          id: uuid(),
+          itemIds: l.itemIds.map((iid) => itemIdMap[iid] ?? iid),
+        })),
+      }))
+
+      const newUnlabelled: UnlabelledDatasetBlock[] = saved.unlabelledBlocks.map((b) => ({
+        ...b,
+        id: uuid(),
+        position: { x: b.position.x + offset.x, y: b.position.y + offset.y },
+        itemIds: b.itemIds.map((iid) => itemIdMap[iid] ?? iid),
+      }))
+
+      return {
+        bankItems: [...s.bankItems, ...newBankItems],
+        labelledBlocks: [...s.labelledBlocks, ...newLabelled],
+        unlabelledBlocks: [...s.unlabelledBlocks, ...newUnlabelled],
       }
     }),
 
