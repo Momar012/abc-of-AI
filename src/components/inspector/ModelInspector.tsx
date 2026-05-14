@@ -6,7 +6,8 @@ import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { trainImageSupervisedModel, runInference, clusterImages } from '@/lib/trainModel'
-import { TrainedModel, ModelType, TestResult } from '@/types/model'
+import { trainTextCorpus, queryTextCorpus } from '@/lib/textLearner'
+import { TrainedModel, ModelType, TestResult, ChatMessage } from '@/types/model'
 
 const MODEL_CATALOG = [
   {
@@ -28,6 +29,13 @@ const MODEL_CATALOG = [
     name: 'Image Unsupervised',
     icon: '🧩',
     description: 'Group similar images automatically. No labels needed. Uses K-means + MobileNet.',
+    available: true,
+  },
+  {
+    type: 'text-corpus' as ModelType,
+    name: 'Text Brain',
+    icon: '🧠',
+    description: 'Feed it text and it learns the facts. Teach it wrong things and watch it get confused!',
     available: true,
   },
 ]
@@ -55,26 +63,34 @@ export default function ModelInspector() {
   const [saveName, setSaveName] = useState('')
   const [testProgress, setTestProgress] = useState(0)
   const [testTotal, setTestTotal] = useState(0)
+  const [chatInput, setChatInput] = useState('')
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
 
   useEffect(() => {
     if (block) setSaveName(block.name)
+    setChatInput('')
+    setChatMessages([])
   }, [selectedBlockId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!block) return null
 
   const linkedLabelledBlock = labelledBlocks.find((b) => b.id === block.linkedBlockId)
   const linkedUnlabelledBlock = unlabelledBlocks.find((b) => b.id === block.linkedBlockId)
-  // For unsupervised, allow linking to either labelled or unlabelled blocks
-  const linkedBlock = block.modelType === 'image-unsupervised'
+  // For unsupervised and text-corpus, allow linking to either labelled or unlabelled blocks
+  const linkedBlock = (block.modelType === 'image-unsupervised' || block.modelType === 'text-corpus')
     ? (linkedLabelledBlock ?? linkedUnlabelledBlock)
     : linkedLabelledBlock
   const testLabelledBlock = labelledBlocks.find((b) => b.id === block.testLinkedBlockId)
   const testUnlabelledBlock = unlabelledBlocks.find((b) => b.id === block.testLinkedBlockId)
-  const isTrainable = !!linkedBlock && (block.modelType === 'image-unsupervised'
-    ? ('labels' in linkedBlock
-        ? linkedBlock.labels.some((l) => l.itemIds.length > 0) || linkedBlock.itemIds.length > 0
-        : linkedBlock.itemIds.length > 0)
-    : (linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).length ?? 0) >= 2)
+  const isTrainable = !!linkedBlock && (
+    block.modelType === 'text-corpus'
+      ? linkedBlock.itemIds.length > 0 || ('labels' in linkedBlock && linkedBlock.labels.some((l) => l.itemIds.length > 0))
+      : block.modelType === 'image-unsupervised'
+      ? ('labels' in linkedBlock
+          ? linkedBlock.labels.some((l) => l.itemIds.length > 0) || linkedBlock.itemIds.length > 0
+          : linkedBlock.itemIds.length > 0)
+      : (linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).length ?? 0) >= 2
+  )
   const isWorking = block.status === 'loading' || block.status === 'training'
   const isTesting = block.testStatus === 'running'
 
@@ -153,6 +169,49 @@ export default function ModelInspector() {
       updateModelBlock(block.id, { status: 'error', errorMessage: msg })
       addToast(`❌ ${msg}`, 'warn')
     }
+  }
+
+  const handleTrainText = () => {
+    if (!linkedBlock) return
+    const allItemIds = 'labels' in linkedBlock
+      ? [...linkedBlock.itemIds, ...linkedBlock.labels.flatMap((l) => l.itemIds)]
+      : [...linkedBlock.itemIds]
+    const textItems = allItemIds
+      .map((id) => bankItems.find((i) => i.id === id))
+      .filter((i): i is NonNullable<typeof i> => !!i && i.type === 'text' && !!i.content)
+      .map((i) => ({ content: i.content! }))
+
+    if (!textItems.length) {
+      addToast('⚠ No text items found. Upload .txt files and add them to the linked block.', 'warn')
+      return
+    }
+
+    const { sentences } = trainTextCorpus(textItems)
+    updateModelBlock(block.id, { status: 'trained', textSentences: sentences })
+    setChatMessages((prev) => [
+      ...prev,
+      { role: 'ai', text: `I've read ${sentences.length} sentence${sentences.length !== 1 ? 's' : ''}! Go ahead, ask me anything 🧠` },
+    ])
+    addToast(`🧠 Text Brain trained on ${sentences.length} sentences!`, 'success')
+  }
+
+  const handleChat = () => {
+    const q = chatInput.trim()
+    if (!q) return
+    const userMsg: ChatMessage = { role: 'user', text: q }
+    setChatInput('')
+
+    if (!block.textSentences?.length) {
+      setChatMessages((prev) => [
+        ...prev,
+        userMsg,
+        { role: 'ai', text: "I haven't learned anything yet! Link some text and hit 'Feed the Brain' first." },
+      ])
+      return
+    }
+
+    const { answer } = queryTextCorpus(q, block.textSentences)
+    setChatMessages((prev) => [...prev, userMsg, { role: 'ai', text: answer }])
   }
 
   const handleTrain = async () => {
@@ -302,7 +361,13 @@ export default function ModelInspector() {
               <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/30 flex flex-col gap-1.5">
                 <p className="text-xs text-emerald-400 font-body font-semibold">✓ Connected</p>
                 <p className="text-xs text-white/70 font-body">{linkedBlock.name}</p>
-                {block.modelType === 'image-unsupervised' ? (
+                {block.modelType === 'text-corpus' ? (
+                  <p className="text-xs text-white/50 font-body">
+                    {'labels' in linkedBlock
+                      ? `${linkedBlock.itemIds.length + linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} text items`
+                      : `${linkedBlock.itemIds.length} text items`}
+                  </p>
+                ) : block.modelType === 'image-unsupervised' ? (
                   <p className="text-xs text-white/50 font-body">
                     {'labels' in linkedBlock
                       ? `${linkedBlock.itemIds.length + linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} images`
@@ -337,7 +402,9 @@ export default function ModelInspector() {
             ) : (
               <div className="p-2 rounded-lg bg-white/5 border border-white/10">
                 <p className="text-xs text-white/40 font-body leading-relaxed">
-                  {block.modelType === 'image-unsupervised'
+                  {block.modelType === 'text-corpus'
+                    ? <>🔗 Upload .txt files to the Data Bank, drop them into a 📦 Unlabelled block, then drag from its <span className="text-violet-300 font-semibold">violet dot</span> to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
+                    : block.modelType === 'image-unsupervised'
                     ? <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled or 📦 Unlabelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
                     : <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
                   }
@@ -351,7 +418,7 @@ export default function ModelInspector() {
         {block.modelType && block.linkedBlockId && (
           <div className="px-4 py-3 border-b border-white/8">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider mb-2">
-              {block.modelType === 'image-unsupervised' ? '3 · Cluster' : '3 · Train'}
+              {block.modelType === 'image-unsupervised' ? '3 · Cluster' : block.modelType === 'text-corpus' ? '3 · Feed the Brain' : '3 · Train'}
             </p>
 
             {block.status === 'error' && block.errorMessage && (
@@ -373,7 +440,28 @@ export default function ModelInspector() {
               </div>
             )}
 
-            {block.modelType === 'image-unsupervised' ? (
+            {block.modelType === 'text-corpus' ? (
+              <>
+                {block.status === 'trained' && block.textSentences && (
+                  <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-400 font-body font-semibold">
+                      ✓ Learned {block.textSentences.length} sentences
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={handleTrainText}
+                  disabled={!isTrainable}
+                  className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isTrainable
+                      ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+                >
+                  {block.status === 'trained' ? '🔁 Re-feed' : '🧠 Feed the Brain'}
+                </button>
+              </>
+            ) : block.modelType === 'image-unsupervised' ? (
               <>
                 {/* k-picker */}
                 {!isWorking && (
@@ -470,8 +558,69 @@ export default function ModelInspector() {
           </div>
         )}
 
-        {/* Step 4: Name result (both supervised and unsupervised) */}
-        {block.status === 'trained' && (
+        {/* Step 4: Chat with the Brain (text-corpus only — always visible once model type selected) */}
+        {block.modelType === 'text-corpus' && (
+          <div className="px-4 py-4 border-b border-white/8 flex flex-col gap-3">
+            <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
+              4 · Chat with the Brain
+            </p>
+
+            {/* Message list */}
+            <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
+              {chatMessages.length === 0 && (
+                <p className="text-xs text-white/30 font-body text-center py-4">
+                  {block.status === 'trained'
+                    ? 'Ask me anything! Try: "Where did Humpty sit?"'
+                    : 'Feed me some text first, then ask me anything!'}
+                </p>
+              )}
+              {chatMessages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] px-3 py-2 rounded-xl text-xs font-body leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-violet-600/70 text-white rounded-br-sm'
+                        : 'bg-white/10 text-white/85 rounded-bl-sm'
+                    }`}
+                  >
+                    {msg.role === 'ai' && <span className="mr-1">🧠</span>}
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input row */}
+            <div className="flex gap-2">
+              <input
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+                placeholder="Ask a question…"
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-xs placeholder-white/30 outline-none focus:border-violet-400 font-body"
+              />
+              <button
+                onClick={handleChat}
+                disabled={!chatInput.trim()}
+                className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-white/10 disabled:text-white/30 text-white text-xs font-heading font-semibold transition-all"
+              >
+                Ask
+              </button>
+            </div>
+
+            {block.status === 'trained' && (
+              <p className="text-xs text-white/30 font-body text-center leading-relaxed">
+                Try changing your text, hitting Re-feed, and asking again!
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Step 4: Name result (supervised and unsupervised, not text-corpus) */}
+        {block.status === 'trained' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 border-b border-white/8 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
               {block.modelType === 'image-unsupervised' ? '4 · Name Your Result' : '4 · Save to My Models'}
@@ -523,7 +672,7 @@ export default function ModelInspector() {
         )}
 
         {/* Step 5: Test with test set */}
-        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && (
+        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
               5 · Test Model

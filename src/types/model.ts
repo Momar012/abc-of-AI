@@ -1,4 +1,9 @@
-export type ModelType = 'image-supervised' | 'image-classifier' | 'image-unsupervised'
+export type ModelType = 'image-supervised' | 'image-classifier' | 'image-unsupervised' | 'text-corpus'
+
+export interface ChatMessage {
+  role: 'user' | 'ai'
+  text: string
+}
 export type ModelStatus = 'idle' | 'loading' | 'training' | 'trained' | 'error'
 export type TestStatus = 'idle' | 'running' | 'done' | 'error'
 
@@ -22,6 +27,7 @@ export interface ModelBlock {
   testResults: TestResult[] | null
   clusterCount: number | null
   clusterResults: ClusterResult[] | null
+  textSentences?: string[]
 }
 
 export interface TrainedModel {
