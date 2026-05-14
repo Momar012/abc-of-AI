@@ -40,12 +40,12 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
       if (!event.over || event.over.id !== 'canvas-drop') return
       const dragType = event.active.data.current?.type
 
-      const translated = event.active.rect.current.translated
-      if (!translated || !canvasRef.current) return
+      if (!canvasRef.current) return
       const bounds = canvasRef.current.getBoundingClientRect()
+      const activator = event.activatorEvent as MouseEvent
       const flowPos = project({
-        x: translated.left + translated.width / 2 - bounds.left,
-        y: translated.top + translated.height / 2 - bounds.top,
+        x: activator.clientX + event.delta.x - bounds.left,
+        y: activator.clientY + event.delta.y - bounds.top,
       })
 
       if (dragType === 'block-palette') {

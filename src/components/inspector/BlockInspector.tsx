@@ -178,7 +178,6 @@ export default function BlockInspector() {
 
   const renameLabelledBlock = useDatasetStore((s) => s.renameLabelledBlock)
   const renameUnlabelledBlock = useDatasetStore((s) => s.renameUnlabelledBlock)
-  const setDatasetName = useDatasetStore((s) => s.setDatasetName)
   const saveCurrentDataset = useDatasetStore((s) => s.saveCurrentDataset)
   const savedDatasets = useDatasetStore((s) => s.savedDatasets)
 
@@ -204,8 +203,7 @@ export default function BlockInspector() {
     const isOverwrite = savedDatasets.some((d) => d.name === name)
     if (selectedBlockType === 'labelled') renameLabelledBlock(selectedBlockId, name)
     else renameUnlabelledBlock(selectedBlockId, name)
-    setDatasetName(name)
-    saveCurrentDataset()
+    saveCurrentDataset(selectedBlockId, selectedBlockType as 'labelled' | 'unlabelled')
     addToast(isOverwrite ? `🔄 "${name}" updated!` : `💾 "${name}" saved!`, 'success')
   }
 

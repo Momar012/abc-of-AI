@@ -59,7 +59,7 @@ interface DatasetState {
 
   // Dataset naming + session save
   setDatasetName: (name: string) => void
-  saveCurrentDataset: () => void
+  saveCurrentDataset: (blockId?: string, blockType?: 'labelled' | 'unlabelled') => void
   loadSavedDataset: (id: string) => void
   addDatasetToCanvas: (id: string, pos?: { x: number; y: number }) => void
   deleteSavedDataset: (id: string) => void
@@ -288,16 +288,63 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
 
   setDatasetName: (name) => set({ currentDatasetName: name }),
 
-  saveCurrentDataset: () =>
+  saveCurrentDataset: (blockId?, blockType?) =>
     set((s) => {
+      // Single-block save (from BlockInspector — saves only the selected block)
+      if (blockId && blockType === 'labelled') {
+        const block = s.labelledBlocks.find((b) => b.id === blockId)
+        if (!block) return s
+        const usedIds = new Set([...block.itemIds, ...block.labels.flatMap((l) => l.itemIds)])
+        const bankItems = s.bankItems.filter((i) => usedIds.has(i.id)).map(({ thumbnailUrl: _, ...rest }) => rest)
+        const existingIdx = s.savedDatasets.findIndex((d) => d.name === block.name)
+        const snapshot: SavedDataset = {
+          id: existingIdx >= 0 ? s.savedDatasets[existingIdx].id : uuid(),
+          name: block.name,
+          savedAt: Date.now(),
+          bankItems,
+          labelledBlocks: [{ ...block, itemIds: [...block.itemIds], labels: block.labels.map((l) => ({ ...l, itemIds: [...l.itemIds] })) }],
+          unlabelledBlocks: [],
+          splitConfig: s.splitConfig,
+        }
+        if (existingIdx >= 0) { const u = [...s.savedDatasets]; u[existingIdx] = snapshot; return { savedDatasets: u } }
+        return { savedDatasets: [snapshot, ...s.savedDatasets] }
+      }
+
+      if (blockId && blockType === 'unlabelled') {
+        const block = s.unlabelledBlocks.find((b) => b.id === blockId)
+        if (!block) return s
+        const usedIds = new Set(block.itemIds)
+        const bankItems = s.bankItems.filter((i) => usedIds.has(i.id)).map(({ thumbnailUrl: _, ...rest }) => rest)
+        const existingIdx = s.savedDatasets.findIndex((d) => d.name === block.name)
+        const snapshot: SavedDataset = {
+          id: existingIdx >= 0 ? s.savedDatasets[existingIdx].id : uuid(),
+          name: block.name,
+          savedAt: Date.now(),
+          bankItems,
+          labelledBlocks: [],
+          unlabelledBlocks: [{ ...block, itemIds: [...block.itemIds] }],
+          splitConfig: s.splitConfig,
+        }
+        if (existingIdx >= 0) { const u = [...s.savedDatasets]; u[existingIdx] = snapshot; return { savedDatasets: u } }
+        return { savedDatasets: [snapshot, ...s.savedDatasets] }
+      }
+
+      // Legacy full-canvas save (no args)
       const existingIdx = s.savedDatasets.findIndex((d) => d.name === s.currentDatasetName)
       const snapshot: SavedDataset = {
         id: existingIdx >= 0 ? s.savedDatasets[existingIdx].id : uuid(),
         name: s.currentDatasetName,
         savedAt: Date.now(),
         bankItems: s.bankItems.map(({ thumbnailUrl: _, ...rest }) => rest),
-        labelledBlocks: s.labelledBlocks,
-        unlabelledBlocks: s.unlabelledBlocks,
+        labelledBlocks: s.labelledBlocks.map((b) => ({
+          ...b,
+          itemIds: [...b.itemIds],
+          labels: b.labels.map((l) => ({ ...l, itemIds: [...l.itemIds] })),
+        })),
+        unlabelledBlocks: s.unlabelledBlocks.map((b) => ({
+          ...b,
+          itemIds: [...b.itemIds],
+        })),
         splitConfig: s.splitConfig,
       }
       if (existingIdx >= 0) {
