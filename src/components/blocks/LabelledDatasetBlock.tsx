@@ -105,8 +105,8 @@ export default function LabelledDatasetBlock({ block }: LabelledDatasetBlockProp
       ) : (
         <div className="overflow-x-auto overflow-y-auto max-h-56">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
+            <thead className="sticky top-0 z-10">
+              <tr className="border-b border-white/10 bg-[rgba(18,12,45,0.95)]">
                 <th className="text-left text-xs text-white/40 font-heading font-semibold px-3 py-2">Item</th>
                 <th className="text-left text-xs text-white/40 font-heading font-semibold px-3 py-2">Label</th>
                 <th className="w-8" />
