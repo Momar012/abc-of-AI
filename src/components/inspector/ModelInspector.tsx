@@ -305,7 +305,7 @@ export default function ModelInspector() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-0 overflow-y-auto">
+      <div className="flex flex-col gap-0">
 
         {/* Step 1: Model catalog */}
         <div className="px-4 py-3 border-b border-white/8">

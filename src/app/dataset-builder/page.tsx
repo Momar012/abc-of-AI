@@ -199,7 +199,7 @@ export default function DatasetBuilderPage() {
           </div>
 
           {/* Right panel — Model Inspector, Block Inspector, or Validation + Split */}
-          <div className="flex-shrink-0 w-80 flex flex-col gap-3 overflow-y-auto">
+          <div className="flex-shrink-0 w-80 flex flex-col gap-3 overflow-y-auto min-h-0">
             {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
               <RLInspector key={selectedBlockId} />
             ) : selectedBlockId && selectedBlockType === 'model' ? (
