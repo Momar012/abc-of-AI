@@ -4,9 +4,10 @@ import { useDraggable } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
+import { useWorkflowStore } from '@/store/useWorkflowStore'
 import GlowButton from '@/components/ui/GlowButton'
 
-type BlockType = 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld'
+type BlockType = 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'ifelse' | 'door'
 
 function DraggablePaletteItem({
   blockType,
@@ -42,6 +43,8 @@ export default function CanvasToolbar() {
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlock = useModelStore((s) => s.addModelBlock)
   const addRLBlock = useRLStore((s) => s.addRLBlock)
+  const addIfElseBlock = useWorkflowStore((s) => s.addIfElseBlock)
+  const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
 
   return (
     <div className="flex items-center gap-2 p-2 glass-card-dark rounded-xl flex-wrap">
@@ -57,6 +60,12 @@ export default function CanvasToolbar() {
       </DraggablePaletteItem>
       <DraggablePaletteItem blockType="rl-gridworld" variant="secondary" onClick={addRLBlock}>
         🎮 RL Gridworld
+      </DraggablePaletteItem>
+      <DraggablePaletteItem blockType="ifelse" variant="secondary" onClick={addIfElseBlock}>
+        🔀 If / Else
+      </DraggablePaletteItem>
+      <DraggablePaletteItem blockType="door" variant="secondary" onClick={addDoorBlock}>
+        🚪 Door
       </DraggablePaletteItem>
     </div>
   )

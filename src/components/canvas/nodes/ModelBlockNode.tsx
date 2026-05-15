@@ -44,6 +44,13 @@ export default function ModelBlockNode({ data }: NodeProps<{ block: ModelBlock }
         id="test-in"
         style={{ background: '#F59E0B', border: '2px solid #78350F', width: 12, height: 12, left: -6, top: '65%' }}
       />
+      {/* Source handle — right, emits prediction output to If/Else block */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="prediction-out"
+        style={{ background: '#10B981', border: '2px solid #064E3B', width: 10, height: 10, right: -5, top: '85%' }}
+      />
 
       <div className="drag-handle flex justify-center items-center py-1.5 px-4 rounded-t-xl cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors">
         <div className="flex gap-1">

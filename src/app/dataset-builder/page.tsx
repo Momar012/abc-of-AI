@@ -27,6 +27,7 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
+import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
@@ -83,6 +84,8 @@ export default function DatasetBuilderPage() {
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
+  const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
+  const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -107,6 +110,12 @@ export default function DatasetBuilderPage() {
       if (saved.rlBlocks) {
         useRLStore.setState({ rlBlocks: saved.rlBlocks })
       }
+      if (saved.ifElseBlocks) {
+        useWorkflowStore.setState({ ifElseBlocks: saved.ifElseBlocks })
+      }
+      if (saved.doorBlocks) {
+        useWorkflowStore.setState({ doorBlocks: saved.doorBlocks })
+      }
     }
 
     if (firstVisit) setShowEducationalOverlay(true)
@@ -126,8 +135,10 @@ export default function DatasetBuilderPage() {
       modelBlocks,
       trainedModels,
       rlBlocks,
+      ifElseBlocks,
+      doorBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
