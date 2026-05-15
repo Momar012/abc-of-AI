@@ -70,7 +70,7 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
           scale: isOver ? 1.02 : 1,
         }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className="drop-zone min-h-[80px] p-2 flex flex-col gap-1"
+        className="drop-zone min-h-[80px] max-h-48 overflow-y-auto p-2 flex flex-col gap-1"
         style={{ borderColor: isOver ? '#06B6D4' : undefined }}
       >
         {block.itemIds.length === 0 ? (

@@ -211,9 +211,9 @@ export default function BlockInspector() {
   const typeLabel = selectedBlockType === 'labelled' ? 'Labelled Block' : 'Unlabelled Block'
 
   return (
-    <div className="glass-card flex flex-col gap-0 overflow-hidden">
+    <div className="glass-card flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-base">{icon}</span>
           <div>
@@ -231,11 +231,13 @@ export default function BlockInspector() {
       </div>
 
       {/* Block content */}
-      {selectedBlockType === 'labelled' && <LabelledContent blockId={selectedBlockId} />}
-      {selectedBlockType === 'unlabelled' && <UnlabelledContent blockId={selectedBlockId} />}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {selectedBlockType === 'labelled' && <LabelledContent blockId={selectedBlockId} />}
+        {selectedBlockType === 'unlabelled' && <UnlabelledContent blockId={selectedBlockId} />}
+      </div>
 
       {/* Footer — Save section */}
-      <div className="px-4 py-4 border-t border-white/8 flex flex-col gap-2">
+      <div className="px-4 py-4 border-t border-white/8 flex flex-col gap-2 flex-shrink-0">
         <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">Save Dataset</p>
         <input
           value={saveName}

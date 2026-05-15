@@ -391,9 +391,9 @@ export default function RLInspector() {
     : null
 
   return (
-    <div className="glass-card flex flex-col gap-0 overflow-hidden">
+    <div className="glass-card flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className={`text-base ${isTraining ? 'animate-pulse' : ''}`}>🎮</span>
           <div>
@@ -409,7 +409,7 @@ export default function RLInspector() {
         </button>
       </div>
 
-      <div className="flex flex-col gap-0">
+      <div className="flex flex-col gap-0 flex-1 min-h-0 overflow-y-auto">
 
         {/* ── Step 1: Design the Maze ── */}
         <div className="px-4 py-3 border-b border-white/8">
