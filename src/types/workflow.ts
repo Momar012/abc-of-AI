@@ -16,3 +16,12 @@ export interface DoorBlock {
   linkedIfElseId: string | null
   isOpen: boolean
 }
+
+export interface BulbBlock {
+  id: string
+  type: 'bulb'
+  position: { x: number; y: number }
+  name: string
+  linkedIfElseId: string | null
+  isOn: boolean
+}

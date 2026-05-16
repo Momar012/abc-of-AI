@@ -66,6 +66,12 @@ body {
   border-radius: 1rem;
 }
 
+.react-flow__node.selected,
+.react-flow__node:focus,
+.react-flow__node:focus-visible {
+  outline: none;
+}
+
 .react-flow__background {
   background: transparent !important;
 }

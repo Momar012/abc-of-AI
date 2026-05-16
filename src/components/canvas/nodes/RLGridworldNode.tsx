@@ -27,7 +27,7 @@ function MiniRewardChart({ history }: { history: number[] }) {
   )
 }
 
-export default function RLGridworldNode({ data }: NodeProps<{ block: RLGridworldBlock }>) {
+export default function RLGridworldNode({ data, selected }: NodeProps<{ block: RLGridworldBlock }>) {
   const removeRLBlock = useRLStore((s) => s.removeRLBlock)
   const setCell = useRLStore((s) => s.setCell)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
@@ -69,8 +69,10 @@ export default function RLGridworldNode({ data }: NodeProps<{ block: RLGridworld
         style={{
           width: block.gridWidth * CELL_SIZE + 28,
           borderColor: isDone ? 'rgba(52,211,153,0.3)' : isTraining ? 'rgba(139,92,246,0.4)' : undefined,
+          boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
+          transition: 'box-shadow 0.2s ease',
         }}
-        onDoubleClick={() => setSelectedBlock(block.id, 'rl-gridworld')}
+        onClick={() => setSelectedBlock(block.id, 'rl-gridworld')}
       >
         {/* Header */}
         <div className="flex items-center justify-between">

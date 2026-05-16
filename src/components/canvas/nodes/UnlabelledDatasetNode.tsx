@@ -5,12 +5,12 @@ import { UnlabelledDatasetBlock as UnlabelledBlock } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 
-export default function UnlabelledDatasetNode({ data }: NodeProps<{ block: UnlabelledBlock }>) {
+export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ block: UnlabelledBlock }>) {
   const removeUnlabelledBlock = useDatasetStore((s) => s.removeUnlabelledBlock)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
 
-  const handleDoubleClick = () => {
+  const handleClick = () => {
     setSelectedBlock(block.id, 'unlabelled')
   }
 
@@ -24,7 +24,14 @@ export default function UnlabelledDatasetNode({ data }: NodeProps<{ block: Unlab
         </div>
       </div>
 
-      <div className="glass-card w-48 flex flex-col gap-2 px-4 py-3" onDoubleClick={handleDoubleClick}>
+      <div
+        className="glass-card w-48 flex flex-col gap-2 px-4 py-3"
+        onClick={handleClick}
+        style={{
+          boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
+          transition: 'box-shadow 0.2s ease',
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -47,7 +54,7 @@ export default function UnlabelledDatasetNode({ data }: NodeProps<{ block: Unlab
 
         {/* Hint */}
         <p className="text-xs text-white/25 font-body text-center mt-1">
-          Double-click to inspect
+          Click to inspect
         </p>
       </div>
 

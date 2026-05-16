@@ -28,6 +28,7 @@ import ModelBlockNode from './nodes/ModelBlockNode'
 import RLGridworldNode from './nodes/RLGridworldNode'
 import IfElseNode from './nodes/IfElseNode'
 import DoorNode from './nodes/DoorNode'
+import BulbNode from './nodes/BulbNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
@@ -41,6 +42,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addRLBlock = useRLStore((s) => s.addRLBlock)
   const addIfElseBlock = useWorkflowStore((s) => s.addIfElseBlock)
   const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
+  const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
   const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
   const addToast = useUIStore((s) => s.addToast)
 
@@ -65,6 +67,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
         else if (blockType === 'ifelse') addIfElseBlock(flowPos)
         else if (blockType === 'door') addDoorBlock(flowPos)
+        else if (blockType === 'bulb') addBulbBlock(flowPos)
         return
       }
 
@@ -97,6 +100,7 @@ const nodeTypes = {
   'rl-gridworld': RLGridworldNode,
   ifelse: IfElseNode,
   door: DoorNode,
+  bulb: BulbNode,
 }
 
 const edgeTypes = {
@@ -120,6 +124,9 @@ export default function DatasetCanvas() {
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const updateDoorBlockPosition = useWorkflowStore((s) => s.updateDoorBlockPosition)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
+  const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
+  const updateBulbBlockPosition = useWorkflowStore((s) => s.updateBulbBlockPosition)
+  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -191,8 +198,17 @@ export default function DatasetCanvas() {
           data: { block: b },
         } as Node
       }),
+      ...bulbBlocks.map((b) => {
+        const existing = current.find((n) => n.id === b.id)
+        return {
+          id: b.id,
+          type: 'bulb',
+          position: existing?.position ?? b.position,
+          data: { block: b },
+        } as Node
+      }),
     ])
-  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, setRfNodes])
+  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, setRfNodes])
 
   // Sync model linkedBlockIds → RF edges
   useEffect(() => {
@@ -243,8 +259,19 @@ export default function DatasetCanvas() {
           targetHandle: 'door-in',
           type: 'workflow',
         } as Edge)),
+      // Action edges: ifelse ifelse-out → bulb bulb-in (emerald)
+      ...bulbBlocks
+        .filter((b) => b.linkedIfElseId !== null)
+        .map((b) => ({
+          id: `bulb-${b.linkedIfElseId}-${b.id}`,
+          source: b.linkedIfElseId!,
+          sourceHandle: 'ifelse-out',
+          target: b.id,
+          targetHandle: 'bulb-in',
+          type: 'workflow',
+        } as Edge)),
     ])
-  }, [modelBlocks, ifElseBlocks, doorBlocks, setRfEdges])
+  }, [modelBlocks, ifElseBlocks, doorBlocks, bulbBlocks, setRfEdges])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -259,6 +286,8 @@ export default function DatasetCanvas() {
             updateIfElseBlockPosition(change.id, change.position)
           } else if (doorBlocks.some((b) => b.id === change.id)) {
             updateDoorBlockPosition(change.id, change.position)
+          } else if (bulbBlocks.some((b) => b.id === change.id)) {
+            updateBulbBlockPosition(change.id, change.position)
           } else {
             const type = labelledBlocks.some((b) => b.id === change.id) ? 'labelled' : 'unlabelled'
             updateBlockPosition(change.id, type, change.position)
@@ -266,7 +295,7 @@ export default function DatasetCanvas() {
         }
       }
     },
-    [labelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition, updateIfElseBlockPosition, updateDoorBlockPosition, setRfNodes]
+    [labelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition, updateIfElseBlockPosition, updateDoorBlockPosition, updateBulbBlockPosition, setRfNodes]
   )
 
   const onConnect = useCallback(
@@ -289,9 +318,11 @@ export default function DatasetCanvas() {
         updateIfElseBlock(connection.target, { linkedModelId: connection.source, currentOutput: null })
       } else if (connection.targetHandle === 'door-in') {
         updateDoorBlock(connection.target, { linkedIfElseId: connection.source, isOpen: false })
+      } else if (connection.targetHandle === 'bulb-in') {
+        updateBulbBlock(connection.target, { linkedIfElseId: connection.source, isOn: false })
       }
     },
-    [updateModelBlock, updateIfElseBlock, updateDoorBlock]
+    [updateModelBlock, updateIfElseBlock, updateDoorBlock, updateBulbBlock]
   )
 
   return (

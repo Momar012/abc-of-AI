@@ -6,7 +6,7 @@ import { IfElseBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useModelStore } from '@/store/useModelStore'
 
-export default function IfElseNode({ data }: NodeProps<{ block: IfElseBlock }>) {
+export default function IfElseNode({ data, selected }: NodeProps<{ block: IfElseBlock }>) {
   const { block } = data
   const updateIfElseBlock = useWorkflowStore((s) => s.updateIfElseBlock)
   const removeIfElseBlock = useWorkflowStore((s) => s.removeIfElseBlock)
@@ -59,7 +59,13 @@ export default function IfElseNode({ data }: NodeProps<{ block: IfElseBlock }>) 
         </div>
       </div>
 
-      <div className="glass-card w-52 flex flex-col gap-3 px-4 py-3">
+      <div
+        className="glass-card w-52 flex flex-col gap-3 px-4 py-3"
+        style={{
+          boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
+          transition: 'box-shadow 0.2s ease',
+        }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-base">🔀</span>
@@ -83,11 +89,12 @@ export default function IfElseNode({ data }: NodeProps<{ block: IfElseBlock }>) 
                 updateIfElseBlock(block.id, { condition: e.target.value || null, currentOutput: null })
               }
               onPointerDown={(e) => e.stopPropagation()}
-              className="w-full px-2 py-1.5 rounded-lg bg-white/10 border border-white/15 text-white text-xs font-body outline-none focus:border-violet-400 cursor-pointer"
+              className="w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-violet-400 cursor-pointer"
+              style={{ backgroundColor: '#1e1b4b' }}
             >
-              <option value="">Pick a label…</option>
+              <option value="" style={{ backgroundColor: '#1e1b4b' }}>Pick a label…</option>
               {availableLabels.map((label) => (
-                <option key={label} value={label}>{label}</option>
+                <option key={label} value={label} style={{ backgroundColor: '#1e1b4b' }}>{label}</option>
               ))}
             </select>
           ) : (

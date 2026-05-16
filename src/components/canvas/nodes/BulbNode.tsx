@@ -3,32 +3,31 @@
 import { useEffect } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
-import { DoorBlock } from '@/types/workflow'
+import { BulbBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 
-export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBlock }>) {
+export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBlock }>) {
   const { block } = data
-  const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
-  const removeDoorBlock = useWorkflowStore((s) => s.removeDoorBlock)
+  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
+  const removeBulbBlock = useWorkflowStore((s) => s.removeBulbBlock)
   const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
 
   const linkedIfElse = ifElseBlocks.find((b) => b.id === block.linkedIfElseId)
 
-  // Sync open/close state from connected if/else block
   useEffect(() => {
     if (!linkedIfElse) return
-    updateDoorBlock(block.id, { isOpen: linkedIfElse.currentOutput === true })
+    updateBulbBlock(block.id, { isOn: linkedIfElse.currentOutput === true })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedIfElse?.currentOutput, block.id])
 
-  const isOpen = block.isOpen
+  const isOn = block.isOn
 
   return (
     <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}
-        id="door-in"
+        id="bulb-in"
         style={{ background: '#10B981', border: '2px solid #064E3B', width: 12, height: 12, left: -6, top: '50%' }}
       />
 
@@ -51,39 +50,28 @@ export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBloc
           <span className="text-xs font-heading font-bold text-white/70">{block.name}</span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => removeDoorBlock(block.id)}
+            onClick={() => removeBulbBlock(block.id)}
             className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×
           </button>
         </div>
 
-        {/* Animated door */}
-        <div className="relative" style={{ width: 72, height: 96, perspective: '400px' }}>
-          {/* Door frame */}
-          <div className="absolute inset-0 rounded-t-xl border-2 border-amber-700/50 bg-amber-950/40" />
-          {/* Door panel */}
-          <motion.div
-            style={{ transformOrigin: 'left center' }}
-            animate={{ rotateY: isOpen ? -75 : 0 }}
-            transition={{ type: 'spring', stiffness: 150, damping: 18 }}
-            className="absolute inset-0 rounded-t-xl bg-amber-700/85 border-2 border-amber-500/70 flex flex-col items-center justify-center gap-2"
-          >
-            <div className="w-7 h-4 rounded border border-amber-400/50 bg-amber-600/50" />
-            <div className="w-7 h-4 rounded border border-amber-400/50 bg-amber-600/50" />
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-300/90 self-end mr-1.5" />
-          </motion.div>
+        <motion.div
+          animate={isOn ? { scale: [1, 1.06, 1] } : { scale: 1 }}
+          transition={isOn ? { repeat: Infinity, duration: 1.2, ease: 'easeInOut' } : {}}
+          style={
+            isOn
+              ? { filter: 'drop-shadow(0 0 14px rgba(251,191,36,0.9))' }
+              : { filter: 'grayscale(1)', opacity: 0.3 }
+          }
+          className="text-5xl select-none"
+        >
+          💡
+        </motion.div>
 
-          {/* Room peek when open */}
-          {isOpen && (
-            <div className="absolute inset-0 rounded-t-xl bg-violet-900/30 flex items-center justify-center">
-              <span className="text-lg">🏠</span>
-            </div>
-          )}
-        </div>
-
-        <p className={`text-xs font-heading font-bold ${isOpen ? 'text-emerald-400' : 'text-white/40'}`}>
-          {isOpen ? '🚪 Open!' : '🔒 Closed'}
+        <p className={`text-xs font-heading font-bold ${isOn ? 'text-amber-400' : 'text-white/40'}`}>
+          {isOn ? '💡 On!' : '⬛ Off'}
         </p>
 
         {!block.linkedIfElseId && (

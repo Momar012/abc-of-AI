@@ -68,7 +68,7 @@ function GettingStartedPanel() {
 
 export default function DatasetBuilderPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-  const { activeItem, activeTrainedModel, activeSavedDataset, handleDragStart, handleDragEnd, selectionCount } = useDragFromBank()
+  const { activeItem, activeTrainedModel, activeSavedDataset, activePaletteBlock, handleDragStart, handleDragEnd, selectionCount } = useDragFromBank()
 
   const bankItems = useDatasetStore((s) => s.bankItems)
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
@@ -86,6 +86,7 @@ export default function DatasetBuilderPage() {
   const rlBlocks = useRLStore((s) => s.rlBlocks)
   const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
+  const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -116,6 +117,9 @@ export default function DatasetBuilderPage() {
       if (saved.doorBlocks) {
         useWorkflowStore.setState({ doorBlocks: saved.doorBlocks })
       }
+      if (saved.bulbBlocks) {
+        useWorkflowStore.setState({ bulbBlocks: saved.bulbBlocks })
+      }
     }
 
     if (firstVisit) setShowEducationalOverlay(true)
@@ -137,8 +141,9 @@ export default function DatasetBuilderPage() {
       rlBlocks,
       ifElseBlocks,
       doorBlocks,
+      bulbBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -188,6 +193,18 @@ export default function DatasetBuilderPage() {
             <span className="text-base">💾</span>
             <span className="text-sm font-heading font-bold text-white">{activeSavedDataset.name}</span>
             <span className="text-xs text-violet-400 font-body">drop to load</span>
+          </div>
+        )}
+        {activePaletteBlock && (
+          <div
+            className="glass-card px-3 py-2 flex items-center gap-2 shadow-xl"
+            style={{ border: '1px solid rgba(139,92,246,0.4)', pointerEvents: 'none' }}
+          >
+            <span className="text-base">
+              {activePaletteBlock === 'door' ? '🚪' : activePaletteBlock === 'bulb' ? '💡' : '📦'}
+            </span>
+            <span className="text-sm font-heading font-bold text-white capitalize">{activePaletteBlock}</span>
+            <span className="text-xs text-violet-400 font-body">drop on canvas</span>
           </div>
         )}
       </DragOverlay>

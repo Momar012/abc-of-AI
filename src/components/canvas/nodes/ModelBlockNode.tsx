@@ -19,7 +19,7 @@ const STATUS_STYLES: Record<string, { color: string; label: string }> = {
   error: { color: 'text-red-400', label: 'Error' },
 }
 
-export default function ModelBlockNode({ data }: NodeProps<{ block: ModelBlock }>) {
+export default function ModelBlockNode({ data, selected }: NodeProps<{ block: ModelBlock }>) {
   const removeModelBlock = useModelStore((s) => s.removeModelBlock)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
@@ -62,8 +62,12 @@ export default function ModelBlockNode({ data }: NodeProps<{ block: ModelBlock }
 
       <div
         className="glass-card w-56 flex flex-col gap-2 px-4 py-3"
-        onDoubleClick={() => setSelectedBlock(block.id, 'model')}
-        style={{ borderColor: block.status === 'trained' ? 'rgba(52,211,153,0.3)' : undefined }}
+        onClick={() => setSelectedBlock(block.id, 'model')}
+        style={{
+          borderColor: block.status === 'trained' ? 'rgba(52,211,153,0.3)' : undefined,
+          boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
+          transition: 'box-shadow 0.2s ease',
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -109,7 +113,7 @@ export default function ModelBlockNode({ data }: NodeProps<{ block: ModelBlock }
 
         {/* Hint */}
         <p className="text-xs text-white/25 font-body text-center mt-1">
-          Double-click to inspect
+          Click to inspect
         </p>
       </div>
     </div>

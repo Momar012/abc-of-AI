@@ -1,7 +1,7 @@
 import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, SavedDataset } from '@/types/dataset'
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
-import { IfElseBlock, DoorBlock } from '@/types/workflow'
+import { IfElseBlock, DoorBlock, BulbBlock } from '@/types/workflow'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -18,6 +18,7 @@ interface PersistedState {
   rlBlocks?: RLGridworldBlock[]
   ifElseBlocks?: IfElseBlock[]
   doorBlocks?: DoorBlock[]
+  bulbBlocks?: BulbBlock[]
 }
 
 export function saveToLocalStorage(state: {
@@ -33,6 +34,7 @@ export function saveToLocalStorage(state: {
   rlBlocks: RLGridworldBlock[]
   ifElseBlocks: IfElseBlock[]
   doorBlocks: DoorBlock[]
+  bulbBlocks: BulbBlock[]
 }) {
   try {
     const toSave: PersistedState = {
@@ -48,6 +50,7 @@ export function saveToLocalStorage(state: {
       rlBlocks: state.rlBlocks.map(({ agentPos: _p, agentPath: _a, ...rest }) => rest as RLGridworldBlock),
       ifElseBlocks: state.ifElseBlocks.map(({ currentOutput: _, ...rest }) => ({ ...rest, currentOutput: null })),
       doorBlocks: state.doorBlocks.map(({ isOpen: _, ...rest }) => ({ ...rest, isOpen: false })),
+      bulbBlocks: state.bulbBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
     }
     localStorage.setItem(KEY, JSON.stringify(toSave))
   } catch {
@@ -102,6 +105,7 @@ export function loadFromLocalStorage(): PersistedState | null {
       })),
       ifElseBlocks: (parsed.ifElseBlocks ?? []).map((b) => ({ ...b, currentOutput: null })),
       doorBlocks: (parsed.doorBlocks ?? []).map((b) => ({ ...b, isOpen: false })),
+      bulbBlocks: (parsed.bulbBlocks ?? []).map((b) => ({ ...b, isOn: false })),
     }
   } catch {
     return null

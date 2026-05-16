@@ -7,10 +7,21 @@ import { TrainedModel } from '@/types/model'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 
+const PALETTE_LABELS: Record<string, string> = {
+  door: '🚪 Door',
+  bulb: '💡 Bulb',
+  labelled: '🏷️ Labelled',
+  unlabelled: '📦 Unlabelled',
+  model: '🤖 Model',
+  'rl-gridworld': '🎮 RL Gridworld',
+  ifelse: '🔀 If / Else',
+}
+
 export function useDragFromBank() {
   const [activeItem, setActiveItem] = useState<DataItem | null>(null)
   const [activeTrainedModel, setActiveTrainedModel] = useState<TrainedModel | null>(null)
   const [activeSavedDataset, setActiveSavedDataset] = useState<SavedDataset | null>(null)
+  const [activePaletteBlock, setActivePaletteBlock] = useState<string | null>(null)
 
   const addItemToBlock = useDatasetStore((s) => s.addItemToBlock)
   const assignItemToUnlabelled = useDatasetStore((s) => s.assignItemToUnlabelled)
@@ -25,6 +36,10 @@ export function useDragFromBank() {
     }
     if (dragType === 'saved-dataset') {
       setActiveSavedDataset(event.active.data.current?.dataset as SavedDataset)
+      return
+    }
+    if (dragType === 'block-palette') {
+      setActivePaletteBlock(event.active.data.current?.blockType as string)
       return
     }
     const item = event.active.data.current?.item as DataItem | undefined
@@ -43,6 +58,11 @@ export function useDragFromBank() {
     // Handle saved-dataset drag onto canvas
     if (active.data.current?.type === 'saved-dataset') {
       setActiveSavedDataset(null)
+      return
+    }
+
+    if (active.data.current?.type === 'block-palette') {
+      setActivePaletteBlock(null)
       return
     }
 
@@ -84,5 +104,5 @@ export function useDragFromBank() {
 
   const selectionCount = useUIStore((s) => s.selectedBankItemIds.length)
 
-  return { activeItem, activeTrainedModel, activeSavedDataset, handleDragStart, handleDragEnd, selectionCount }
+  return { activeItem, activeTrainedModel, activeSavedDataset, activePaletteBlock, handleDragStart, handleDragEnd, selectionCount }
 }

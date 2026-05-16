@@ -15,6 +15,7 @@ export default function WorkflowEdge({
 }: EdgeProps) {
   const updateIfElseBlock = useWorkflowStore((s) => s.updateIfElseBlock)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
+  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX, sourceY, sourcePosition,
@@ -24,9 +25,10 @@ export default function WorkflowEdge({
   const gradId = `wf-grad-${id}`
 
   const handleDelete = () => {
-    // One update will match (ifelse target or door target), the other is a no-op
+    // Each call is a no-op when target doesn't match that block type
     updateIfElseBlock(target, { linkedModelId: null, currentOutput: null })
     updateDoorBlock(target, { linkedIfElseId: null, isOpen: false })
+    updateBulbBlock(target, { linkedIfElseId: null, isOn: false })
   }
 
   return (

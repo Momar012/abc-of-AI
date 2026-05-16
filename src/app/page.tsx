@@ -1,11 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 
 export default function Home() {
-  const router = useRouter()
-
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
       <div className="max-w-xl">
@@ -29,14 +27,15 @@ export default function Home() {
         A fun and simple way for kids to build datasets, train AI models, and explore how machines learn.
         </p>
 
-        <motion.button
-          whileHover={{ scale: 1.05, boxShadow: '0 0 28px rgba(124, 58, 237, 0.6)' }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => router.push('/dataset-builder')}
-          className="px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-heading font-bold text-lg shadow-lg"
-        >
-          🚀 Start Building
-        </motion.button>
+        <Link href="/dataset-builder">
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 28px rgba(124, 58, 237, 0.6)' }}
+            whileTap={{ scale: 0.97 }}
+            className="px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-heading font-bold text-lg shadow-lg"
+          >
+            🚀 Start Building
+          </motion.button>
+        </Link>
 
         <p className="mt-6 text-white/30 text-sm">No sign-up needed · Works in your browser</p>
       </div>
