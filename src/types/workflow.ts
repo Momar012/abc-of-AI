@@ -14,6 +14,7 @@ export interface DoorBlock {
   position: { x: number; y: number }
   name: string
   linkedIfElseId: string | null
+  linkedRuleBlockId?: string | null
   isOpen: boolean
 }
 
@@ -23,5 +24,6 @@ export interface BulbBlock {
   position: { x: number; y: number }
   name: string
   linkedIfElseId: string | null
+  linkedRuleBlockId?: string | null
   isOn: boolean
 }

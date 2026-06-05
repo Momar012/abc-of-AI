@@ -7,9 +7,15 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useRuleStore } from '@/store/useRuleStore'
+import { SensorType } from '@/types/rules'
 import GlowButton from '@/components/ui/GlowButton'
 
-type BlockType = 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'ifelse' | 'door' | 'bulb'
+type BlockType =
+  | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'ifelse' | 'door' | 'bulb'
+  | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
+  | 'condition' | 'logic-and' | 'logic-or' | 'logic-not'
+  | 'fan' | 'alarm'
 
 function DraggablePaletteItem({
   blockType,
@@ -45,7 +51,7 @@ function DraggableActionItem({
   label,
   onAdd,
 }: {
-  blockType: 'door' | 'bulb'
+  blockType: BlockType
   label: string
   onAdd: () => void
 }) {
@@ -74,10 +80,9 @@ function ActionsMenu() {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
   const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
+  const addFanBlock = useRuleStore((s) => s.addFanBlock)
+  const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
 
-  // On drag start: remove only the backdrop so pointer events reach the canvas,
-  // but keep the portal mounted so dnd-kit can still track the draggable node.
-  // On drag end/cancel: close the dropdown.
   useDndMonitor({
     onDragStart:  () => setDragging(true),
     onDragEnd:    () => { setDragging(false); setOpen(false) },
@@ -103,22 +108,85 @@ function ActionsMenu() {
             className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-32 shadow-xl"
             style={{ top: pos.top, left: pos.left }}
           >
-            <DraggableActionItem
-              blockType="door"
-              label="🚪 Door"
-              onAdd={() => { addDoorBlock(); setOpen(false) }}
-            />
-            <DraggableActionItem
-              blockType="bulb"
-              label="💡 Bulb"
-              onAdd={() => { addBulbBlock(); setOpen(false) }}
-            />
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/30 font-heading uppercase tracking-wider">ML Actions</p>
+            <DraggableActionItem blockType="door" label="🚪 Door" onAdd={() => { addDoorBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="bulb" label="💡 Bulb" onAdd={() => { addBulbBlock(); setOpen(false) }} />
+            <div className="my-1 border-t border-white/10" />
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/30 font-heading uppercase tracking-wider">Rule Actions</p>
+            <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => { addFanBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => { addAlarmBlock(); setOpen(false) }} />
           </div>
         </>,
         document.body
       )}
       <GlowButton size="sm" variant="secondary" onClick={handleToggle}>
         ⚡ Actions {open ? '▴' : '▾'}
+      </GlowButton>
+    </div>
+  )
+}
+
+function RuleBasedMenu() {
+  const [open, setOpen] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
+  const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
+  const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
+
+  useDndMonitor({
+    onDragStart:  () => setDragging(true),
+    onDragEnd:    () => { setDragging(false); setOpen(false) },
+    onDragCancel: () => { setDragging(false); setOpen(false) },
+  })
+
+  const handleToggle = () => {
+    if (!open && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 4, left: rect.left })
+    }
+    setOpen((o) => !o)
+  }
+
+  const addSensor = (type: SensorType) => { addSensorBlock(type); setOpen(false) }
+  const addCond   = () => { addConditionBlock(); setOpen(false) }
+  const addLogic  = (t: 'and' | 'or' | 'not') => { addLogicBlock(t); setOpen(false) }
+
+  return (
+    <div ref={wrapperRef}>
+      {open && createPortal(
+        <>
+          {!dragging && (
+            <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
+          )}
+          <div
+            className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-40 shadow-xl"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            {/* Sensors */}
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-orange-400/70 font-heading uppercase tracking-wider">📡 Sensors</p>
+            <DraggableActionItem blockType="sensor-temperature" label="🌡️ Temperature" onAdd={() => addSensor('temperature')} />
+            <DraggableActionItem blockType="sensor-light" label="💡 Light Level" onAdd={() => addSensor('light')} />
+            <DraggableActionItem blockType="sensor-motion" label="👁️ Motion" onAdd={() => addSensor('motion')} />
+            <DraggableActionItem blockType="sensor-humidity" label="💧 Humidity" onAdd={() => addSensor('humidity')} />
+            <DraggableActionItem blockType="sensor-text" label="📝 Text Input" onAdd={() => addSensor('text-input')} />
+
+            <div className="my-1 border-t border-white/10" />
+
+            {/* Logic */}
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-yellow-400/70 font-heading uppercase tracking-wider">🔢 Logic</p>
+            <DraggableActionItem blockType="condition" label="📋 IF Condition" onAdd={addCond} />
+            <DraggableActionItem blockType="logic-and" label="∧ AND" onAdd={() => addLogic('and')} />
+            <DraggableActionItem blockType="logic-or" label="∨ OR" onAdd={() => addLogic('or')} />
+            <DraggableActionItem blockType="logic-not" label="¬ NOT" onAdd={() => addLogic('not')} />
+          </div>
+        </>,
+        document.body
+      )}
+      <GlowButton size="sm" variant="ghost" onClick={handleToggle}>
+        🔌 Rule-Based {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )
@@ -150,6 +218,8 @@ export default function CanvasToolbar() {
         🔀 If / Else
       </DraggablePaletteItem>
       <ActionsMenu />
+      <div className="w-px h-5 bg-white/10 self-center" />
+      <RuleBasedMenu />
     </div>
   )
 }

@@ -13,7 +13,7 @@ interface UIState {
   firstVisit: boolean
   showEducationalOverlay: boolean
   selectedBlockId: string | null
-  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | null
+  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm' | null
   testResultsModalBlockId: string | null
   clusterResultsModalBlockId: string | null
   labellingModalBlockId: string | null
@@ -24,7 +24,7 @@ interface UIState {
   earnBadge: (badgeId: string) => void
   setFirstVisitSeen: () => void
   setShowEducationalOverlay: (show: boolean) => void
-  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld') => void
+  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm') => void
   clearSelectedBlock: () => void
   openTestResultsModal: (blockId: string) => void
   closeTestResultsModal: () => void

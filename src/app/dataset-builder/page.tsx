@@ -18,6 +18,9 @@ import CanvasToolbar from '@/components/canvas/CanvasToolbar'
 import BlockInspector from '@/components/inspector/BlockInspector'
 import ModelInspector from '@/components/inspector/ModelInspector'
 import RLInspector from '@/components/inspector/RLInspector'
+import SensorInspector from '@/components/inspector/SensorInspector'
+import ConditionInspector from '@/components/inspector/ConditionInspector'
+import LogicInspector from '@/components/inspector/LogicInspector'
 import BadgeToast from '@/components/gamification/BadgeToast'
 import EducationalOverlay from '@/components/feedback/EducationalOverlay'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
@@ -28,6 +31,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useRuleStore } from '@/store/useRuleStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
@@ -87,6 +91,11 @@ export default function DatasetBuilderPage() {
   const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
+  const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
+  const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
+  const logicBlocks = useRuleStore((s) => s.logicBlocks)
+  const fanBlocks = useRuleStore((s) => s.fanBlocks)
+  const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -120,6 +129,21 @@ export default function DatasetBuilderPage() {
       if (saved.bulbBlocks) {
         useWorkflowStore.setState({ bulbBlocks: saved.bulbBlocks })
       }
+      if (saved.sensorBlocks) {
+        useRuleStore.setState({ sensorBlocks: saved.sensorBlocks })
+      }
+      if (saved.conditionBlocks) {
+        useRuleStore.setState({ conditionBlocks: saved.conditionBlocks })
+      }
+      if (saved.logicBlocks) {
+        useRuleStore.setState({ logicBlocks: saved.logicBlocks })
+      }
+      if (saved.fanBlocks) {
+        useRuleStore.setState({ fanBlocks: saved.fanBlocks })
+      }
+      if (saved.alarmBlocks) {
+        useRuleStore.setState({ alarmBlocks: saved.alarmBlocks })
+      }
     }
 
     if (firstVisit) setShowEducationalOverlay(true)
@@ -142,8 +166,13 @@ export default function DatasetBuilderPage() {
       ifElseBlocks,
       doorBlocks,
       bulbBlocks,
+      sensorBlocks,
+      conditionBlocks,
+      logicBlocks,
+      fanBlocks,
+      alarmBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -201,9 +230,24 @@ export default function DatasetBuilderPage() {
             style={{ border: '1px solid rgba(139,92,246,0.4)', pointerEvents: 'none' }}
           >
             <span className="text-base">
-              {activePaletteBlock === 'door' ? '🚪' : activePaletteBlock === 'bulb' ? '💡' : '📦'}
+              {activePaletteBlock === 'door' ? '🚪'
+                : activePaletteBlock === 'bulb' ? '💡'
+                : activePaletteBlock === 'fan' ? '🌀'
+                : activePaletteBlock === 'alarm' ? '🚨'
+                : activePaletteBlock === 'sensor-temperature' ? '🌡️'
+                : activePaletteBlock === 'sensor-light' ? '💡'
+                : activePaletteBlock === 'sensor-motion' ? '👁️'
+                : activePaletteBlock === 'sensor-humidity' ? '💧'
+                : activePaletteBlock === 'sensor-text' ? '📝'
+                : activePaletteBlock === 'condition' ? '📋'
+                : activePaletteBlock === 'logic-and' ? '∧'
+                : activePaletteBlock === 'logic-or' ? '∨'
+                : activePaletteBlock === 'logic-not' ? '¬'
+                : '📦'}
             </span>
-            <span className="text-sm font-heading font-bold text-white capitalize">{activePaletteBlock}</span>
+            <span className="text-sm font-heading font-bold text-white capitalize">
+              {activePaletteBlock.replace(/-/g, ' ')}
+            </span>
             <span className="text-xs text-violet-400 font-body">drop on canvas</span>
           </div>
         )}
@@ -226,12 +270,18 @@ export default function DatasetBuilderPage() {
             </div>
           </div>
 
-          {/* Right panel — Model Inspector, Block Inspector, or Validation + Split */}
+          {/* Right panel — Inspector or Getting Started */}
           <div className="flex-shrink-0 w-80 flex flex-col gap-3 overflow-y-auto min-h-0">
             {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
               <RLInspector key={selectedBlockId} />
             ) : selectedBlockId && selectedBlockType === 'model' ? (
               <ModelInspector key={selectedBlockId} />
+            ) : selectedBlockId && selectedBlockType === 'sensor' ? (
+              <SensorInspector key={selectedBlockId} />
+            ) : selectedBlockId && selectedBlockType === 'condition' ? (
+              <ConditionInspector key={selectedBlockId} />
+            ) : selectedBlockId && (selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm') ? (
+              <LogicInspector key={selectedBlockId} />
             ) : selectedBlockId ? (
               <BlockInspector key={selectedBlockId} />
             ) : (

@@ -74,8 +74,8 @@ export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBloc
           {isOn ? '💡 On!' : '⬛ Off'}
         </p>
 
-        {!block.linkedIfElseId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect If/Else</p>
+        {!block.linkedIfElseId && !block.linkedRuleBlockId && (
+          <p className="text-xs text-white/25 font-body text-center">Connect If/Else or rule</p>
         )}
       </div>
     </div>

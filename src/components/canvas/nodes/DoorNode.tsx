@@ -86,8 +86,8 @@ export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBloc
           {isOpen ? '🚪 Open!' : '🔒 Closed'}
         </p>
 
-        {!block.linkedIfElseId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect If/Else</p>
+        {!block.linkedIfElseId && !block.linkedRuleBlockId && (
+          <p className="text-xs text-white/25 font-body text-center">Connect If/Else or rule</p>
         )}
       </div>
     </div>

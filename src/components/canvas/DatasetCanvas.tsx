@@ -20,6 +20,7 @@ import { useModelStore } from '@/store/useModelStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useRuleStore } from '@/store/useRuleStore'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -29,9 +30,15 @@ import RLGridworldNode from './nodes/RLGridworldNode'
 import IfElseNode from './nodes/IfElseNode'
 import DoorNode from './nodes/DoorNode'
 import BulbNode from './nodes/BulbNode'
+import SensorNode from './nodes/SensorNode'
+import ConditionNode from './nodes/ConditionNode'
+import LogicNode from './nodes/LogicNode'
+import FanNode from './nodes/FanNode'
+import AlarmNode from './nodes/AlarmNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
+import RuleEdge from './edges/RuleEdge'
 
 function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
   const { project } = useReactFlow()
@@ -45,6 +52,11 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
   const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
   const addToast = useUIStore((s) => s.addToast)
+  const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
+  const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
+  const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
+  const addFanBlock = useRuleStore((s) => s.addFanBlock)
+  const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
 
   useDndMonitor({
     onDragEnd(event) {
@@ -68,6 +80,17 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'ifelse') addIfElseBlock(flowPos)
         else if (blockType === 'door') addDoorBlock(flowPos)
         else if (blockType === 'bulb') addBulbBlock(flowPos)
+        else if (blockType === 'sensor-temperature') addSensorBlock('temperature', flowPos)
+        else if (blockType === 'sensor-light') addSensorBlock('light', flowPos)
+        else if (blockType === 'sensor-motion') addSensorBlock('motion', flowPos)
+        else if (blockType === 'sensor-humidity') addSensorBlock('humidity', flowPos)
+        else if (blockType === 'sensor-text') addSensorBlock('text-input', flowPos)
+        else if (blockType === 'condition') addConditionBlock(flowPos)
+        else if (blockType === 'logic-and') addLogicBlock('and', flowPos)
+        else if (blockType === 'logic-or') addLogicBlock('or', flowPos)
+        else if (blockType === 'logic-not') addLogicBlock('not', flowPos)
+        else if (blockType === 'fan') addFanBlock(flowPos)
+        else if (blockType === 'alarm') addAlarmBlock(flowPos)
         return
       }
 
@@ -101,12 +124,18 @@ const nodeTypes = {
   ifelse: IfElseNode,
   door: DoorNode,
   bulb: BulbNode,
+  sensor: SensorNode,
+  condition: ConditionNode,
+  logic: LogicNode,
+  fan: FanNode,
+  alarm: AlarmNode,
 }
 
 const edgeTypes = {
   dataset: DatasetEdge,
   test: TestEdge,
   workflow: WorkflowEdge,
+  rule: RuleEdge,
 }
 
 export default function DatasetCanvas() {
@@ -128,6 +157,25 @@ export default function DatasetCanvas() {
   const updateBulbBlockPosition = useWorkflowStore((s) => s.updateBulbBlockPosition)
   const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
 
+  // Rule store
+  const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
+  const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
+  const logicBlocks = useRuleStore((s) => s.logicBlocks)
+  const fanBlocks = useRuleStore((s) => s.fanBlocks)
+  const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
+  const updateSensorBlockPosition = useRuleStore((s) => s.updateSensorBlockPosition)
+  const updateConditionBlockPosition = useRuleStore((s) => s.updateConditionBlockPosition)
+  const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
+  const updateLogicBlockPosition = useRuleStore((s) => s.updateLogicBlockPosition)
+  const updateLogicBlock = useRuleStore((s) => s.updateLogicBlock)
+  const updateFanBlockPosition = useRuleStore((s) => s.updateFanBlockPosition)
+  const updateFanBlock = useRuleStore((s) => s.updateFanBlock)
+  const updateAlarmBlockPosition = useRuleStore((s) => s.updateAlarmBlockPosition)
+  const updateAlarmBlock = useRuleStore((s) => s.updateAlarmBlock)
+  const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
+
+  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
+
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -143,186 +191,218 @@ export default function DatasetCanvas() {
 
   // Sync Zustand blocks → RF nodes
   useEffect(() => {
-    setRfNodes((current) => [
-      ...labelledBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'labelled',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...unlabelledBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'unlabelled',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...modelBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'model',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...rlBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'rl-gridworld',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...ifElseBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'ifelse',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...doorBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'door',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-      ...bulbBlocks.map((b) => {
-        const existing = current.find((n) => n.id === b.id)
-        return {
-          id: b.id,
-          type: 'bulb',
-          position: existing?.position ?? b.position,
-          data: { block: b },
-        } as Node
-      }),
-    ])
-  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, setRfNodes])
+    setRfNodes((current) => {
+      const pos = (id: string) => current.find((n) => n.id === id)?.position
+      return [
+        ...labelledBlocks.map((b) => ({ id: b.id, type: 'labelled', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...unlabelledBlocks.map((b) => ({ id: b.id, type: 'unlabelled', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...modelBlocks.map((b) => ({ id: b.id, type: 'model', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...rlBlocks.map((b) => ({ id: b.id, type: 'rl-gridworld', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...ifElseBlocks.map((b) => ({ id: b.id, type: 'ifelse', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...doorBlocks.map((b) => ({ id: b.id, type: 'door', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...bulbBlocks.map((b) => ({ id: b.id, type: 'bulb', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...sensorBlocks.map((b) => ({ id: b.id, type: 'sensor', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...conditionBlocks.map((b) => ({ id: b.id, type: 'condition', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...logicBlocks.map((b) => ({ id: b.id, type: 'logic', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...fanBlocks.map((b) => ({ id: b.id, type: 'fan', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+      ]
+    })
+  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfNodes])
 
-  // Sync model linkedBlockIds → RF edges
+  // Sync linked IDs → RF edges
   useEffect(() => {
     setRfEdges([
-      // Training edges: labelled → model (violet→cyan)
-      ...modelBlocks
-        .filter((b) => b.linkedBlockId !== null)
-        .map((b) => ({
-          id: `edge-${b.linkedBlockId}-${b.id}`,
-          source: b.linkedBlockId!,
-          sourceHandle: 'out',
-          target: b.id,
-          targetHandle: 'in',
-          type: 'dataset',
-          animated: b.status === 'loading' || b.status === 'training',
-        } as Edge)),
-      // Test edges: unlabelled → model (amber→orange)
-      ...modelBlocks
-        .filter((b) => b.testLinkedBlockId !== null)
-        .map((b) => ({
-          id: `test-edge-${b.testLinkedBlockId}-${b.id}`,
-          source: b.testLinkedBlockId!,
-          sourceHandle: 'test-out',
-          target: b.id,
-          targetHandle: 'test-in',
-          type: 'test',
-          animated: b.testStatus === 'running',
-        } as Edge)),
-      // Prediction edges: model prediction-out → ifelse ifelse-in (emerald)
-      ...ifElseBlocks
-        .filter((b) => b.linkedModelId !== null)
-        .map((b) => ({
-          id: `pred-${b.linkedModelId}-${b.id}`,
-          source: b.linkedModelId!,
-          sourceHandle: 'prediction-out',
-          target: b.id,
-          targetHandle: 'ifelse-in',
-          type: 'workflow',
-        } as Edge)),
-      // Action edges: ifelse ifelse-out → door door-in (emerald)
-      ...doorBlocks
-        .filter((b) => b.linkedIfElseId !== null)
-        .map((b) => ({
-          id: `action-${b.linkedIfElseId}-${b.id}`,
-          source: b.linkedIfElseId!,
-          sourceHandle: 'ifelse-out',
-          target: b.id,
-          targetHandle: 'door-in',
-          type: 'workflow',
-        } as Edge)),
-      // Action edges: ifelse ifelse-out → bulb bulb-in (emerald)
-      ...bulbBlocks
-        .filter((b) => b.linkedIfElseId !== null)
-        .map((b) => ({
-          id: `bulb-${b.linkedIfElseId}-${b.id}`,
-          source: b.linkedIfElseId!,
-          sourceHandle: 'ifelse-out',
-          target: b.id,
-          targetHandle: 'bulb-in',
-          type: 'workflow',
-        } as Edge)),
+      // Training edges: labelled → model
+      ...modelBlocks.filter((b) => b.linkedBlockId !== null).map((b) => ({
+        id: `edge-${b.linkedBlockId}-${b.id}`,
+        source: b.linkedBlockId!, sourceHandle: 'out',
+        target: b.id, targetHandle: 'in',
+        type: 'dataset',
+        animated: b.status === 'loading' || b.status === 'training',
+      } as Edge)),
+      // Test edges: unlabelled → model
+      ...modelBlocks.filter((b) => b.testLinkedBlockId !== null).map((b) => ({
+        id: `test-edge-${b.testLinkedBlockId}-${b.id}`,
+        source: b.testLinkedBlockId!, sourceHandle: 'test-out',
+        target: b.id, targetHandle: 'test-in',
+        type: 'test',
+        animated: b.testStatus === 'running',
+      } as Edge)),
+      // ML prediction → ifelse
+      ...ifElseBlocks.filter((b) => b.linkedModelId !== null).map((b) => ({
+        id: `pred-${b.linkedModelId}-${b.id}`,
+        source: b.linkedModelId!, sourceHandle: 'prediction-out',
+        target: b.id, targetHandle: 'ifelse-in',
+        type: 'workflow',
+      } as Edge)),
+      // ifelse → door (ML)
+      ...doorBlocks.filter((b) => b.linkedIfElseId !== null).map((b) => ({
+        id: `action-${b.linkedIfElseId}-${b.id}`,
+        source: b.linkedIfElseId!, sourceHandle: 'ifelse-out',
+        target: b.id, targetHandle: 'door-in',
+        type: 'workflow',
+      } as Edge)),
+      // ifelse → bulb (ML)
+      ...bulbBlocks.filter((b) => b.linkedIfElseId !== null).map((b) => ({
+        id: `bulb-${b.linkedIfElseId}-${b.id}`,
+        source: b.linkedIfElseId!, sourceHandle: 'ifelse-out',
+        target: b.id, targetHandle: 'bulb-in',
+        type: 'workflow',
+      } as Edge)),
+
+      // ── Rule edges ──────────────────────────────────────────────────────
+      // sensor → condition
+      ...conditionBlocks.filter((b) => b.linkedSensorId !== null).map((b) => ({
+        id: `rule-sense-${b.linkedSensorId}-${b.id}`,
+        source: b.linkedSensorId!, sourceHandle: 'sensor-out',
+        target: b.id, targetHandle: 'condition-in',
+        type: 'rule',
+      } as Edge)),
+      // condition/logic → logic input 1
+      ...logicBlocks.filter((b) => b.linkedInputIds[0] !== null).map((b) => ({
+        id: `rule-logic1-${b.linkedInputIds[0]}-${b.id}`,
+        source: b.linkedInputIds[0]!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: b.logicType === 'not' ? 'logic-in' : 'logic-in-1',
+        type: 'rule',
+      } as Edge)),
+      // condition/logic → logic input 2
+      ...logicBlocks.filter((b) => b.linkedInputIds[1] !== null).map((b) => ({
+        id: `rule-logic2-${b.linkedInputIds[1]}-${b.id}`,
+        source: b.linkedInputIds[1]!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'logic-in-2',
+        type: 'rule',
+      } as Edge)),
+      // rule → fan
+      ...fanBlocks.filter((b) => b.linkedRuleBlockId !== null).map((b) => ({
+        id: `rule-fan-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'fan-in',
+        type: 'rule',
+      } as Edge)),
+      // rule → alarm
+      ...alarmBlocks.filter((b) => b.linkedRuleBlockId !== null).map((b) => ({
+        id: `rule-alarm-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'alarm-in',
+        type: 'rule',
+      } as Edge)),
+      // rule → door (rule-based)
+      ...doorBlocks.filter((b) => b.linkedRuleBlockId != null).map((b) => ({
+        id: `rule-door-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'door-in',
+        type: 'rule',
+      } as Edge)),
+      // rule → bulb (rule-based)
+      ...bulbBlocks.filter((b) => b.linkedRuleBlockId != null).map((b) => ({
+        id: `rule-bulb-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'bulb-in',
+        type: 'rule',
+      } as Edge)),
     ])
-  }, [modelBlocks, ifElseBlocks, doorBlocks, bulbBlocks, setRfEdges])
+  }, [modelBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+      conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfEdges])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       setRfNodes((nds) => applyNodeChanges(changes, nds))
       for (const change of changes) {
         if (change.type === 'position' && !change.dragging && change.position) {
-          if (modelBlocks.some((b) => b.id === change.id)) {
-            updateModelBlockPosition(change.id, change.position)
-          } else if (rlBlocks.some((b) => b.id === change.id)) {
-            updateRLBlockPosition(change.id, change.position)
-          } else if (ifElseBlocks.some((b) => b.id === change.id)) {
-            updateIfElseBlockPosition(change.id, change.position)
-          } else if (doorBlocks.some((b) => b.id === change.id)) {
-            updateDoorBlockPosition(change.id, change.position)
-          } else if (bulbBlocks.some((b) => b.id === change.id)) {
-            updateBulbBlockPosition(change.id, change.position)
-          } else {
-            const type = labelledBlocks.some((b) => b.id === change.id) ? 'labelled' : 'unlabelled'
-            updateBlockPosition(change.id, type, change.position)
+          const { id, position: p } = change
+          if (modelBlocks.some((b) => b.id === id)) updateModelBlockPosition(id, p)
+          else if (rlBlocks.some((b) => b.id === id)) updateRLBlockPosition(id, p)
+          else if (ifElseBlocks.some((b) => b.id === id)) updateIfElseBlockPosition(id, p)
+          else if (doorBlocks.some((b) => b.id === id)) updateDoorBlockPosition(id, p)
+          else if (bulbBlocks.some((b) => b.id === id)) updateBulbBlockPosition(id, p)
+          else if (sensorBlocks.some((b) => b.id === id)) updateSensorBlockPosition(id, p)
+          else if (conditionBlocks.some((b) => b.id === id)) updateConditionBlockPosition(id, p)
+          else if (logicBlocks.some((b) => b.id === id)) updateLogicBlockPosition(id, p)
+          else if (fanBlocks.some((b) => b.id === id)) updateFanBlockPosition(id, p)
+          else if (alarmBlocks.some((b) => b.id === id)) updateAlarmBlockPosition(id, p)
+          else {
+            const type = labelledBlocks.some((b) => b.id === id) ? 'labelled' : 'unlabelled'
+            updateBlockPosition(id, type, p)
           }
         }
       }
     },
-    [labelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition, updateIfElseBlockPosition, updateDoorBlockPosition, updateBulbBlockPosition, setRfNodes]
+    [
+      labelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks,
+      updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
+      updateIfElseBlockPosition, updateDoorBlockPosition, updateBulbBlockPosition,
+      updateSensorBlockPosition, updateConditionBlockPosition, updateLogicBlockPosition,
+      updateFanBlockPosition, updateAlarmBlockPosition, setRfNodes,
+    ]
   )
 
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return
+      const { source, target, targetHandle, sourceHandle } = connection
 
-      if (connection.targetHandle === 'test-in') {
-        updateModelBlock(connection.target, {
-          testLinkedBlockId: connection.source,
-          testStatus: 'idle',
-          testResults: null,
-        })
-      } else if (connection.targetHandle === 'in') {
-        updateModelBlock(connection.target, {
-          linkedBlockId: connection.source,
-          status: 'idle',
-          trainedModelId: null,
-        })
-      } else if (connection.targetHandle === 'ifelse-in') {
-        updateIfElseBlock(connection.target, { linkedModelId: connection.source, currentOutput: null })
-      } else if (connection.targetHandle === 'door-in') {
-        updateDoorBlock(connection.target, { linkedIfElseId: connection.source, isOpen: false })
-      } else if (connection.targetHandle === 'bulb-in') {
-        updateBulbBlock(connection.target, { linkedIfElseId: connection.source, isOn: false })
+      // ── ML pipeline ──────────────────────────────────────────────────────
+      if (targetHandle === 'test-in') {
+        updateModelBlock(target, { testLinkedBlockId: source, testStatus: 'idle', testResults: null })
+      } else if (targetHandle === 'in') {
+        updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null })
+      } else if (targetHandle === 'ifelse-in') {
+        updateIfElseBlock(target, { linkedModelId: source, currentOutput: null })
+      } else if (targetHandle === 'door-in') {
+        if (sourceHandle === 'rule-out') {
+          updateDoorBlock(target, { linkedRuleBlockId: source, linkedIfElseId: null, isOpen: false })
+          evaluateGraph()
+        } else {
+          updateDoorBlock(target, { linkedIfElseId: source, linkedRuleBlockId: null, isOpen: false })
+        }
+      } else if (targetHandle === 'bulb-in') {
+        if (sourceHandle === 'rule-out') {
+          updateBulbBlock(target, { linkedRuleBlockId: source, linkedIfElseId: null, isOn: false })
+          evaluateGraph()
+        } else {
+          updateBulbBlock(target, { linkedIfElseId: source, linkedRuleBlockId: null, isOn: false })
+        }
+      }
+
+      // ── Rule pipeline ────────────────────────────────────────────────────
+      else if (targetHandle === 'condition-in') {
+        updateConditionBlock(target, { linkedSensorId: source, currentOutput: null })
+        evaluateGraph()
+      } else if (targetHandle === 'logic-in-1') {
+        const block = logicBlocks.find((b) => b.id === target)
+        if (block) {
+          const ids = [...block.linkedInputIds]
+          ids[0] = source
+          updateLogicBlock(target, { linkedInputIds: ids })
+          evaluateGraph()
+        }
+      } else if (targetHandle === 'logic-in-2') {
+        const block = logicBlocks.find((b) => b.id === target)
+        if (block) {
+          const ids = [...block.linkedInputIds]
+          ids[1] = source
+          updateLogicBlock(target, { linkedInputIds: ids })
+          evaluateGraph()
+        }
+      } else if (targetHandle === 'logic-in') {
+        updateLogicBlock(target, { linkedInputIds: [source] })
+        evaluateGraph()
+      } else if (targetHandle === 'fan-in') {
+        updateFanBlock(target, { linkedRuleBlockId: source, isOn: false })
+        evaluateGraph()
+      } else if (targetHandle === 'alarm-in') {
+        updateAlarmBlock(target, { linkedRuleBlockId: source, isOn: false })
+        evaluateGraph()
       }
     },
-    [updateModelBlock, updateIfElseBlock, updateDoorBlock, updateBulbBlock]
+    [
+      updateModelBlock, updateIfElseBlock, updateDoorBlock, updateBulbBlock,
+      updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
+      logicBlocks, evaluateGraph,
+    ]
   )
 
   return (
@@ -348,6 +428,12 @@ export default function DatasetCanvas() {
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
+        onNodeDoubleClick={(_, node) => {
+          const ruleTypes = ['sensor', 'condition', 'logic', 'fan', 'alarm']
+          if (ruleTypes.includes(node.type ?? '')) {
+            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm')
+          }
+        }}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
