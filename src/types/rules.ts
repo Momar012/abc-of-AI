@@ -53,3 +53,26 @@ export interface AlarmBlock {
   linkedRuleBlockId: string | null
   isOn: boolean
 }
+
+export interface ACBlock {
+  id: string
+  type: 'ac'
+  position: { x: number; y: number }
+  name: string
+  linkedRuleBlockId: string | null
+  isOn: boolean
+}
+
+export interface TimerBlock {
+  id: string
+  type: 'timer'
+  position: { x: number; y: number }
+  name: string
+  durationMinutes: number
+  durationSeconds: number
+  linkedRuleBlockId: string | null
+  isRunning: boolean
+  remainingSeconds: number
+  currentOutput: boolean | null
+  lastTriggerInput: boolean | null
+}

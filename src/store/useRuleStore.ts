@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import {
   SensorBlock, SensorType, ConditionBlock, RuleOperator,
-  LogicBlock, FanBlock, AlarmBlock,
+  LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock,
 } from '@/types/rules'
 
 const SENSOR_DEFAULTS: Record<SensorType, Partial<SensorBlock>> = {
@@ -45,6 +45,8 @@ interface RuleState {
   logicBlocks: LogicBlock[]
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
+  acBlocks: ACBlock[]
+  timerBlocks: TimerBlock[]
 
   addSensorBlock: (sensorType: SensorType, pos?: { x: number; y: number }) => void
   removeSensorBlock: (id: string) => void
@@ -71,6 +73,17 @@ interface RuleState {
   updateAlarmBlock: (id: string, updates: Partial<AlarmBlock>) => void
   updateAlarmBlockPosition: (id: string, pos: { x: number; y: number }) => void
 
+  addACBlock: (pos?: { x: number; y: number }) => void
+  removeACBlock: (id: string) => void
+  updateACBlock: (id: string, updates: Partial<ACBlock>) => void
+  updateACBlockPosition: (id: string, pos: { x: number; y: number }) => void
+
+  addTimerBlock: (pos?: { x: number; y: number }) => void
+  removeTimerBlock: (id: string) => void
+  updateTimerBlock: (id: string, updates: Partial<TimerBlock>) => void
+  updateTimerBlockPosition: (id: string, pos: { x: number; y: number }) => void
+  tickTimers: () => void
+
   evaluateGraph: () => void
 }
 
@@ -80,6 +93,8 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   logicBlocks: [],
   fanBlocks: [],
   alarmBlocks: [],
+  acBlocks: [],
+  timerBlocks: [],
 
   // ── Sensors ──────────────────────────────────────────────────────────────
   addSensorBlock: (sensorType, pos?) =>
@@ -197,9 +212,75 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   updateAlarmBlockPosition: (id, pos) =>
     set((s) => ({ alarmBlocks: s.alarmBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
 
+  // ── AC ───────────────────────────────────────────────────────────────────
+  addACBlock: (pos?) =>
+    set((s) => ({
+      acBlocks: [
+        ...s.acBlocks,
+        {
+          id: uuid(), type: 'ac',
+          position: pos ?? { x: 950 + s.acBlocks.length * 40, y: 400 + s.acBlocks.length * 40 },
+          name: `AC ${s.acBlocks.length + 1}`,
+          linkedRuleBlockId: null, isOn: false,
+        },
+      ],
+    })),
+
+  removeACBlock: (id) =>
+    set((s) => ({ acBlocks: s.acBlocks.filter((b) => b.id !== id) })),
+
+  updateACBlock: (id, updates) =>
+    set((s) => ({ acBlocks: s.acBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updateACBlockPosition: (id, pos) =>
+    set((s) => ({ acBlocks: s.acBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
+  // ── Timer ────────────────────────────────────────────────────────────────
+  addTimerBlock: (pos?) =>
+    set((s) => ({
+      timerBlocks: [
+        ...s.timerBlocks,
+        {
+          id: uuid(), type: 'timer',
+          position: pos ?? { x: 700 + s.timerBlocks.length * 40, y: 450 + s.timerBlocks.length * 40 },
+          name: `Timer ${s.timerBlocks.length + 1}`,
+          durationMinutes: 0, durationSeconds: 10,
+          linkedRuleBlockId: null,
+          isRunning: false, remainingSeconds: 0,
+          currentOutput: null, lastTriggerInput: null,
+        },
+      ],
+    })),
+
+  removeTimerBlock: (id) =>
+    set((s) => ({ timerBlocks: s.timerBlocks.filter((b) => b.id !== id) })),
+
+  updateTimerBlock: (id, updates) =>
+    set((s) => ({ timerBlocks: s.timerBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updateTimerBlockPosition: (id, pos) =>
+    set((s) => ({ timerBlocks: s.timerBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
+  tickTimers: () => {
+    const { timerBlocks } = get()
+    if (!timerBlocks.some((t) => t.isRunning)) return
+
+    const newTimers = timerBlocks.map((t) => {
+      if (!t.isRunning) return t
+      const remaining = t.remainingSeconds - 1
+      if (remaining <= 0) {
+        return { ...t, isRunning: false, remainingSeconds: 0, currentOutput: false }
+      }
+      return { ...t, remainingSeconds: remaining }
+    })
+
+    set({ timerBlocks: newTimers })
+    get().evaluateGraph()
+  },
+
   // ── Graph evaluation ──────────────────────────────────────────────────────
   evaluateGraph: () => {
-    const { sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks } = get()
+    const { sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks } = get()
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
@@ -242,15 +323,34 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       if (!changed) break
     }
 
-    // 3. Update fan/alarm blocks
+    // 3. Evaluate timer blocks (rising-edge trigger starts the countdown; ticking is handled by tickTimers)
+    const newTimers = timerBlocks.map((t) => {
+      const triggerInput = t.linkedRuleBlockId ? (resolved.get(t.linkedRuleBlockId) ?? null) : null
+      if (triggerInput === true && t.lastTriggerInput !== true && !t.isRunning) {
+        return {
+          ...t,
+          isRunning: true,
+          remainingSeconds: t.durationMinutes * 60 + t.durationSeconds,
+          currentOutput: true,
+          lastTriggerInput: triggerInput,
+        }
+      }
+      return { ...t, lastTriggerInput: triggerInput }
+    })
+    newTimers.forEach((t) => resolved.set(t.id, t.currentOutput))
+
+    // 4. Update fan/alarm/AC blocks
     const newFans = fanBlocks.map((f) => ({
       ...f, isOn: f.linkedRuleBlockId ? (resolved.get(f.linkedRuleBlockId) === true) : false,
     }))
     const newAlarms = alarmBlocks.map((a) => ({
       ...a, isOn: a.linkedRuleBlockId ? (resolved.get(a.linkedRuleBlockId) === true) : false,
     }))
+    const newACs = acBlocks.map((a) => ({
+      ...a, isOn: a.linkedRuleBlockId ? (resolved.get(a.linkedRuleBlockId) === true) : false,
+    }))
 
-    // 4. Update door/bulb blocks in workflow store
+    // 5. Update door/bulb blocks in workflow store
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const wfStore = require('@/store/useWorkflowStore').useWorkflowStore
     const { doorBlocks, bulbBlocks, updateDoorBlock, updateBulbBlock } = wfStore.getState()
@@ -265,6 +365,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       }
     })
 
-    set({ conditionBlocks: newConditions, logicBlocks: newLogic, fanBlocks: newFans, alarmBlocks: newAlarms })
+    set({
+      conditionBlocks: newConditions, logicBlocks: newLogic,
+      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, timerBlocks: newTimers,
+    })
   },
 }))

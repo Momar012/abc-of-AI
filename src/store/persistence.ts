@@ -2,7 +2,7 @@ import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, Sa
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
 import { DoorBlock, BulbBlock } from '@/types/workflow'
-import { SensorBlock, ConditionBlock, LogicBlock, FanBlock, AlarmBlock } from '@/types/rules'
+import { SensorBlock, ConditionBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock } from '@/types/rules'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -24,6 +24,8 @@ interface PersistedState {
   logicBlocks?: LogicBlock[]
   fanBlocks?: FanBlock[]
   alarmBlocks?: AlarmBlock[]
+  acBlocks?: ACBlock[]
+  timerBlocks?: TimerBlock[]
 }
 
 export function saveToLocalStorage(state: {
@@ -44,6 +46,8 @@ export function saveToLocalStorage(state: {
   logicBlocks: LogicBlock[]
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
+  acBlocks: ACBlock[]
+  timerBlocks: TimerBlock[]
 }) {
   try {
     const toSave: PersistedState = {
@@ -64,6 +68,10 @@ export function saveToLocalStorage(state: {
       logicBlocks: state.logicBlocks.map(({ currentOutput: _, ...rest }) => ({ ...rest, currentOutput: null })),
       fanBlocks: state.fanBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       alarmBlocks: state.alarmBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
+      acBlocks: state.acBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
+      timerBlocks: state.timerBlocks.map(({ isRunning: _r, remainingSeconds: _s, currentOutput: _o, lastTriggerInput: _l, ...rest }) => ({
+        ...rest, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
+      })),
     }
     localStorage.setItem(KEY, JSON.stringify(toSave))
   } catch {
@@ -123,6 +131,10 @@ export function loadFromLocalStorage(): PersistedState | null {
       logicBlocks: (parsed.logicBlocks ?? []).map((b) => ({ ...b, currentOutput: null })),
       fanBlocks: (parsed.fanBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       alarmBlocks: (parsed.alarmBlocks ?? []).map((b) => ({ ...b, isOn: false })),
+      acBlocks: (parsed.acBlocks ?? []).map((b) => ({ ...b, isOn: false })),
+      timerBlocks: (parsed.timerBlocks ?? []).map((b) => ({
+        ...b, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
+      })),
     }
   } catch {
     return null

@@ -142,6 +142,47 @@ function AlarmBlockView({ id }: { id: string }) {
   )
 }
 
+function ACBlockView({ id }: { id: string }) {
+  const acBlocks = useRuleStore((s) => s.acBlocks)
+  const updateACBlock = useRuleStore((s) => s.updateACBlock)
+  const block = acBlocks.find((b) => b.id === id)
+  if (!block) return null
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">❄️</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Actuator</p>
+          <p className="text-sm font-heading font-bold text-cyan-300">AC</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updateACBlock(block.id, { name: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-cyan-400 bg-transparent"
+        />
+      </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider mb-1">Status</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOn ? 'text-cyan-400' : 'text-white/40'}`}>
+          {block.isOn ? '🥶 Cooling!' : '⬛ Off'}
+        </p>
+      </div>
+
+      {!block.linkedRuleBlockId && (
+        <div className="rounded-xl bg-cyan-500/10 border border-cyan-500/20 p-3">
+          <p className="text-xs text-cyan-200/80 font-body">Connect a rule block&apos;s output (or a ⏱️ Timer) to this AC&apos;s left handle to control it.</p>
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function LogicInspector() {
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
@@ -162,6 +203,7 @@ export default function LogicInspector() {
       {selectedBlockType === 'logic' && <LogicBlockView id={selectedBlockId} />}
       {selectedBlockType === 'fan'   && <FanBlockView   id={selectedBlockId} />}
       {selectedBlockType === 'alarm' && <AlarmBlockView id={selectedBlockId} />}
+      {selectedBlockType === 'ac'    && <ACBlockView    id={selectedBlockId} />}
     </div>
   )
 }

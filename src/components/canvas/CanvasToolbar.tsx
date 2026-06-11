@@ -15,7 +15,7 @@ type BlockType =
   | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
   | 'condition' | 'logic-and' | 'logic-or' | 'logic-not'
-  | 'fan' | 'alarm'
+  | 'fan' | 'alarm' | 'ac' | 'timer'
 
 function DraggablePaletteItem({
   blockType,
@@ -82,6 +82,7 @@ function ActionsMenu() {
   const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
   const addFanBlock = useRuleStore((s) => s.addFanBlock)
   const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
+  const addACBlock = useRuleStore((s) => s.addACBlock)
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -115,6 +116,7 @@ function ActionsMenu() {
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/30 font-heading uppercase tracking-wider">Rule Actions</p>
             <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => { addFanBlock(); setOpen(false) }} />
             <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => { addAlarmBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => { addACBlock(); setOpen(false) }} />
           </div>
         </>,
         document.body
@@ -135,6 +137,7 @@ function RuleBasedMenu() {
   const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
   const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
   const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
+  const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -153,6 +156,7 @@ function RuleBasedMenu() {
   const addSensor = (type: SensorType) => { addSensorBlock(type); setOpen(false) }
   const addCond   = () => { addConditionBlock(); setOpen(false) }
   const addLogic  = (t: 'and' | 'or' | 'not') => { addLogicBlock(t); setOpen(false) }
+  const addTimer  = () => { addTimerBlock(); setOpen(false) }
 
   return (
     <div ref={wrapperRef}>
@@ -181,6 +185,12 @@ function RuleBasedMenu() {
             <DraggableActionItem blockType="logic-and" label="∧ AND" onAdd={() => addLogic('and')} />
             <DraggableActionItem blockType="logic-or" label="∨ OR" onAdd={() => addLogic('or')} />
             <DraggableActionItem blockType="logic-not" label="¬ NOT" onAdd={() => addLogic('not')} />
+
+            <div className="my-1 border-t border-white/10" />
+
+            {/* Timer */}
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">⏱️ Timer</p>
+            <DraggableActionItem blockType="timer" label="⏱️ Timer" onAdd={addTimer} />
           </div>
         </>,
         document.body

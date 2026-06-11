@@ -21,6 +21,7 @@ import RLInspector from '@/components/inspector/RLInspector'
 import SensorInspector from '@/components/inspector/SensorInspector'
 import ConditionInspector from '@/components/inspector/ConditionInspector'
 import LogicInspector from '@/components/inspector/LogicInspector'
+import TimerInspector from '@/components/inspector/TimerInspector'
 import BadgeToast from '@/components/gamification/BadgeToast'
 import EducationalOverlay from '@/components/feedback/EducationalOverlay'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
@@ -95,6 +96,8 @@ export default function DatasetBuilderPage() {
   const logicBlocks = useRuleStore((s) => s.logicBlocks)
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
+  const acBlocks = useRuleStore((s) => s.acBlocks)
+  const timerBlocks = useRuleStore((s) => s.timerBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -140,6 +143,12 @@ export default function DatasetBuilderPage() {
       if (saved.alarmBlocks) {
         useRuleStore.setState({ alarmBlocks: saved.alarmBlocks })
       }
+      if (saved.acBlocks) {
+        useRuleStore.setState({ acBlocks: saved.acBlocks })
+      }
+      if (saved.timerBlocks) {
+        useRuleStore.setState({ timerBlocks: saved.timerBlocks })
+      }
     }
 
     if (firstVisit) setShowEducationalOverlay(true)
@@ -166,8 +175,10 @@ export default function DatasetBuilderPage() {
       logicBlocks,
       fanBlocks,
       alarmBlocks,
+      acBlocks,
+      timerBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -275,7 +286,9 @@ export default function DatasetBuilderPage() {
               <SensorInspector key={selectedBlockId} />
             ) : selectedBlockId && selectedBlockType === 'condition' ? (
               <ConditionInspector key={selectedBlockId} />
-            ) : selectedBlockId && (selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm') ? (
+            ) : selectedBlockId && selectedBlockType === 'timer' ? (
+              <TimerInspector key={selectedBlockId} />
+            ) : selectedBlockId && (selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac') ? (
               <LogicInspector key={selectedBlockId} />
             ) : selectedBlockId ? (
               <BlockInspector key={selectedBlockId} />

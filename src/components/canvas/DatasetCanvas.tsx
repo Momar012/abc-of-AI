@@ -34,6 +34,8 @@ import ConditionNode from './nodes/ConditionNode'
 import LogicNode from './nodes/LogicNode'
 import FanNode from './nodes/FanNode'
 import AlarmNode from './nodes/AlarmNode'
+import ACNode from './nodes/ACNode'
+import TimerNode from './nodes/TimerNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
@@ -55,6 +57,8 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
   const addFanBlock = useRuleStore((s) => s.addFanBlock)
   const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
+  const addACBlock = useRuleStore((s) => s.addACBlock)
+  const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
 
   useDndMonitor({
     onDragEnd(event) {
@@ -88,6 +92,8 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'logic-not') addLogicBlock('not', flowPos)
         else if (blockType === 'fan') addFanBlock(flowPos)
         else if (blockType === 'alarm') addAlarmBlock(flowPos)
+        else if (blockType === 'ac') addACBlock(flowPos)
+        else if (blockType === 'timer') addTimerBlock(flowPos)
         return
       }
 
@@ -125,6 +131,8 @@ const nodeTypes = {
   logic: LogicNode,
   fan: FanNode,
   alarm: AlarmNode,
+  ac: ACNode,
+  timer: TimerNode,
 }
 
 const edgeTypes = {
@@ -156,6 +164,8 @@ export default function DatasetCanvas() {
   const logicBlocks = useRuleStore((s) => s.logicBlocks)
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
+  const acBlocks = useRuleStore((s) => s.acBlocks)
+  const timerBlocks = useRuleStore((s) => s.timerBlocks)
   const updateSensorBlockPosition = useRuleStore((s) => s.updateSensorBlockPosition)
   const updateConditionBlockPosition = useRuleStore((s) => s.updateConditionBlockPosition)
   const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
@@ -165,7 +175,12 @@ export default function DatasetCanvas() {
   const updateFanBlock = useRuleStore((s) => s.updateFanBlock)
   const updateAlarmBlockPosition = useRuleStore((s) => s.updateAlarmBlockPosition)
   const updateAlarmBlock = useRuleStore((s) => s.updateAlarmBlock)
+  const updateACBlockPosition = useRuleStore((s) => s.updateACBlockPosition)
+  const updateACBlock = useRuleStore((s) => s.updateACBlock)
+  const updateTimerBlockPosition = useRuleStore((s) => s.updateTimerBlockPosition)
+  const updateTimerBlock = useRuleStore((s) => s.updateTimerBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
+  const tickTimers = useRuleStore((s) => s.tickTimers)
 
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
@@ -198,10 +213,12 @@ export default function DatasetCanvas() {
         ...logicBlocks.map((b) => ({ id: b.id, type: 'logic', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...fanBlocks.map((b) => ({ id: b.id, type: 'fan', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
       ]
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfNodes])
+      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -266,6 +283,20 @@ export default function DatasetCanvas() {
         target: b.id, targetHandle: 'alarm-in',
         type: 'rule',
       } as Edge)),
+      // rule/logic → timer (trigger)
+      ...timerBlocks.filter((b) => b.linkedRuleBlockId !== null).map((b) => ({
+        id: `rule-timer-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'timer-in',
+        type: 'rule',
+      } as Edge)),
+      // rule/timer → AC
+      ...acBlocks.filter((b) => b.linkedRuleBlockId !== null).map((b) => ({
+        id: `rule-ac-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'ac-in',
+        type: 'rule',
+      } as Edge)),
       // rule → door (rule-based)
       ...doorBlocks.filter((b) => b.linkedRuleBlockId != null).map((b) => ({
         id: `rule-door-${b.linkedRuleBlockId}-${b.id}`,
@@ -282,7 +313,7 @@ export default function DatasetCanvas() {
       } as Edge)),
     ])
   }, [modelBlocks, doorBlocks, bulbBlocks,
-      conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfEdges])
+      conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, setRfEdges])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -299,6 +330,8 @@ export default function DatasetCanvas() {
           else if (logicBlocks.some((b) => b.id === id)) updateLogicBlockPosition(id, p)
           else if (fanBlocks.some((b) => b.id === id)) updateFanBlockPosition(id, p)
           else if (alarmBlocks.some((b) => b.id === id)) updateAlarmBlockPosition(id, p)
+          else if (acBlocks.some((b) => b.id === id)) updateACBlockPosition(id, p)
+          else if (timerBlocks.some((b) => b.id === id)) updateTimerBlockPosition(id, p)
           else {
             const type = labelledBlocks.some((b) => b.id === id) ? 'labelled' : 'unlabelled'
             updateBlockPosition(id, type, p)
@@ -308,11 +341,11 @@ export default function DatasetCanvas() {
     },
     [
       labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks,
+      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
       updateDoorBlockPosition, updateBulbBlockPosition,
       updateSensorBlockPosition, updateConditionBlockPosition, updateLogicBlockPosition,
-      updateFanBlockPosition, updateAlarmBlockPosition, setRfNodes,
+      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, setRfNodes,
     ]
   )
 
@@ -367,14 +400,27 @@ export default function DatasetCanvas() {
       } else if (targetHandle === 'alarm-in') {
         updateAlarmBlock(target, { linkedRuleBlockId: source, isOn: false })
         evaluateGraph()
+      } else if (targetHandle === 'ac-in') {
+        updateACBlock(target, { linkedRuleBlockId: source, isOn: false })
+        evaluateGraph()
+      } else if (targetHandle === 'timer-in') {
+        updateTimerBlock(target, { linkedRuleBlockId: source, isRunning: false, currentOutput: null, lastTriggerInput: null })
+        evaluateGraph()
       }
     },
     [
       updateModelBlock, updateDoorBlock, updateBulbBlock,
       updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
+      updateACBlock, updateTimerBlock,
       logicBlocks, evaluateGraph,
     ]
   )
+
+  // Tick running timer blocks once per second
+  useEffect(() => {
+    const interval = setInterval(() => tickTimers(), 1000)
+    return () => clearInterval(interval)
+  }, [tickTimers])
 
   return (
     <div
@@ -400,9 +446,9 @@ export default function DatasetCanvas() {
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
         onNodeDoubleClick={(_, node) => {
-          const ruleTypes = ['sensor', 'condition', 'logic', 'fan', 'alarm']
+          const ruleTypes = ['sensor', 'condition', 'logic', 'fan', 'alarm', 'ac', 'timer']
           if (ruleTypes.includes(node.type ?? '')) {
-            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm')
+            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer')
           }
         }}
         fitView
