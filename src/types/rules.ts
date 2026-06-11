@@ -26,6 +26,14 @@ export interface ConditionBlock {
   currentOutput: boolean | null
 }
 
+export interface SwitchBlock {
+  id: string
+  type: 'switch'
+  position: { x: number; y: number }
+  name: string
+  isOn: boolean
+}
+
 export interface LogicBlock {
   id: string
   type: 'logic'

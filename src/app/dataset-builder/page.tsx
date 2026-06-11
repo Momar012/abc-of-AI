@@ -93,6 +93,7 @@ export default function DatasetBuilderPage() {
   const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
   const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
+  const switchBlocks = useRuleStore((s) => s.switchBlocks)
   const logicBlocks = useRuleStore((s) => s.logicBlocks)
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
@@ -134,6 +135,9 @@ export default function DatasetBuilderPage() {
       if (saved.conditionBlocks) {
         useRuleStore.setState({ conditionBlocks: saved.conditionBlocks })
       }
+      if (saved.switchBlocks) {
+        useRuleStore.setState({ switchBlocks: saved.switchBlocks })
+      }
       if (saved.logicBlocks) {
         useRuleStore.setState({ logicBlocks: saved.logicBlocks })
       }
@@ -172,13 +176,14 @@ export default function DatasetBuilderPage() {
       bulbBlocks,
       sensorBlocks,
       conditionBlocks,
+      switchBlocks,
       logicBlocks,
       fanBlocks,
       alarmBlocks,
       acBlocks,
       timerBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -246,6 +251,7 @@ export default function DatasetBuilderPage() {
                 : activePaletteBlock === 'sensor-humidity' ? '💧'
                 : activePaletteBlock === 'sensor-text' ? '📝'
                 : activePaletteBlock === 'condition' ? '📋'
+                : activePaletteBlock === 'switch' ? '🎚️'
                 : activePaletteBlock === 'logic-and' ? '∧'
                 : activePaletteBlock === 'logic-or' ? '∨'
                 : activePaletteBlock === 'logic-not' ? '¬'
@@ -288,7 +294,7 @@ export default function DatasetBuilderPage() {
               <ConditionInspector key={selectedBlockId} />
             ) : selectedBlockId && selectedBlockType === 'timer' ? (
               <TimerInspector key={selectedBlockId} />
-            ) : selectedBlockId && (selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac') ? (
+            ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac') ? (
               <LogicInspector key={selectedBlockId} />
             ) : selectedBlockId ? (
               <BlockInspector key={selectedBlockId} />

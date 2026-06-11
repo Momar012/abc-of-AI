@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import {
-  SensorBlock, SensorType, ConditionBlock, RuleOperator,
+  SensorBlock, SensorType, ConditionBlock, RuleOperator, SwitchBlock,
   LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock,
 } from '@/types/rules'
 
@@ -42,6 +42,7 @@ function evalCondition(
 interface RuleState {
   sensorBlocks: SensorBlock[]
   conditionBlocks: ConditionBlock[]
+  switchBlocks: SwitchBlock[]
   logicBlocks: LogicBlock[]
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
@@ -57,6 +58,11 @@ interface RuleState {
   removeConditionBlock: (id: string) => void
   updateConditionBlock: (id: string, updates: Partial<ConditionBlock>) => void
   updateConditionBlockPosition: (id: string, pos: { x: number; y: number }) => void
+
+  addSwitchBlock: (pos?: { x: number; y: number }) => void
+  removeSwitchBlock: (id: string) => void
+  updateSwitchBlock: (id: string, updates: Partial<SwitchBlock>) => void
+  updateSwitchBlockPosition: (id: string, pos: { x: number; y: number }) => void
 
   addLogicBlock: (logicType: 'and' | 'or' | 'not', pos?: { x: number; y: number }) => void
   removeLogicBlock: (id: string) => void
@@ -90,6 +96,7 @@ interface RuleState {
 export const useRuleStore = create<RuleState>((set, get) => ({
   sensorBlocks: [],
   conditionBlocks: [],
+  switchBlocks: [],
   logicBlocks: [],
   fanBlocks: [],
   alarmBlocks: [],
@@ -141,6 +148,29 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
   updateConditionBlockPosition: (id, pos) =>
     set((s) => ({ conditionBlocks: s.conditionBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
+  // ── Switch ───────────────────────────────────────────────────────────────
+  addSwitchBlock: (pos?) =>
+    set((s) => ({
+      switchBlocks: [
+        ...s.switchBlocks,
+        {
+          id: uuid(), type: 'switch',
+          position: pos ?? { x: 200 + s.switchBlocks.length * 40, y: 600 + s.switchBlocks.length * 40 },
+          name: `Switch ${s.switchBlocks.length + 1}`,
+          isOn: false,
+        },
+      ],
+    })),
+
+  removeSwitchBlock: (id) =>
+    set((s) => ({ switchBlocks: s.switchBlocks.filter((b) => b.id !== id) })),
+
+  updateSwitchBlock: (id, updates) =>
+    set((s) => ({ switchBlocks: s.switchBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updateSwitchBlockPosition: (id, pos) =>
+    set((s) => ({ switchBlocks: s.switchBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
 
   // ── Logic ─────────────────────────────────────────────────────────────────
   addLogicBlock: (logicType, pos?) =>
@@ -280,7 +310,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
   // ── Graph evaluation ──────────────────────────────────────────────────────
   evaluateGraph: () => {
-    const { sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks } = get()
+    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks } = get()
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
@@ -302,6 +332,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     // 2. Evaluate logic blocks (iterative topological pass, max 10 rounds)
     const resolved = new Map<string, boolean | null>()
     newConditions.forEach((c) => resolved.set(c.id, c.currentOutput))
+    switchBlocks.forEach((sw) => resolved.set(sw.id, sw.isOn))
     const newLogic = logicBlocks.map((b) => ({ ...b }))
 
     for (let iter = 0; iter < 10; iter++) {

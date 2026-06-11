@@ -31,6 +31,7 @@ import DoorNode from './nodes/DoorNode'
 import BulbNode from './nodes/BulbNode'
 import SensorNode from './nodes/SensorNode'
 import ConditionNode from './nodes/ConditionNode'
+import SwitchNode from './nodes/SwitchNode'
 import LogicNode from './nodes/LogicNode'
 import FanNode from './nodes/FanNode'
 import AlarmNode from './nodes/AlarmNode'
@@ -54,6 +55,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addToast = useUIStore((s) => s.addToast)
   const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
   const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
+  const addSwitchBlock = useRuleStore((s) => s.addSwitchBlock)
   const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
   const addFanBlock = useRuleStore((s) => s.addFanBlock)
   const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
@@ -87,6 +89,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'sensor-humidity') addSensorBlock('humidity', flowPos)
         else if (blockType === 'sensor-text') addSensorBlock('text-input', flowPos)
         else if (blockType === 'condition') addConditionBlock(flowPos)
+        else if (blockType === 'switch') addSwitchBlock(flowPos)
         else if (blockType === 'logic-and') addLogicBlock('and', flowPos)
         else if (blockType === 'logic-or') addLogicBlock('or', flowPos)
         else if (blockType === 'logic-not') addLogicBlock('not', flowPos)
@@ -128,6 +131,7 @@ const nodeTypes = {
   bulb: BulbNode,
   sensor: SensorNode,
   condition: ConditionNode,
+  switch: SwitchNode,
   logic: LogicNode,
   fan: FanNode,
   alarm: AlarmNode,
@@ -161,6 +165,7 @@ export default function DatasetCanvas() {
   // Rule store
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
   const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
+  const switchBlocks = useRuleStore((s) => s.switchBlocks)
   const logicBlocks = useRuleStore((s) => s.logicBlocks)
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
@@ -169,6 +174,7 @@ export default function DatasetCanvas() {
   const updateSensorBlockPosition = useRuleStore((s) => s.updateSensorBlockPosition)
   const updateConditionBlockPosition = useRuleStore((s) => s.updateConditionBlockPosition)
   const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
+  const updateSwitchBlockPosition = useRuleStore((s) => s.updateSwitchBlockPosition)
   const updateLogicBlockPosition = useRuleStore((s) => s.updateLogicBlockPosition)
   const updateLogicBlock = useRuleStore((s) => s.updateLogicBlock)
   const updateFanBlockPosition = useRuleStore((s) => s.updateFanBlockPosition)
@@ -210,6 +216,7 @@ export default function DatasetCanvas() {
         ...bulbBlocks.map((b) => ({ id: b.id, type: 'bulb', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...sensorBlocks.map((b) => ({ id: b.id, type: 'sensor', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...conditionBlocks.map((b) => ({ id: b.id, type: 'condition', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...switchBlocks.map((b) => ({ id: b.id, type: 'switch', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...logicBlocks.map((b) => ({ id: b.id, type: 'logic', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...fanBlocks.map((b) => ({ id: b.id, type: 'fan', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
@@ -218,7 +225,7 @@ export default function DatasetCanvas() {
       ]
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, setRfNodes])
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -327,6 +334,7 @@ export default function DatasetCanvas() {
           else if (bulbBlocks.some((b) => b.id === id)) updateBulbBlockPosition(id, p)
           else if (sensorBlocks.some((b) => b.id === id)) updateSensorBlockPosition(id, p)
           else if (conditionBlocks.some((b) => b.id === id)) updateConditionBlockPosition(id, p)
+          else if (switchBlocks.some((b) => b.id === id)) updateSwitchBlockPosition(id, p)
           else if (logicBlocks.some((b) => b.id === id)) updateLogicBlockPosition(id, p)
           else if (fanBlocks.some((b) => b.id === id)) updateFanBlockPosition(id, p)
           else if (alarmBlocks.some((b) => b.id === id)) updateAlarmBlockPosition(id, p)
@@ -341,10 +349,10 @@ export default function DatasetCanvas() {
     },
     [
       labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
       updateDoorBlockPosition, updateBulbBlockPosition,
-      updateSensorBlockPosition, updateConditionBlockPosition, updateLogicBlockPosition,
+      updateSensorBlockPosition, updateConditionBlockPosition, updateSwitchBlockPosition, updateLogicBlockPosition,
       updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, setRfNodes,
     ]
   )
@@ -446,9 +454,9 @@ export default function DatasetCanvas() {
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
         onNodeDoubleClick={(_, node) => {
-          const ruleTypes = ['sensor', 'condition', 'logic', 'fan', 'alarm', 'ac', 'timer']
+          const ruleTypes = ['sensor', 'condition', 'switch', 'logic', 'fan', 'alarm', 'ac', 'timer']
           if (ruleTypes.includes(node.type ?? '')) {
-            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer')
+            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer')
           }
         }}
         fitView

@@ -60,6 +60,67 @@ function LogicBlockView({ id }: { id: string }) {
   )
 }
 
+function SwitchBlockView({ id }: { id: string }) {
+  const switchBlocks = useRuleStore((s) => s.switchBlocks)
+  const updateSwitchBlock = useRuleStore((s) => s.updateSwitchBlock)
+  const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
+  const block = switchBlocks.find((b) => b.id === id)
+  if (!block) return null
+
+  const toggle = () => {
+    updateSwitchBlock(block.id, { isOn: !block.isOn })
+    evaluateGraph()
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">🎚️</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Input</p>
+          <p className="text-sm font-heading font-bold text-lime-300">Switch</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updateSwitchBlock(block.id, { name: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-lime-400 bg-transparent"
+        />
+      </div>
+
+      <button
+        onClick={toggle}
+        className={`relative w-24 h-12 mx-auto rounded-full border-2 transition-colors ${
+          block.isOn ? 'bg-lime-500/30 border-lime-400' : 'bg-white/10 border-white/20'
+        }`}
+      >
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 w-9 h-9 rounded-full transition-all ${
+            block.isOn ? 'left-[calc(100%-42px)] bg-lime-400' : 'left-1 bg-white/40'
+          }`}
+          style={block.isOn ? { boxShadow: '0 0 12px rgba(132,204,22,0.9)' } : {}}
+        />
+      </button>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3 flex flex-col gap-1">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Output</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOn ? 'text-emerald-400' : 'text-red-400'}`}>
+          {block.isOn ? 'TRUE ✓' : 'FALSE ✗'}
+        </p>
+      </div>
+
+      <div className="rounded-xl bg-lime-500/10 border border-lime-500/20 p-3">
+        <p className="text-xs text-lime-200/80 font-body leading-relaxed">
+          Flip this switch to send TRUE or FALSE into a Logic Gate (AND / OR / NOT) — or straight to a 💡 Bulb.
+        </p>
+      </div>
+    </>
+  )
+}
+
 function FanBlockView({ id }: { id: string }) {
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const updateFanBlock = useRuleStore((s) => s.updateFanBlock)
@@ -200,6 +261,7 @@ export default function LogicInspector() {
           ×
         </button>
       </div>
+      {selectedBlockType === 'switch' && <SwitchBlockView id={selectedBlockId} />}
       {selectedBlockType === 'logic' && <LogicBlockView id={selectedBlockId} />}
       {selectedBlockType === 'fan'   && <FanBlockView   id={selectedBlockId} />}
       {selectedBlockType === 'alarm' && <AlarmBlockView id={selectedBlockId} />}

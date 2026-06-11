@@ -2,7 +2,7 @@ import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, Sa
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
 import { DoorBlock, BulbBlock } from '@/types/workflow'
-import { SensorBlock, ConditionBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock } from '@/types/rules'
+import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock } from '@/types/rules'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -21,6 +21,7 @@ interface PersistedState {
   bulbBlocks?: BulbBlock[]
   sensorBlocks?: SensorBlock[]
   conditionBlocks?: ConditionBlock[]
+  switchBlocks?: SwitchBlock[]
   logicBlocks?: LogicBlock[]
   fanBlocks?: FanBlock[]
   alarmBlocks?: AlarmBlock[]
@@ -43,6 +44,7 @@ export function saveToLocalStorage(state: {
   bulbBlocks: BulbBlock[]
   sensorBlocks: SensorBlock[]
   conditionBlocks: ConditionBlock[]
+  switchBlocks: SwitchBlock[]
   logicBlocks: LogicBlock[]
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
@@ -64,6 +66,7 @@ export function saveToLocalStorage(state: {
       doorBlocks: state.doorBlocks.map(({ isOpen: _, ...rest }) => ({ ...rest, isOpen: false })),
       bulbBlocks: state.bulbBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       sensorBlocks: state.sensorBlocks,
+      switchBlocks: state.switchBlocks,
       conditionBlocks: state.conditionBlocks.map(({ currentOutput: _, ...rest }) => ({ ...rest, currentOutput: null })),
       logicBlocks: state.logicBlocks.map(({ currentOutput: _, ...rest }) => ({ ...rest, currentOutput: null })),
       fanBlocks: state.fanBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
@@ -127,6 +130,7 @@ export function loadFromLocalStorage(): PersistedState | null {
       doorBlocks: (parsed.doorBlocks ?? []).map((b) => ({ ...b, isOpen: false })),
       bulbBlocks: (parsed.bulbBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       sensorBlocks: parsed.sensorBlocks ?? [],
+      switchBlocks: parsed.switchBlocks ?? [],
       conditionBlocks: (parsed.conditionBlocks ?? []).map((b) => ({ ...b, currentOutput: null })),
       logicBlocks: (parsed.logicBlocks ?? []).map((b) => ({ ...b, currentOutput: null })),
       fanBlocks: (parsed.fanBlocks ?? []).map((b) => ({ ...b, isOn: false })),

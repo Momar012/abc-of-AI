@@ -14,7 +14,7 @@ import GlowButton from '@/components/ui/GlowButton'
 type BlockType =
   | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
-  | 'condition' | 'logic-and' | 'logic-or' | 'logic-not'
+  | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
   | 'fan' | 'alarm' | 'ac' | 'timer'
 
 function DraggablePaletteItem({
@@ -136,6 +136,7 @@ function RuleBasedMenu() {
 
   const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
   const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
+  const addSwitchBlock = useRuleStore((s) => s.addSwitchBlock)
   const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
   const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
 
@@ -176,6 +177,12 @@ function RuleBasedMenu() {
             <DraggableActionItem blockType="sensor-motion" label="👁️ Motion" onAdd={() => addSensor('motion')} />
             <DraggableActionItem blockType="sensor-humidity" label="💧 Humidity" onAdd={() => addSensor('humidity')} />
             <DraggableActionItem blockType="sensor-text" label="📝 Text Input" onAdd={() => addSensor('text-input')} />
+
+            <div className="my-1 border-t border-white/10" />
+
+            {/* Manual Input */}
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-lime-400/70 font-heading uppercase tracking-wider">🎚️ Manual Input</p>
+            <DraggableActionItem blockType="switch" label="🎚️ Switch" onAdd={() => { addSwitchBlock(); setOpen(false) }} />
 
             <div className="my-1 border-t border-white/10" />
 
