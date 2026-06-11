@@ -17,6 +17,8 @@ export default function RuleEdge({
   const updateLogicBlock     = useRuleStore((s) => s.updateLogicBlock)
   const updateFanBlock       = useRuleStore((s) => s.updateFanBlock)
   const updateAlarmBlock     = useRuleStore((s) => s.updateAlarmBlock)
+  const updateACBlock        = useRuleStore((s) => s.updateACBlock)
+  const updateTimerBlock     = useRuleStore((s) => s.updateTimerBlock)
   const logicBlocks          = useRuleStore((s) => s.logicBlocks)
   const evaluateGraph        = useRuleStore((s) => s.evaluateGraph)
   const updateDoorBlock      = useWorkflowStore((s) => s.updateDoorBlock)
@@ -52,6 +54,10 @@ export default function RuleEdge({
       updateFanBlock(target, { linkedRuleBlockId: null, isOn: false })
     } else if (targetHandle === 'alarm-in') {
       updateAlarmBlock(target, { linkedRuleBlockId: null, isOn: false })
+    } else if (targetHandle === 'ac-in') {
+      updateACBlock(target, { linkedRuleBlockId: null, isOn: false })
+    } else if (targetHandle === 'timer-in') {
+      updateTimerBlock(target, { linkedRuleBlockId: null, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null })
     } else if (targetHandle === 'door-in') {
       updateDoorBlock(target, { linkedRuleBlockId: null, isOpen: false })
     } else if (targetHandle === 'bulb-in') {

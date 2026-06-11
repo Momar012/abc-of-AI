@@ -380,7 +380,14 @@ export default function DatasetCanvas() {
         if (sourceHandle === 'prediction-out') {
           updateConditionBlock(target, { linkedModelId: source, linkedSensorId: null, currentOutput: null })
         } else {
-          updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null })
+          const sensor = sensorBlocks.find((b) => b.id === source)
+          if (sensor?.sensorType === 'motion') {
+            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: 'is', threshold: true })
+          } else if (sensor?.sensorType === 'text-input') {
+            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '==', threshold: '' })
+          } else {
+            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '>', threshold: 0 })
+          }
         }
         evaluateGraph()
       } else if (targetHandle === 'logic-in-1') {
@@ -420,7 +427,7 @@ export default function DatasetCanvas() {
       updateModelBlock, updateDoorBlock, updateBulbBlock,
       updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
       updateACBlock, updateTimerBlock,
-      logicBlocks, evaluateGraph,
+      logicBlocks, sensorBlocks, evaluateGraph,
     ]
   )
 

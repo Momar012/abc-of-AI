@@ -29,6 +29,19 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedModel?.testResults, block.modelCondition])
 
+  // Self-heal: a motion sensor must always use the 'is' operator, otherwise
+  // evalCondition's numeric branches produce stuck/inverted results.
+  useEffect(() => {
+    if (sensor?.sensorType === 'motion' && block.operator !== 'is') {
+      updateConditionBlock(block.id, {
+        operator: 'is',
+        threshold: typeof block.threshold === 'boolean' ? block.threshold : true,
+      })
+      evaluateGraph()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sensor?.sensorType, block.operator])
+
   const outputColor =
     block.currentOutput === null ? 'text-white/40' :
     block.currentOutput ? 'text-emerald-400' : 'text-red-400'
