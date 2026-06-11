@@ -21,6 +21,8 @@ export interface ConditionBlock {
   linkedSensorId: string | null
   operator: RuleOperator
   threshold: number | boolean | string
+  linkedModelId?: string | null
+  modelCondition?: string | null
   currentOutput: boolean | null
 }
 

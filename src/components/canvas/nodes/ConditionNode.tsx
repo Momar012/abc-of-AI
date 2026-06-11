@@ -1,17 +1,33 @@
 'use client'
 
+import { useEffect } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { ConditionBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useModelStore } from '@/store/useModelStore'
 
 export default function ConditionNode({ data, selected }: NodeProps<{ block: ConditionBlock }>) {
   const { block } = data
   const removeConditionBlock = useRuleStore((s) => s.removeConditionBlock)
+  const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
+  const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
+  const modelBlocks = useModelStore((s) => s.modelBlocks)
+  const trainedModels = useModelStore((s) => s.trainedModels)
 
   const sensor = sensorBlocks.find((s) => s.id === block.linkedSensorId)
+  const linkedModel = modelBlocks.find((m) => m.id === block.linkedModelId)
+  const trainedModel = trainedModels.find((m) => m.id === linkedModel?.trainedModelId)
+  const availableLabels = trainedModel?.labels ?? []
+
+  // Re-evaluate when model test results change
+  useEffect(() => {
+    if (!block.linkedModelId) return
+    evaluateGraph()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedModel?.testResults, block.modelCondition])
 
   const outputColor =
     block.currentOutput === null ? 'text-white/40' :
@@ -20,14 +36,19 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
     block.currentOutput === null ? 'Waiting…' :
     block.currentOutput ? 'TRUE ✓' : 'FALSE ✗'
 
-  const sensorLabel = sensor ? sensor.name.split(' ').slice(1).join(' ') || sensor.name : ''
-  const conditionPreview = sensor
-    ? `${sensorLabel} ${block.operator} ${block.threshold}`
-    : 'Connect a sensor'
+  const isModelMode = !!block.linkedModelId
+  const isSensorMode = !!block.linkedSensorId
+
+  const sensorShortName = sensor ? (sensor.name.split(' ').slice(1).join(' ') || sensor.name) : ''
+  const conditionPreview = isSensorMode
+    ? `${sensorShortName} ${block.operator} ${block.threshold}`
+    : isModelMode
+    ? (block.modelCondition ? `prediction == "${block.modelCondition}"` : 'Pick a label…')
+    : 'Connect a sensor or model'
 
   return (
     <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'condition')}>
-      {/* Input: from sensor */}
+      {/* Input: from sensor OR model prediction */}
       <Handle
         type="target"
         position={Position.Left}
@@ -61,7 +82,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-base">📋</span>
+            <span className="text-base">🔀</span>
             <span className="text-sm font-heading font-bold text-white">{block.name}</span>
           </div>
           <button
@@ -73,16 +94,47 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
           </button>
         </div>
 
-        <div className="rounded-lg bg-white/5 px-3 py-2">
-          <p className="text-[10px] text-white/40 font-body mb-0.5">IF</p>
-          <p className="text-xs font-heading font-semibold text-yellow-300 truncate">{conditionPreview}</p>
-        </div>
+        {/* Model mode: inline label picker */}
+        {isModelMode ? (
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs text-white/40 font-body">if prediction is:</p>
+            {availableLabels.length > 0 ? (
+              <select
+                value={block.modelCondition ?? ''}
+                onChange={(e) => {
+                  updateConditionBlock(block.id, { modelCondition: e.target.value || null, currentOutput: null })
+                  evaluateGraph()
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-yellow-400 cursor-pointer"
+                style={{ backgroundColor: '#1e1b4b' }}
+              >
+                <option value="" style={{ backgroundColor: '#1e1b4b' }}>Pick a label…</option>
+                {availableLabels.map((label) => (
+                  <option key={label} value={label} style={{ backgroundColor: '#1e1b4b' }}>{label}</option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-xs text-white/25 font-body italic">
+                {block.linkedModelId ? 'Train the model first' : 'Connect a trained model'}
+              </p>
+            )}
+          </div>
+        ) : (
+          /* Sensor mode or empty: show condition preview */
+          <div className="rounded-lg bg-white/5 px-3 py-2">
+            <p className="text-[10px] text-white/40 font-body mb-0.5">IF</p>
+            <p className="text-xs font-heading font-semibold text-yellow-300 truncate">{conditionPreview}</p>
+          </div>
+        )}
 
         <div className={`text-xs font-heading font-bold text-center py-1 rounded-lg bg-white/5 ${outputColor}`}>
           {outputLabel}
         </div>
 
-        <p className="text-[10px] text-white/25 font-body text-center italic">double-click to edit</p>
+        {!isModelMode && (
+          <p className="text-[10px] text-white/25 font-body text-center italic">double-click to edit</p>
+        )}
       </div>
     </div>
   )

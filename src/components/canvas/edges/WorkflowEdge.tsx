@@ -1,7 +1,7 @@
 'use client'
 
 import { EdgeProps, getBezierPath } from 'reactflow'
-import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useRuleStore } from '@/store/useRuleStore'
 
 export default function WorkflowEdge({
   id,
@@ -13,9 +13,7 @@ export default function WorkflowEdge({
   targetY,
   targetPosition,
 }: EdgeProps) {
-  const updateIfElseBlock = useWorkflowStore((s) => s.updateIfElseBlock)
-  const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
-  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
+  const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX, sourceY, sourcePosition,
@@ -25,10 +23,7 @@ export default function WorkflowEdge({
   const gradId = `wf-grad-${id}`
 
   const handleDelete = () => {
-    // Each call is a no-op when target doesn't match that block type
-    updateIfElseBlock(target, { linkedModelId: null, currentOutput: null })
-    updateDoorBlock(target, { linkedIfElseId: null, isOpen: false })
-    updateBulbBlock(target, { linkedIfElseId: null, isOn: false })
+    updateConditionBlock(target, { linkedModelId: null, currentOutput: null })
   }
 
   return (

@@ -12,7 +12,7 @@ import { SensorType } from '@/types/rules'
 import GlowButton from '@/components/ui/GlowButton'
 
 type BlockType =
-  | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'ifelse' | 'door' | 'bulb'
+  | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
   | 'condition' | 'logic-and' | 'logic-or' | 'logic-not'
   | 'fan' | 'alarm'
@@ -197,8 +197,6 @@ export default function CanvasToolbar() {
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlock = useModelStore((s) => s.addModelBlock)
   const addRLBlock = useRLStore((s) => s.addRLBlock)
-  const addIfElseBlock = useWorkflowStore((s) => s.addIfElseBlock)
-
   return (
     <div className="flex items-center gap-2 p-2 glass-card-dark rounded-xl flex-wrap">
       <span className="text-xs text-white/40 font-heading">Drag or click to add:</span>
@@ -213,9 +211,6 @@ export default function CanvasToolbar() {
       </DraggablePaletteItem>
       <DraggablePaletteItem blockType="rl-gridworld" variant="secondary" onClick={addRLBlock}>
         🎮 RL Gridworld
-      </DraggablePaletteItem>
-      <DraggablePaletteItem blockType="ifelse" variant="secondary" onClick={addIfElseBlock}>
-        🔀 If / Else
       </DraggablePaletteItem>
       <ActionsMenu />
       <div className="w-px h-5 bg-white/10 self-center" />

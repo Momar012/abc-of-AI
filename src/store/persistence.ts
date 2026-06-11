@@ -1,7 +1,7 @@
 import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, SavedDataset } from '@/types/dataset'
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
-import { IfElseBlock, DoorBlock, BulbBlock } from '@/types/workflow'
+import { DoorBlock, BulbBlock } from '@/types/workflow'
 import { SensorBlock, ConditionBlock, LogicBlock, FanBlock, AlarmBlock } from '@/types/rules'
 
 const KEY = 'abcai_dataset_v1'
@@ -17,7 +17,6 @@ interface PersistedState {
   modelBlocks?: ModelBlock[]
   trainedModels?: TrainedModel[]
   rlBlocks?: RLGridworldBlock[]
-  ifElseBlocks?: IfElseBlock[]
   doorBlocks?: DoorBlock[]
   bulbBlocks?: BulbBlock[]
   sensorBlocks?: SensorBlock[]
@@ -38,7 +37,6 @@ export function saveToLocalStorage(state: {
   modelBlocks: ModelBlock[]
   trainedModels: TrainedModel[]
   rlBlocks: RLGridworldBlock[]
-  ifElseBlocks: IfElseBlock[]
   doorBlocks: DoorBlock[]
   bulbBlocks: BulbBlock[]
   sensorBlocks: SensorBlock[]
@@ -59,7 +57,6 @@ export function saveToLocalStorage(state: {
       modelBlocks: state.modelBlocks.map(({ testResults: _t, clusterResults: _c, ...rest }) => rest as ModelBlock),
       trainedModels: state.trainedModels,
       rlBlocks: state.rlBlocks.map(({ agentPos: _p, agentPath: _a, ...rest }) => rest as RLGridworldBlock),
-      ifElseBlocks: state.ifElseBlocks.map(({ currentOutput: _, ...rest }) => ({ ...rest, currentOutput: null })),
       doorBlocks: state.doorBlocks.map(({ isOpen: _, ...rest }) => ({ ...rest, isOpen: false })),
       bulbBlocks: state.bulbBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       sensorBlocks: state.sensorBlocks,
@@ -119,7 +116,6 @@ export function loadFromLocalStorage(): PersistedState | null {
         agentPath: [],
         trainingStatus: b.trainingStatus === 'training' ? 'paused' as const : b.trainingStatus,
       })),
-      ifElseBlocks: (parsed.ifElseBlocks ?? []).map((b) => ({ ...b, currentOutput: null })),
       doorBlocks: (parsed.doorBlocks ?? []).map((b) => ({ ...b, isOpen: false })),
       bulbBlocks: (parsed.bulbBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       sensorBlocks: parsed.sensorBlocks ?? [],

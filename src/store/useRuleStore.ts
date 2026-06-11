@@ -201,8 +201,17 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   evaluateGraph: () => {
     const { sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks } = get()
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
+
     // 1. Evaluate condition blocks
     const newConditions = conditionBlocks.map((c) => {
+      if (c.linkedModelId) {
+        // Model prediction path
+        const modelBlock = modelBlocks.find((m: { id: string; testResults?: { predictedLabel: string }[] }) => m.id === c.linkedModelId)
+        if (!modelBlock?.testResults?.length || !c.modelCondition) return { ...c, currentOutput: null }
+        return { ...c, currentOutput: modelBlock.testResults[0].predictedLabel === c.modelCondition }
+      }
       if (!c.linkedSensorId) return { ...c, currentOutput: null }
       const sensor = sensorBlocks.find((s) => s.id === c.linkedSensorId)
       if (!sensor) return { ...c, currentOutput: null }
@@ -241,16 +250,16 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       ...a, isOn: a.linkedRuleBlockId ? (resolved.get(a.linkedRuleBlockId) === true) : false,
     }))
 
-    // 4. Update door/bulb blocks in workflow store (rule-connected ones only)
-    // Imported here to avoid module-level circular reference
+    // 4. Update door/bulb blocks in workflow store
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const wfStore = require('@/store/useWorkflowStore').useWorkflowStore
     const { doorBlocks, bulbBlocks, updateDoorBlock, updateBulbBlock } = wfStore.getState()
-    ;(doorBlocks as { id: string; linkedRuleBlockId?: string | null }[]).forEach((d) => {
+    ;(doorBlocks as { id: string; linkedRuleBlockId: string | null }[]).forEach((d) => {
       if (d.linkedRuleBlockId) {
         updateDoorBlock(d.id, { isOpen: resolved.get(d.linkedRuleBlockId) === true })
       }
     })
-    ;(bulbBlocks as { id: string; linkedRuleBlockId?: string | null }[]).forEach((b) => {
+    ;(bulbBlocks as { id: string; linkedRuleBlockId: string | null }[]).forEach((b) => {
       if (b.linkedRuleBlockId) {
         updateBulbBlock(b.id, { isOn: resolved.get(b.linkedRuleBlockId) === true })
       }

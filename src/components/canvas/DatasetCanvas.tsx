@@ -27,7 +27,6 @@ import ValidationResultNode from './nodes/ValidationResultNode'
 import DataSplitNode from './nodes/DataSplitNode'
 import ModelBlockNode from './nodes/ModelBlockNode'
 import RLGridworldNode from './nodes/RLGridworldNode'
-import IfElseNode from './nodes/IfElseNode'
 import DoorNode from './nodes/DoorNode'
 import BulbNode from './nodes/BulbNode'
 import SensorNode from './nodes/SensorNode'
@@ -47,7 +46,6 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addModelBlock = useModelStore((s) => s.addModelBlock)
   const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
   const addRLBlock = useRLStore((s) => s.addRLBlock)
-  const addIfElseBlock = useWorkflowStore((s) => s.addIfElseBlock)
   const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
   const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
   const addDatasetToCanvas = useDatasetStore((s) => s.addDatasetToCanvas)
@@ -77,7 +75,6 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
         else if (blockType === 'model') addModelBlock(flowPos)
         else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
-        else if (blockType === 'ifelse') addIfElseBlock(flowPos)
         else if (blockType === 'door') addDoorBlock(flowPos)
         else if (blockType === 'bulb') addBulbBlock(flowPos)
         else if (blockType === 'sensor-temperature') addSensorBlock('temperature', flowPos)
@@ -121,7 +118,6 @@ const nodeTypes = {
   split: DataSplitNode,
   model: ModelBlockNode,
   'rl-gridworld': RLGridworldNode,
-  ifelse: IfElseNode,
   door: DoorNode,
   bulb: BulbNode,
   sensor: SensorNode,
@@ -147,9 +143,6 @@ export default function DatasetCanvas() {
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
   const updateRLBlockPosition = useRLStore((s) => s.updateRLBlockPosition)
-  const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
-  const updateIfElseBlockPosition = useWorkflowStore((s) => s.updateIfElseBlockPosition)
-  const updateIfElseBlock = useWorkflowStore((s) => s.updateIfElseBlock)
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const updateDoorBlockPosition = useWorkflowStore((s) => s.updateDoorBlockPosition)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
@@ -198,7 +191,6 @@ export default function DatasetCanvas() {
         ...unlabelledBlocks.map((b) => ({ id: b.id, type: 'unlabelled', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...modelBlocks.map((b) => ({ id: b.id, type: 'model', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...rlBlocks.map((b) => ({ id: b.id, type: 'rl-gridworld', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...ifElseBlocks.map((b) => ({ id: b.id, type: 'ifelse', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...doorBlocks.map((b) => ({ id: b.id, type: 'door', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...bulbBlocks.map((b) => ({ id: b.id, type: 'bulb', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...sensorBlocks.map((b) => ({ id: b.id, type: 'sensor', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
@@ -208,7 +200,7 @@ export default function DatasetCanvas() {
         ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
       ]
     })
-  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+  }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
       sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfNodes])
 
   // Sync linked IDs → RF edges
@@ -230,25 +222,11 @@ export default function DatasetCanvas() {
         type: 'test',
         animated: b.testStatus === 'running',
       } as Edge)),
-      // ML prediction → ifelse
-      ...ifElseBlocks.filter((b) => b.linkedModelId !== null).map((b) => ({
-        id: `pred-${b.linkedModelId}-${b.id}`,
+      // model → condition (unified IF block in model mode)
+      ...conditionBlocks.filter((b) => b.linkedModelId != null).map((b) => ({
+        id: `model-cond-${b.linkedModelId}-${b.id}`,
         source: b.linkedModelId!, sourceHandle: 'prediction-out',
-        target: b.id, targetHandle: 'ifelse-in',
-        type: 'workflow',
-      } as Edge)),
-      // ifelse → door (ML)
-      ...doorBlocks.filter((b) => b.linkedIfElseId !== null).map((b) => ({
-        id: `action-${b.linkedIfElseId}-${b.id}`,
-        source: b.linkedIfElseId!, sourceHandle: 'ifelse-out',
-        target: b.id, targetHandle: 'door-in',
-        type: 'workflow',
-      } as Edge)),
-      // ifelse → bulb (ML)
-      ...bulbBlocks.filter((b) => b.linkedIfElseId !== null).map((b) => ({
-        id: `bulb-${b.linkedIfElseId}-${b.id}`,
-        source: b.linkedIfElseId!, sourceHandle: 'ifelse-out',
-        target: b.id, targetHandle: 'bulb-in',
+        target: b.id, targetHandle: 'condition-in',
         type: 'workflow',
       } as Edge)),
 
@@ -303,7 +281,7 @@ export default function DatasetCanvas() {
         type: 'rule',
       } as Edge)),
     ])
-  }, [modelBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+  }, [modelBlocks, doorBlocks, bulbBlocks,
       conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, setRfEdges])
 
   const onNodesChange = useCallback(
@@ -314,7 +292,6 @@ export default function DatasetCanvas() {
           const { id, position: p } = change
           if (modelBlocks.some((b) => b.id === id)) updateModelBlockPosition(id, p)
           else if (rlBlocks.some((b) => b.id === id)) updateRLBlockPosition(id, p)
-          else if (ifElseBlocks.some((b) => b.id === id)) updateIfElseBlockPosition(id, p)
           else if (doorBlocks.some((b) => b.id === id)) updateDoorBlockPosition(id, p)
           else if (bulbBlocks.some((b) => b.id === id)) updateBulbBlockPosition(id, p)
           else if (sensorBlocks.some((b) => b.id === id)) updateSensorBlockPosition(id, p)
@@ -330,10 +307,10 @@ export default function DatasetCanvas() {
       }
     },
     [
-      labelledBlocks, modelBlocks, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks,
+      labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
       sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
-      updateIfElseBlockPosition, updateDoorBlockPosition, updateBulbBlockPosition,
+      updateDoorBlockPosition, updateBulbBlockPosition,
       updateSensorBlockPosition, updateConditionBlockPosition, updateLogicBlockPosition,
       updateFanBlockPosition, updateAlarmBlockPosition, setRfNodes,
     ]
@@ -349,27 +326,21 @@ export default function DatasetCanvas() {
         updateModelBlock(target, { testLinkedBlockId: source, testStatus: 'idle', testResults: null })
       } else if (targetHandle === 'in') {
         updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null })
-      } else if (targetHandle === 'ifelse-in') {
-        updateIfElseBlock(target, { linkedModelId: source, currentOutput: null })
       } else if (targetHandle === 'door-in') {
-        if (sourceHandle === 'rule-out') {
-          updateDoorBlock(target, { linkedRuleBlockId: source, linkedIfElseId: null, isOpen: false })
-          evaluateGraph()
-        } else {
-          updateDoorBlock(target, { linkedIfElseId: source, linkedRuleBlockId: null, isOpen: false })
-        }
+        updateDoorBlock(target, { linkedRuleBlockId: source, isOpen: false })
+        evaluateGraph()
       } else if (targetHandle === 'bulb-in') {
-        if (sourceHandle === 'rule-out') {
-          updateBulbBlock(target, { linkedRuleBlockId: source, linkedIfElseId: null, isOn: false })
-          evaluateGraph()
-        } else {
-          updateBulbBlock(target, { linkedIfElseId: source, linkedRuleBlockId: null, isOn: false })
-        }
+        updateBulbBlock(target, { linkedRuleBlockId: source, isOn: false })
+        evaluateGraph()
       }
 
       // ── Rule pipeline ────────────────────────────────────────────────────
       else if (targetHandle === 'condition-in') {
-        updateConditionBlock(target, { linkedSensorId: source, currentOutput: null })
+        if (sourceHandle === 'prediction-out') {
+          updateConditionBlock(target, { linkedModelId: source, linkedSensorId: null, currentOutput: null })
+        } else {
+          updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null })
+        }
         evaluateGraph()
       } else if (targetHandle === 'logic-in-1') {
         const block = logicBlocks.find((b) => b.id === target)
@@ -399,7 +370,7 @@ export default function DatasetCanvas() {
       }
     },
     [
-      updateModelBlock, updateIfElseBlock, updateDoorBlock, updateBulbBlock,
+      updateModelBlock, updateDoorBlock, updateBulbBlock,
       updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
       logicBlocks, evaluateGraph,
     ]

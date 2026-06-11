@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { DoorBlock } from '@/types/workflow'
@@ -8,18 +7,7 @@ import { useWorkflowStore } from '@/store/useWorkflowStore'
 
 export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBlock }>) {
   const { block } = data
-  const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
   const removeDoorBlock = useWorkflowStore((s) => s.removeDoorBlock)
-  const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
-
-  const linkedIfElse = ifElseBlocks.find((b) => b.id === block.linkedIfElseId)
-
-  // Sync open/close state from connected if/else block
-  useEffect(() => {
-    if (!linkedIfElse) return
-    updateDoorBlock(block.id, { isOpen: linkedIfElse.currentOutput === true })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedIfElse?.currentOutput, block.id])
 
   const isOpen = block.isOpen
 
@@ -86,8 +74,8 @@ export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBloc
           {isOpen ? '🚪 Open!' : '🔒 Closed'}
         </p>
 
-        {!block.linkedIfElseId && !block.linkedRuleBlockId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect If/Else or rule</p>
+        {!block.linkedRuleBlockId && (
+          <p className="text-xs text-white/25 font-body text-center">Connect a rule</p>
         )}
       </div>
     </div>

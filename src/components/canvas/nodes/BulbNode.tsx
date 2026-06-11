@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { BulbBlock } from '@/types/workflow'
@@ -8,17 +7,7 @@ import { useWorkflowStore } from '@/store/useWorkflowStore'
 
 export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBlock }>) {
   const { block } = data
-  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
   const removeBulbBlock = useWorkflowStore((s) => s.removeBulbBlock)
-  const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
-
-  const linkedIfElse = ifElseBlocks.find((b) => b.id === block.linkedIfElseId)
-
-  useEffect(() => {
-    if (!linkedIfElse) return
-    updateBulbBlock(block.id, { isOn: linkedIfElse.currentOutput === true })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedIfElse?.currentOutput, block.id])
 
   const isOn = block.isOn
 
@@ -74,8 +63,8 @@ export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBloc
           {isOn ? '💡 On!' : '⬛ Off'}
         </p>
 
-        {!block.linkedIfElseId && !block.linkedRuleBlockId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect If/Else or rule</p>
+        {!block.linkedRuleBlockId && (
+          <p className="text-xs text-white/25 font-body text-center">Connect a rule</p>
         )}
       </div>
     </div>

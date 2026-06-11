@@ -88,7 +88,6 @@ export default function DatasetBuilderPage() {
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
-  const ifElseBlocks = useWorkflowStore((s) => s.ifElseBlocks)
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
@@ -119,9 +118,6 @@ export default function DatasetBuilderPage() {
       })
       if (saved.rlBlocks) {
         useRLStore.setState({ rlBlocks: saved.rlBlocks })
-      }
-      if (saved.ifElseBlocks) {
-        useWorkflowStore.setState({ ifElseBlocks: saved.ifElseBlocks })
       }
       if (saved.doorBlocks) {
         useWorkflowStore.setState({ doorBlocks: saved.doorBlocks })
@@ -163,7 +159,6 @@ export default function DatasetBuilderPage() {
       modelBlocks,
       trainedModels,
       rlBlocks,
-      ifElseBlocks,
       doorBlocks,
       bulbBlocks,
       sensorBlocks,
@@ -172,7 +167,7 @@ export default function DatasetBuilderPage() {
       fanBlocks,
       alarmBlocks,
     })
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, ifElseBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, logicBlocks, fanBlocks, alarmBlocks])
 
   // Check data-scientist badge
   useEffect(() => {
