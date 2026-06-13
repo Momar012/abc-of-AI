@@ -13,18 +13,20 @@ interface UIState {
   firstVisit: boolean
   showEducationalOverlay: boolean
   selectedBlockId: string | null
-  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer' | null
+  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer' | 'door' | 'bulb' | null
   testResultsModalBlockId: string | null
   clusterResultsModalBlockId: string | null
   labellingModalBlockId: string | null
   selectedBankItemIds: string[]
+  leftPanelCollapsed: boolean
+  rightPanelCollapsed: boolean
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
   earnBadge: (badgeId: string) => void
   setFirstVisitSeen: () => void
   setShowEducationalOverlay: (show: boolean) => void
-  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer') => void
+  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer' | 'door' | 'bulb') => void
   clearSelectedBlock: () => void
   openTestResultsModal: (blockId: string) => void
   closeTestResultsModal: () => void
@@ -34,6 +36,8 @@ interface UIState {
   closeLabellingModal: () => void
   toggleBankItemSelection: (id: string) => void
   clearBankSelection: () => void
+  toggleLeftPanel: () => void
+  toggleRightPanel: () => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -47,6 +51,8 @@ export const useUIStore = create<UIState>((set) => ({
   clusterResultsModalBlockId: null,
   labellingModalBlockId: null,
   selectedBankItemIds: [],
+  leftPanelCollapsed: false,
+  rightPanelCollapsed: false,
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -66,7 +72,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   setShowEducationalOverlay: (show) => set({ showEducationalOverlay: show }),
 
-  setSelectedBlock: (id, type) => set({ selectedBlockId: id, selectedBlockType: type }),
+  setSelectedBlock: (id, type) => set({ selectedBlockId: id, selectedBlockType: type, rightPanelCollapsed: false }),
 
   clearSelectedBlock: () => set({ selectedBlockId: null, selectedBlockType: null }),
 
@@ -87,4 +93,7 @@ export const useUIStore = create<UIState>((set) => ({
     })),
 
   clearBankSelection: () => set({ selectedBankItemIds: [] }),
+
+  toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
+  toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
 }))

@@ -4,15 +4,17 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { DoorBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useUIStore } from '@/store/useUIStore'
 
 export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBlock }>) {
   const { block } = data
   const removeDoorBlock = useWorkflowStore((s) => s.removeDoorBlock)
+  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const isOpen = block.isOpen
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'door')}>
       <Handle
         type="target"
         position={Position.Left}

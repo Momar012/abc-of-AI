@@ -4,15 +4,17 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { BulbBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useUIStore } from '@/store/useUIStore'
 
 export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBlock }>) {
   const { block } = data
   const removeBulbBlock = useWorkflowStore((s) => s.removeBulbBlock)
+  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const isOn = block.isOn
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'bulb')}>
       <Handle
         type="target"
         position={Position.Left}

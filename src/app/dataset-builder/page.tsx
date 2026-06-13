@@ -86,6 +86,10 @@ export default function DatasetBuilderPage() {
   const setShowEducationalOverlay = useUIStore((s) => s.setShowEducationalOverlay)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
+  const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
+  const rightPanelCollapsed = useUIStore((s) => s.rightPanelCollapsed)
+  const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
+  const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
@@ -268,10 +272,21 @@ export default function DatasetBuilderPage() {
       <div className="h-screen flex flex-col overflow-hidden">
         <TopNav />
 
-        <div className="flex flex-1 gap-4 p-4 overflow-hidden">
+        <div className="flex flex-1 gap-3 2xl:gap-4 p-3 2xl:p-4 overflow-hidden">
           {/* Left panel — Data Bank + My Datasets + My Models */}
-          <div className="flex-shrink-0 w-72 flex flex-col gap-3 overflow-hidden min-h-0">
-            <DataBank />
+          <div className="flex-shrink-0 flex items-stretch gap-1 min-h-0">
+            {!leftPanelCollapsed && (
+              <div className="w-60 2xl:w-72 flex flex-col gap-3 overflow-hidden min-h-0">
+                <DataBank />
+              </div>
+            )}
+            <button
+              onClick={toggleLeftPanel}
+              title={leftPanelCollapsed ? 'Show Data Bank' : 'Hide Data Bank'}
+              className="glass-card flex-shrink-0 w-5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+            >
+              {leftPanelCollapsed ? '›' : '‹'}
+            </button>
           </div>
 
           {/* Center — Canvas */}
@@ -283,23 +298,34 @@ export default function DatasetBuilderPage() {
           </div>
 
           {/* Right panel — Inspector or Getting Started */}
-          <div className="flex-shrink-0 w-80 flex flex-col gap-3 overflow-y-auto min-h-0">
-            {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
-              <RLInspector key={selectedBlockId} />
-            ) : selectedBlockId && selectedBlockType === 'model' ? (
-              <ModelInspector key={selectedBlockId} />
-            ) : selectedBlockId && selectedBlockType === 'sensor' ? (
-              <SensorInspector key={selectedBlockId} />
-            ) : selectedBlockId && selectedBlockType === 'condition' ? (
-              <ConditionInspector key={selectedBlockId} />
-            ) : selectedBlockId && selectedBlockType === 'timer' ? (
-              <TimerInspector key={selectedBlockId} />
-            ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac') ? (
-              <LogicInspector key={selectedBlockId} />
-            ) : selectedBlockId ? (
-              <BlockInspector key={selectedBlockId} />
-            ) : (
-              <GettingStartedPanel />
+          <div className="flex-shrink-0 flex items-stretch gap-1 min-h-0">
+            <button
+              onClick={toggleRightPanel}
+              title={rightPanelCollapsed ? 'Show Inspector' : 'Hide Inspector'}
+              className="glass-card flex-shrink-0 w-5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+            >
+              {rightPanelCollapsed ? '‹' : '›'}
+            </button>
+            {!rightPanelCollapsed && (
+              <div className="w-64 2xl:w-80 flex flex-col gap-3 overflow-y-auto min-h-0">
+                {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
+                  <RLInspector key={selectedBlockId} />
+                ) : selectedBlockId && selectedBlockType === 'model' ? (
+                  <ModelInspector key={selectedBlockId} />
+                ) : selectedBlockId && selectedBlockType === 'sensor' ? (
+                  <SensorInspector key={selectedBlockId} />
+                ) : selectedBlockId && selectedBlockType === 'condition' ? (
+                  <ConditionInspector key={selectedBlockId} />
+                ) : selectedBlockId && selectedBlockType === 'timer' ? (
+                  <TimerInspector key={selectedBlockId} />
+                ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
+                  <LogicInspector key={selectedBlockId} />
+                ) : selectedBlockId ? (
+                  <BlockInspector key={selectedBlockId} />
+                ) : (
+                  <GettingStartedPanel />
+                )}
+              </div>
             )}
           </div>
         </div>

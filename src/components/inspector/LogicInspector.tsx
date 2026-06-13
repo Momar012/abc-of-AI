@@ -1,6 +1,7 @@
 'use client'
 
 import { useRuleStore } from '@/store/useRuleStore'
+import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useUIStore } from '@/store/useUIStore'
 
 const LOGIC_INFO = {
@@ -244,6 +245,88 @@ function ACBlockView({ id }: { id: string }) {
   )
 }
 
+function DoorBlockView({ id }: { id: string }) {
+  const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
+  const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
+  const block = doorBlocks.find((b) => b.id === id)
+  if (!block) return null
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">🚪</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Actuator</p>
+          <p className="text-sm font-heading font-bold text-amber-300">Door</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updateDoorBlock(block.id, { name: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-amber-400 bg-transparent"
+        />
+      </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider mb-1">Status</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOpen ? 'text-emerald-400' : 'text-white/40'}`}>
+          {block.isOpen ? '🚪 Open!' : '🔒 Closed'}
+        </p>
+      </div>
+
+      {!block.linkedRuleBlockId && (
+        <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3">
+          <p className="text-xs text-amber-200/80 font-body">Connect a rule block&apos;s output to this door&apos;s left handle to control it.</p>
+        </div>
+      )}
+    </>
+  )
+}
+
+function BulbBlockView({ id }: { id: string }) {
+  const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
+  const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
+  const block = bulbBlocks.find((b) => b.id === id)
+  if (!block) return null
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">💡</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Actuator</p>
+          <p className="text-sm font-heading font-bold text-yellow-300">Bulb</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updateBulbBlock(block.id, { name: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 bg-transparent"
+        />
+      </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider mb-1">Status</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOn ? 'text-yellow-400' : 'text-white/40'}`}>
+          {block.isOn ? '💡 On!' : '⬛ Off'}
+        </p>
+      </div>
+
+      {!block.linkedRuleBlockId && (
+        <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 p-3">
+          <p className="text-xs text-yellow-200/80 font-body">Connect a rule block&apos;s output to this bulb&apos;s left handle to control it.</p>
+        </div>
+      )}
+    </>
+  )
+}
+
 export default function LogicInspector() {
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
@@ -266,6 +349,8 @@ export default function LogicInspector() {
       {selectedBlockType === 'fan'   && <FanBlockView   id={selectedBlockId} />}
       {selectedBlockType === 'alarm' && <AlarmBlockView id={selectedBlockId} />}
       {selectedBlockType === 'ac'    && <ACBlockView    id={selectedBlockId} />}
+      {selectedBlockType === 'door'  && <DoorBlockView  id={selectedBlockId} />}
+      {selectedBlockType === 'bulb'  && <BulbBlockView  id={selectedBlockId} />}
     </div>
   )
 }
