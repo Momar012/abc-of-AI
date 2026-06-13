@@ -46,7 +46,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const { project } = useReactFlow()
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
-  const addModelBlock = useModelStore((s) => s.addModelBlock)
+  const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
   const addModelBlockFromSaved = useModelStore((s) => s.addModelBlockFromSaved)
   const addRLBlock = useRLStore((s) => s.addRLBlock)
   const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
@@ -79,7 +79,9 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         const blockType = event.active.data.current?.blockType
         if (blockType === 'labelled') addLabelledBlock(flowPos)
         else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
-        else if (blockType === 'model') addModelBlock(flowPos)
+        else if (blockType === 'model-image-supervised') addModelBlockWithType('image-supervised', flowPos)
+        else if (blockType === 'model-image-unsupervised') addModelBlockWithType('image-unsupervised', flowPos)
+        else if (blockType === 'model-text-corpus') addModelBlockWithType('text-corpus', flowPos)
         else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
         else if (blockType === 'door') addDoorBlock(flowPos)
         else if (blockType === 'bulb') addBulbBlock(flowPos)
@@ -366,7 +368,13 @@ export default function DatasetCanvas() {
       if (targetHandle === 'test-in') {
         updateModelBlock(target, { testLinkedBlockId: source, testStatus: 'idle', testResults: null })
       } else if (targetHandle === 'in') {
-        updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null })
+        const current = modelBlocks.find((b) => b.id === target)
+        if (current?.trainedModelId && current.trainedLinkedBlockId === source) {
+          // Reconnecting the same data the saved model was trained on — keep trained state.
+          updateModelBlock(target, { linkedBlockId: source })
+        } else {
+          updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null })
+        }
       } else if (targetHandle === 'door-in') {
         updateDoorBlock(target, { linkedRuleBlockId: source, isOpen: false })
         evaluateGraph()
@@ -427,7 +435,7 @@ export default function DatasetCanvas() {
       updateModelBlock, updateDoorBlock, updateBulbBlock,
       updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
       updateACBlock, updateTimerBlock,
-      logicBlocks, sensorBlocks, evaluateGraph,
+      logicBlocks, sensorBlocks, evaluateGraph, modelBlocks,
     ]
   )
 

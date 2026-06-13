@@ -62,7 +62,7 @@ export default function DatasetEdge({
       >
         <div style={{ width: 20, height: 20 }}>
           <button
-            onClick={() => updateModelBlock(target, { linkedBlockId: null, status: 'idle' })}
+            onClick={() => updateModelBlock(target, { linkedBlockId: null })}
             style={{
               width: 20,
               height: 20,

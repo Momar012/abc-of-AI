@@ -21,6 +21,7 @@ export interface ModelBlock {
   linkedBlockId: string | null
   status: ModelStatus
   trainedModelId: string | null
+  trainedLinkedBlockId: string | null
   errorMessage?: string
   testLinkedBlockId: string | null
   testStatus: TestStatus

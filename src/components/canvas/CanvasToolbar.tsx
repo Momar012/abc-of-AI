@@ -9,13 +9,15 @@ import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { SensorType } from '@/types/rules'
+import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
 
 type BlockType =
-  | 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'door' | 'bulb'
+  | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
   | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
   | 'fan' | 'alarm' | 'ac' | 'timer'
+  | 'model-image-supervised' | 'model-image-unsupervised' | 'model-text-corpus'
 
 function DraggablePaletteItem({
   blockType,
@@ -128,6 +130,59 @@ function ActionsMenu() {
   )
 }
 
+function ModelMenu() {
+  const [open, setOpen] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
+
+  useDndMonitor({
+    onDragStart:  () => setDragging(true),
+    onDragEnd:    () => { setDragging(false); setOpen(false) },
+    onDragCancel: () => { setDragging(false); setOpen(false) },
+  })
+
+  const handleToggle = () => {
+    if (!open && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 4, left: rect.left })
+    }
+    setOpen((o) => !o)
+  }
+
+  return (
+    <div ref={wrapperRef}>
+      {open && createPortal(
+        <>
+          {!dragging && (
+            <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
+          )}
+          <div
+            className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-44 shadow-xl"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🤖 Models</p>
+            {MODEL_CATALOG.filter((m) => m.available).map((m) => (
+              <DraggableActionItem
+                key={m.type}
+                blockType={`model-${m.type}` as BlockType}
+                label={`${m.icon} ${m.name}`}
+                onAdd={() => { addModelBlockWithType(m.type); setOpen(false) }}
+              />
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
+      <GlowButton size="sm" variant="secondary" onClick={handleToggle}>
+        🤖 Model {open ? '▴' : '▾'}
+      </GlowButton>
+    </div>
+  )
+}
+
 function RuleBasedMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -212,7 +267,6 @@ function RuleBasedMenu() {
 export default function CanvasToolbar() {
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
-  const addModelBlock = useModelStore((s) => s.addModelBlock)
   const addRLBlock = useRLStore((s) => s.addRLBlock)
   return (
     <div className="flex items-center gap-2 p-2 glass-card-dark rounded-xl flex-wrap">
@@ -223,9 +277,7 @@ export default function CanvasToolbar() {
       <DraggablePaletteItem blockType="unlabelled" variant="secondary" onClick={addUnlabelledBlock}>
         📦 Unlabelled
       </DraggablePaletteItem>
-      <DraggablePaletteItem blockType="model" variant="secondary" onClick={addModelBlock}>
-        🤖 Model
-      </DraggablePaletteItem>
+      <ModelMenu />
       <DraggablePaletteItem blockType="rl-gridworld" variant="secondary" onClick={addRLBlock}>
         🎮 RL Gridworld
       </DraggablePaletteItem>

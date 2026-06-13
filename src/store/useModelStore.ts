@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
-import { ModelBlock, TrainedModel } from '@/types/model'
+import { ModelBlock, ModelType, TrainedModel } from '@/types/model'
 
 interface ModelState {
   modelBlocks: ModelBlock[]
   trainedModels: TrainedModel[]
 
-  addModelBlock: (pos?: { x: number; y: number }) => void
+  addModelBlockWithType: (modelType: ModelType, pos?: { x: number; y: number }) => void
   addModelBlockFromSaved: (model: TrainedModel, pos?: { x: number; y: number }) => void
   removeModelBlock: (id: string) => void
   updateModelBlock: (id: string, updates: Partial<ModelBlock>) => void
@@ -20,7 +20,7 @@ export const useModelStore = create<ModelState>((set) => ({
   modelBlocks: [],
   trainedModels: [],
 
-  addModelBlock: (pos?) =>
+  addModelBlockWithType: (modelType, pos?) =>
     set((s) => ({
       modelBlocks: [
         ...s.modelBlocks,
@@ -29,10 +29,11 @@ export const useModelStore = create<ModelState>((set) => ({
           type: 'model',
           position: pos ?? { x: 300 + s.modelBlocks.length * 40, y: 200 + s.modelBlocks.length * 40 },
           name: `Model ${s.modelBlocks.length + 1}`,
-          modelType: null,
+          modelType,
           linkedBlockId: null,
           status: 'idle',
           trainedModelId: null,
+          trainedLinkedBlockId: null,
           testLinkedBlockId: null,
           testStatus: 'idle',
           testResults: null,
@@ -55,6 +56,7 @@ export const useModelStore = create<ModelState>((set) => ({
           linkedBlockId: null,
           status: 'trained',
           trainedModelId: model.id,
+          trainedLinkedBlockId: null,
           testLinkedBlockId: null,
           testStatus: 'idle',
           testResults: null,
