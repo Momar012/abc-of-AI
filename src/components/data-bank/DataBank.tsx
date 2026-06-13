@@ -17,46 +17,46 @@ export default function DataBank() {
   const [activeTab, setActiveTab] = useState<Tab>('bank')
 
   return (
-    <aside className="w-72 flex-shrink-0 flex flex-col gap-0 flex-1 min-h-0 overflow-hidden glass-card">
+    <aside className="w-full flex-shrink-0 flex flex-col gap-0 flex-1 min-h-0 overflow-hidden glass-card">
       {/* Tab bar */}
       <div className="flex border-b border-white/10">
         <button
           onClick={() => setActiveTab('bank')}
-          className={`flex-1 py-2.5 text-xs font-heading font-semibold transition-colors ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'bank'
               ? 'text-white border-b-2 border-violet-400 -mb-px'
               : 'text-white/40 hover:text-white/70'
           }`}
         >
-          📁 Data
-          <span className="ml-1 text-white/30">{bankItems.length}</span>
+          <span className="truncate">📁 Data</span>
+          <span className="flex-shrink-0 text-white/30">{bankItems.length}</span>
         </button>
         <button
           onClick={() => setActiveTab('saved')}
-          className={`flex-1 py-2.5 text-xs font-heading font-semibold transition-colors ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'saved'
               ? 'text-white border-b-2 border-violet-400 -mb-px'
               : 'text-white/40 hover:text-white/70'
           }`}
         >
-          📋 Datasets
+          <span className="truncate">📋 Datasets</span>
           {savedDatasets.length > 0 && (
-            <span className="ml-1 bg-violet-500/60 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
+            <span className="flex-shrink-0 bg-violet-500/60 text-white text-xs rounded-full px-1 py-0.5 font-semibold">
               {savedDatasets.length}
             </span>
           )}
         </button>
         <button
           onClick={() => setActiveTab('models')}
-          className={`flex-1 py-2.5 text-xs font-heading font-semibold transition-colors ${
+          className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'models'
               ? 'text-white border-b-2 border-violet-400 -mb-px'
               : 'text-white/40 hover:text-white/70'
           }`}
         >
-          🤖 Models
+          <span className="truncate">🤖 Models</span>
           {trainedModels.length > 0 && (
-            <span className="ml-1 bg-emerald-500/60 text-white text-xs rounded-full px-1.5 py-0.5 font-semibold">
+            <span className="flex-shrink-0 bg-emerald-500/60 text-white text-xs rounded-full px-1 py-0.5 font-semibold">
               {trainedModels.length}
             </span>
           )}
