@@ -36,6 +36,24 @@ import { useRuleStore } from '@/store/useRuleStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
+function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ transform: direction === 'left' ? 'rotate(180deg)' : undefined }}
+    >
+      <polyline points="9 6 15 12 9 18" />
+    </svg>
+  )
+}
+
 function GettingStartedPanel() {
   const steps = [
     { emoji: '📸', step: '1', title: 'Feed it photos', body: 'Upload some cat photos and some dog photos using the panel on the left. Try at least 5 of each!' },
@@ -275,17 +293,21 @@ export default function DatasetBuilderPage() {
         <div className="flex flex-1 gap-3 2xl:gap-4 p-3 2xl:p-4 overflow-hidden">
           {/* Left panel — Data Bank + My Datasets + My Models */}
           <div className="flex-shrink-0 flex items-stretch gap-1 min-h-0">
-            {!leftPanelCollapsed && (
-              <div className="w-60 2xl:w-72 flex flex-col gap-3 overflow-hidden min-h-0">
+            <div
+              className={`flex flex-col gap-3 overflow-hidden min-h-0 transition-[width,opacity] duration-300 ease-in-out ${
+                leftPanelCollapsed ? 'w-0 opacity-0' : 'w-60 2xl:w-72 opacity-100'
+              }`}
+            >
+              <div className="w-60 2xl:w-72 flex flex-col gap-3 min-h-0 flex-1">
                 <DataBank />
               </div>
-            )}
+            </div>
             <button
               onClick={toggleLeftPanel}
               title={leftPanelCollapsed ? 'Show Data Bank' : 'Hide Data Bank'}
-              className="glass-card flex-shrink-0 w-5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              className="glass-card flex-shrink-0 w-6 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
             >
-              {leftPanelCollapsed ? '›' : '‹'}
+              <ChevronIcon direction={leftPanelCollapsed ? 'right' : 'left'} />
             </button>
           </div>
 
@@ -302,12 +324,16 @@ export default function DatasetBuilderPage() {
             <button
               onClick={toggleRightPanel}
               title={rightPanelCollapsed ? 'Show Inspector' : 'Hide Inspector'}
-              className="glass-card flex-shrink-0 w-5 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              className="glass-card flex-shrink-0 w-6 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
             >
-              {rightPanelCollapsed ? '‹' : '›'}
+              <ChevronIcon direction={rightPanelCollapsed ? 'left' : 'right'} />
             </button>
-            {!rightPanelCollapsed && (
-              <div className="w-64 2xl:w-80 flex flex-col gap-3 overflow-y-auto min-h-0">
+            <div
+              className={`flex flex-col gap-3 overflow-hidden min-h-0 transition-[width,opacity] duration-300 ease-in-out ${
+                rightPanelCollapsed ? 'w-0 opacity-0' : 'w-64 2xl:w-80 opacity-100'
+              }`}
+            >
+              <div className="w-64 2xl:w-80 flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
                 {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
                   <RLInspector key={selectedBlockId} />
                 ) : selectedBlockId && selectedBlockType === 'model' ? (
@@ -326,7 +352,7 @@ export default function DatasetBuilderPage() {
                   <GettingStartedPanel />
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

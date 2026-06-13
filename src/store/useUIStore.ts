@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
 
 export interface Toast {
@@ -40,7 +41,7 @@ interface UIState {
   toggleRightPanel: () => void
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>()(persist((set) => ({
   toasts: [],
   earnedBadges: [],
   firstVisit: true,
@@ -96,4 +97,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
+}), {
+  name: 'abcai_ui_panels_v1',
+  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed }),
 }))
