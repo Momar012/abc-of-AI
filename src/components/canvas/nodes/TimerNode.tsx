@@ -17,9 +17,23 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
   const removeTimerBlock = useRuleStore((s) => s.removeTimerBlock)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
+  const timerMode = block.timerMode ?? 'duration'
+
   const displaySeconds = block.isRunning
     ? block.remainingSeconds
     : block.durationMinutes * 60 + block.durationSeconds
+
+  const isActive = block.isRunning || block.currentOutput === true
+  const statusLabel =
+    timerMode === 'delay-on'
+      ? block.isRunning
+        ? '⏳ Waiting…'
+        : block.currentOutput === true
+          ? '✅ ON'
+          : '⬛ Idle'
+      : block.isRunning
+        ? '⏳ Running…'
+        : '⬛ Idle'
 
   return (
     <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'timer')}>
@@ -70,17 +84,17 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
           animate={block.isRunning ? { scale: [1, 1.08, 1] } : { scale: 1 }}
           transition={block.isRunning ? { repeat: Infinity, duration: 1, ease: 'easeInOut' } : { duration: 0 }}
           className="text-5xl select-none"
-          style={block.isRunning ? { filter: 'drop-shadow(0 0 10px rgba(167,139,250,0.8))' } : { opacity: 0.5 }}
+          style={isActive ? { filter: 'drop-shadow(0 0 10px rgba(167,139,250,0.8))' } : { opacity: 0.5 }}
         >
           ⏱️
         </motion.div>
 
-        <p className={`text-lg font-heading font-extrabold ${block.isRunning ? 'text-violet-300' : 'text-white/40'}`}>
+        <p className={`text-lg font-heading font-extrabold ${isActive ? 'text-violet-300' : 'text-white/40'}`}>
           {formatTime(displaySeconds)}
         </p>
 
-        <p className={`text-xs font-heading font-bold ${block.isRunning ? 'text-violet-400' : 'text-white/40'}`}>
-          {block.isRunning ? '⏳ Running…' : '⬛ Idle'}
+        <p className={`text-xs font-heading font-bold ${isActive ? 'text-violet-400' : 'text-white/40'}`}>
+          {statusLabel}
         </p>
 
         {!block.linkedRuleBlockId && (

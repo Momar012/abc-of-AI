@@ -25,12 +25,34 @@ export default function TimerInspector() {
       ?? logicBlocks.find((l) => l.id === block.linkedRuleBlockId)
     : null
 
+  const timerMode = block.timerMode ?? 'duration'
+
   const displaySeconds = block.isRunning
     ? block.remainingSeconds
     : block.durationMinutes * 60 + block.durationSeconds
 
-  const statusColor = block.isRunning ? 'text-violet-400' : 'text-white/40'
-  const statusLabel = block.isRunning ? `⏳ Running… ${formatTime(displaySeconds)}` : '⬛ Idle'
+  const statusColor = block.isRunning || block.currentOutput === true ? 'text-violet-400' : 'text-white/40'
+  const statusLabel =
+    timerMode === 'delay-on'
+      ? block.isRunning
+        ? `⏳ Waiting… ${formatTime(displaySeconds)}`
+        : block.currentOutput === true
+          ? '✅ ON'
+          : '⬛ Idle'
+      : block.isRunning
+        ? `⏳ Running… ${formatTime(displaySeconds)}`
+        : '⬛ Idle'
+
+  const setTimerMode = (mode: 'duration' | 'delay-on') => {
+    if (mode === timerMode) return
+    updateTimerBlock(block.id, {
+      timerMode: mode,
+      isRunning: false,
+      remainingSeconds: 0,
+      currentOutput: null,
+      lastTriggerInput: null,
+    })
+  }
 
   return (
     <div className="glass-card flex flex-col gap-4 p-4">
@@ -72,9 +94,38 @@ export default function TimerInspector() {
         )}
       </div>
 
+      {/* Mode toggle */}
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Mode</label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setTimerMode('duration')}
+            className={`flex-1 px-3 py-2 rounded-lg border text-xs font-heading font-bold transition-all ${
+              timerMode === 'duration'
+                ? 'border-violet-400 bg-violet-500/20 text-white'
+                : 'border-white/15 text-white/50 hover:text-white'
+            }`}
+          >
+            ⏳ Stay ON for…
+          </button>
+          <button
+            onClick={() => setTimerMode('delay-on')}
+            className={`flex-1 px-3 py-2 rounded-lg border text-xs font-heading font-bold transition-all ${
+              timerMode === 'delay-on'
+                ? 'border-violet-400 bg-violet-500/20 text-white'
+                : 'border-white/15 text-white/50 hover:text-white'
+            }`}
+          >
+            🕐 Turn ON after…
+          </button>
+        </div>
+      </div>
+
       {/* Duration inputs */}
       <div className="flex flex-col gap-2">
-        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Run for…</label>
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">
+          {timerMode === 'delay-on' ? 'Wait then turn ON…' : 'Run for…'}
+        </label>
         <div className="flex items-center gap-2">
           <div className="flex flex-col gap-1 flex-1">
             <input
@@ -108,7 +159,9 @@ export default function TimerInspector() {
       </div>
 
       <p className="text-[10px] text-white/25 font-body text-center italic">
-        When the connected rule turns TRUE, this timer counts down from the time above and keeps its output ON until it reaches 0.
+        {timerMode === 'delay-on'
+          ? 'When the connected rule turns TRUE, this timer waits, then turns its output ON — and OFF again as soon as the rule turns FALSE.'
+          : 'When the connected rule turns TRUE, this timer counts down from the time above and keeps its output ON until it reaches 0.'}
       </p>
     </div>
   )

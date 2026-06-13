@@ -274,6 +274,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
           id: uuid(), type: 'timer',
           position: pos ?? { x: 700 + s.timerBlocks.length * 40, y: 450 + s.timerBlocks.length * 40 },
           name: `Timer ${s.timerBlocks.length + 1}`,
+          timerMode: 'duration',
           durationMinutes: 0, durationSeconds: 10,
           linkedRuleBlockId: null,
           isRunning: false, remainingSeconds: 0,
@@ -299,6 +300,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       if (!t.isRunning) return t
       const remaining = t.remainingSeconds - 1
       if (remaining <= 0) {
+        if (t.timerMode === 'delay-on') {
+          return { ...t, isRunning: false, remainingSeconds: 0, currentOutput: t.lastTriggerInput === true }
+        }
         return { ...t, isRunning: false, remainingSeconds: 0, currentOutput: false }
       }
       return { ...t, remainingSeconds: remaining }
@@ -357,6 +361,27 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     // 3. Evaluate timer blocks (rising-edge trigger starts the countdown; ticking is handled by tickTimers)
     const newTimers = timerBlocks.map((t) => {
       const triggerInput = t.linkedRuleBlockId ? (resolved.get(t.linkedRuleBlockId) ?? null) : null
+
+      if (t.timerMode === 'delay-on') {
+        // On-delay timer: output stays false while waiting, becomes true once the
+        // delay elapses with the trigger still true, and tracks the trigger back to
+        // false immediately (cancelling any in-progress countdown).
+        if (triggerInput !== true) {
+          return { ...t, isRunning: false, remainingSeconds: 0, currentOutput: false, lastTriggerInput: triggerInput }
+        }
+        if (t.currentOutput === true) {
+          return { ...t, lastTriggerInput: triggerInput }
+        }
+        if (!t.isRunning) {
+          const total = t.durationMinutes * 60 + t.durationSeconds
+          if (total <= 0) {
+            return { ...t, isRunning: false, remainingSeconds: 0, currentOutput: true, lastTriggerInput: triggerInput }
+          }
+          return { ...t, isRunning: true, remainingSeconds: total, currentOutput: false, lastTriggerInput: triggerInput }
+        }
+        return { ...t, lastTriggerInput: triggerInput }
+      }
+
       if (triggerInput === true && t.lastTriggerInput !== true && !t.isRunning) {
         return {
           ...t,

@@ -76,6 +76,7 @@ export interface TimerBlock {
   type: 'timer'
   position: { x: number; y: number }
   name: string
+  timerMode?: 'duration' | 'delay-on'
   durationMinutes: number
   durationSeconds: number
   linkedRuleBlockId: string | null
