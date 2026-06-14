@@ -118,6 +118,7 @@ export default function DatasetBuilderPage() {
   const setShowEducationalOverlay = useUIStore((s) => s.setShowEducationalOverlay)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
+  const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
   const rightPanelCollapsed = useUIStore((s) => s.rightPanelCollapsed)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
@@ -220,6 +221,32 @@ export default function DatasetBuilderPage() {
       timerBlocks,
     })
   }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
+
+  // Clear selection if its block was deleted (e.g. via the node's own × button),
+  // so the right panel falls back to the Getting Started view instead of going blank.
+  useEffect(() => {
+    if (!selectedBlockId) return
+    const exists = (() => {
+      switch (selectedBlockType) {
+        case 'labelled': return labelledBlocks.some((b) => b.id === selectedBlockId)
+        case 'unlabelled': return unlabelledBlocks.some((b) => b.id === selectedBlockId)
+        case 'model': return modelBlocks.some((b) => b.id === selectedBlockId)
+        case 'rl-gridworld': return rlBlocks.some((b) => b.id === selectedBlockId)
+        case 'sensor': return sensorBlocks.some((b) => b.id === selectedBlockId)
+        case 'condition': return conditionBlocks.some((b) => b.id === selectedBlockId)
+        case 'timer': return timerBlocks.some((b) => b.id === selectedBlockId)
+        case 'switch': return switchBlocks.some((b) => b.id === selectedBlockId)
+        case 'logic': return logicBlocks.some((b) => b.id === selectedBlockId)
+        case 'fan': return fanBlocks.some((b) => b.id === selectedBlockId)
+        case 'alarm': return alarmBlocks.some((b) => b.id === selectedBlockId)
+        case 'ac': return acBlocks.some((b) => b.id === selectedBlockId)
+        case 'door': return doorBlocks.some((b) => b.id === selectedBlockId)
+        case 'bulb': return bulbBlocks.some((b) => b.id === selectedBlockId)
+        default: return false
+      }
+    })()
+    if (!exists) clearSelectedBlock()
+  }, [selectedBlockId, selectedBlockType, labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, sensorBlocks, conditionBlocks, timerBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, doorBlocks, bulbBlocks, clearSelectedBlock])
 
   // Check data-scientist badge
   useEffect(() => {
