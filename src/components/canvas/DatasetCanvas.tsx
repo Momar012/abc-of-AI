@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import ReactFlow, {
   Background,
+  BackgroundVariant,
   Controls,
   Node,
   Edge,
@@ -481,7 +482,7 @@ export default function DatasetCanvas() {
         deleteKeyCode={null}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="rgba(255,255,255,0.03)" gap={24} />
+        <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.18)" gap={24} size={1.5} />
         <Controls className="!bg-white/10 !border-white/10 !rounded-xl" />
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
       </ReactFlow>
