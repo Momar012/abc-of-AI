@@ -217,6 +217,8 @@ export default function DatasetCanvas() {
   const removeTextBlock = useCanvasStore((s) => s.removeTextBlock)
 
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
+  const selectedBlockId = useUIStore((s) => s.selectedBlockId)
+  const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
@@ -492,13 +494,14 @@ export default function DatasetCanvas() {
           case 'timer': removeTimerBlock(node.id); break
           case 'text': removeTextBlock(node.id); break
         }
+        if (node.id === selectedBlockId) clearSelectedBlock()
       }
       evaluateGraph()
     },
     [
       removeLabelledBlock, removeUnlabelledBlock, removeModelBlock, removeRLBlock, removeDoorBlock, removeBulbBlock,
       removeSensorBlock, removeConditionBlock, removeSwitchBlock, removeLogicBlock, removeFanBlock, removeAlarmBlock,
-      removeACBlock, removeTimerBlock, removeTextBlock, evaluateGraph,
+      removeACBlock, removeTimerBlock, removeTextBlock, evaluateGraph, selectedBlockId, clearSelectedBlock,
     ]
   )
 
