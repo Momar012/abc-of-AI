@@ -66,15 +66,15 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
       <motion.div
         ref={setNodeRef}
         animate={{
-          boxShadow: isOver ? '0 0 20px 4px rgba(6,182,212,0.35)' : 'none',
+          boxShadow: isOver ? '0 0 20px 4px rgba(45,212,191,0.35)' : 'none',
           scale: isOver ? 1.02 : 1,
         }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className="drop-zone min-h-[80px] max-h-48 overflow-y-auto p-2 flex flex-col gap-1"
-        style={{ borderColor: isOver ? '#06B6D4' : undefined }}
+        style={{ borderColor: isOver ? '#2DD4BF' : undefined }}
       >
         {block.itemIds.length === 0 ? (
-          <p className="text-xs text-white/25 text-center py-4 font-body">
+          <p className="text-xs text-white/35 text-center py-4 font-body">
             {isOver ? '✨ Drop here!' : 'Drag items here (no labels)'}
           </p>
         ) : (
@@ -85,14 +85,14 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
                 itemId={itemId}
                 blockId={block.id}
                 labelId="unlabelled"
-                color="#06B6D4"
+                color="#2DD4BF"
               />
             ))}
           </AnimatePresence>
         )}
       </motion.div>
 
-      <p className="text-xs text-white/30 font-body text-center">
+      <p className="text-xs text-white/40 font-body text-center">
         {block.itemIds.length} item{block.itemIds.length !== 1 ? 's' : ''}
       </p>
     </div>

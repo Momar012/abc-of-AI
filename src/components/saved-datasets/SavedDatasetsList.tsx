@@ -29,7 +29,7 @@ function DraggableDatasetCard({ ds, onDelete }: { ds: SavedDataset; onDelete: ()
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className="glass-card-dark rounded-xl p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing"
+      className="glass-card rounded-xl p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing"
       style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -47,7 +47,7 @@ function DraggableDatasetCard({ ds, onDelete }: { ds: SavedDataset; onDelete: ()
           🗑
         </button>
       </div>
-      <p className="text-xs text-white/30 font-body text-center">drag to canvas to load ↗</p>
+      <p className="text-xs text-white/40 font-body text-center">drag to canvas to load ↗</p>
     </div>
   )
 }
@@ -62,7 +62,7 @@ export default function SavedDatasetsList() {
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-3">
         <span className="text-4xl">📋</span>
         <p className="text-white/50 text-sm font-heading font-semibold">Nothing saved yet</p>
-        <p className="text-white/30 text-xs font-body leading-relaxed">
+        <p className="text-white/40 text-xs font-body leading-relaxed">
           Type a name and hit <span className="text-violet-400">💾 Save</span> in the toolbar to store a snapshot of your work.
         </p>
       </div>

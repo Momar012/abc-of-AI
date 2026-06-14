@@ -178,14 +178,14 @@ export default function RLGridworldNode({ data, selected }: NodeProps<{ block: R
         {/* Reward chart */}
         {block.rewardHistory.length > 1 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-white/30 font-body">reward</span>
+            <span className="text-xs text-white/40 font-body">reward</span>
             <MiniRewardChart history={block.rewardHistory} />
           </div>
         )}
 
         {/* Status / hint */}
         {block.trainingStatus === 'idle' && (
-          <p className="text-xs text-white/25 font-body text-center">Double-click to configure</p>
+          <p className="text-xs text-white/35 font-body text-center">Double-click to configure</p>
         )}
         {block.trainingStatus === 'paused' && (
           <p className="text-xs text-amber-400/70 font-body text-center">⏸ Paused</p>

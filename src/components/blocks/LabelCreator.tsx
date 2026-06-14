@@ -27,7 +27,7 @@ export default function LabelCreator({ blockId, labels }: LabelCreatorProps) {
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         placeholder="Label name…"
-        className="flex-1 px-2 py-1 rounded-lg bg-white/10 border border-white/15 text-white text-xs placeholder-white/30 outline-none focus:border-violet-400"
+        className="flex-1 px-2 py-1 rounded-lg bg-white/10 border border-white/15 text-white text-xs placeholder-white/40 outline-none focus:border-violet-400"
         maxLength={30}
       />
       <button

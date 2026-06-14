@@ -44,7 +44,7 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={onDelete}
-          className="w-6 h-6 rounded-full bg-white/10 text-white/30 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
+          className="w-6 h-6 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
         >
           ×
         </button>
@@ -70,7 +70,7 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
 
       <div className="flex items-center justify-between">
         <span className="text-xs text-emerald-400/80 font-body font-semibold">✓ Trained</span>
-        <span className="text-xs text-white/25 font-body">drag to canvas ↗</span>
+        <span className="text-xs text-white/35 font-body">drag to canvas ↗</span>
       </div>
     </div>
   )
@@ -86,7 +86,7 @@ export default function TrainedModelsList() {
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center gap-3">
         <span className="text-4xl">🤖</span>
         <p className="text-white/50 text-sm font-heading font-semibold">No trained models yet</p>
-        <p className="text-white/30 text-xs font-body leading-relaxed">
+        <p className="text-white/40 text-xs font-body leading-relaxed">
           Add a <span className="text-violet-400">🤖 Model</span> block, link a labelled dataset, and hit Train!
         </p>
       </div>

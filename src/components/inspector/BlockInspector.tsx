@@ -67,34 +67,23 @@ function LabelledContent({ blockId }: { blockId: string }) {
               <p className="text-violet-300 font-heading font-semibold text-sm">✨ Drop here!</p>
             ) : (
               <>
-                <p className="text-white/30 text-sm font-body">Drag items from Data Bank here</p>
-                <p className="text-white/20 text-xs mt-1 font-body">Then assign labels in the table</p>
+                <p className="text-white/40 text-sm font-body">Drag items from Data Bank here</p>
+                <p className="text-white/30 text-xs mt-1 font-body">Then assign labels in the table</p>
               </>
             )}
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left text-xs text-white/40 font-heading font-semibold px-3 py-2">Item</th>
-                    <th className="text-left text-xs text-white/40 font-heading font-semibold px-3 py-2">Label</th>
-                    <th className="w-8" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {allRows.map(({ itemId, assignedLabelId }) => (
-                    <LabelTableRow
-                      key={itemId}
-                      blockId={block.id}
-                      itemId={itemId}
-                      labels={block.labels}
-                      assignedLabelId={assignedLabelId}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex flex-col">
+              {allRows.map(({ itemId, assignedLabelId }) => (
+                <LabelTableRow
+                  key={itemId}
+                  blockId={block.id}
+                  itemId={itemId}
+                  labels={block.labels}
+                  assignedLabelId={assignedLabelId}
+                />
+              ))}
             </div>
             {isOver && (
               <div className="text-center py-2 text-violet-300 text-xs font-heading font-semibold border-t border-violet-500/20">
@@ -119,7 +108,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />
                 {label.name}
-                <span className="text-white/30 ml-0.5">({label.itemIds.length})</span>
+                <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
               </span>
             ))}
           </div>
@@ -142,15 +131,15 @@ function UnlabelledContent({ blockId }: { blockId: string }) {
     <motion.div
       ref={setNodeRef}
       animate={{
-        boxShadow: isOver ? '0 0 20px 4px rgba(6,182,212,0.35)' : 'none',
+        boxShadow: isOver ? '0 0 20px 4px rgba(45,212,191,0.35)' : 'none',
         scale: isOver ? 1.01 : 1,
       }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className="drop-zone min-h-[120px] mx-4 my-3 p-3 flex flex-col gap-1 rounded-xl"
-      style={{ borderColor: isOver ? '#06B6D4' : undefined }}
+      style={{ borderColor: isOver ? '#2DD4BF' : undefined }}
     >
       {block.itemIds.length === 0 ? (
-        <p className="text-xs text-white/25 text-center py-6 font-body">
+        <p className="text-xs text-white/35 text-center py-6 font-body">
           {isOver ? '✨ Drop here!' : 'Drag items here (no labels)'}
         </p>
       ) : (
@@ -161,7 +150,7 @@ function UnlabelledContent({ blockId }: { blockId: string }) {
               itemId={itemId}
               blockId={block.id}
               labelId="unlabelled"
-              color="#06B6D4"
+              color="#2DD4BF"
             />
           ))}
         </AnimatePresence>
@@ -211,7 +200,7 @@ export default function BlockInspector() {
   const typeLabel = selectedBlockType === 'labelled' ? 'Labelled Block' : 'Unlabelled Block'
 
   return (
-    <div className="glass-card flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
+    <div className="glass-panel flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -244,7 +233,7 @@ export default function BlockInspector() {
           onChange={(e) => setSaveName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
           placeholder="Dataset name…"
-          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/30 outline-none focus:border-violet-400 font-body"
+          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/40 outline-none focus:border-violet-400 font-body"
           maxLength={60}
         />
         <button

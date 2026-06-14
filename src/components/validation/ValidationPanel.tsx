@@ -41,7 +41,7 @@ export default function ValidationPanel() {
         {validationResult && (
           <button
             onClick={clearValidation}
-            className="text-xs text-white/30 hover:text-white/60 transition-colors"
+            className="text-xs text-white/40 hover:text-white/60 transition-colors"
           >
             Clear
           </button>

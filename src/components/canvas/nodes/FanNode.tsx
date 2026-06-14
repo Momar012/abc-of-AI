@@ -62,7 +62,7 @@ export default function FanNode({ data, selected }: NodeProps<{ block: FanBlock 
         </p>
 
         {!block.linkedRuleBlockId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect a rule</p>
+          <p className="text-xs text-white/35 font-body text-center">Connect a rule</p>
         )}
       </div>
     </div>

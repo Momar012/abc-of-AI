@@ -36,35 +36,49 @@ import { useRuleStore } from '@/store/useRuleStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 
-function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
+function PropertiesIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ transform: direction === 'left' ? 'rotate(180deg)' : undefined }}
-    >
-      <polyline points="9 6 15 12 9 18" />
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <circle cx="15" cy="6" r="2" fill="currentColor" stroke="none" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <circle cx="9" cy="12" r="2" fill="currentColor" stroke="none" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+      <circle cx="17" cy="18" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function PanelToggleIcon({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      {side === 'left' ? (
+        <>
+          <rect x="3" y="4" width="6.5" height="16" rx="2.5" fill="currentColor" fillOpacity="0.45" stroke="none" />
+          <line x1="9.5" y1="4" x2="9.5" y2="20" />
+        </>
+      ) : (
+        <>
+          <rect x="14.5" y="4" width="6.5" height="16" rx="2.5" fill="currentColor" fillOpacity="0.45" stroke="none" />
+          <line x1="14.5" y1="4" x2="14.5" y2="20" />
+        </>
+      )}
     </svg>
   )
 }
 
 function GettingStartedPanel() {
   const steps = [
-    { emoji: '📸', step: '1', title: 'Feed it photos', body: 'Upload some cat photos and some dog photos using the panel on the left. Try at least 5 of each!' },
-    { emoji: '🗂️', step: '2', title: 'Teach it the names', body: 'Drag a Labelled block onto the canvas. Make two labels: Cat 🐱 and Dog 🐶, then sort your photos into them.' },
-    { emoji: '🤖', step: '3', title: 'Add a Brain', body: 'Drag a Model block onto the canvas. Double-click it, link it to your labelled block, and pick Image Supervised.' },
-    { emoji: '🚀', step: '4', title: 'Train it!', body: 'Hit Train Model and watch your AI learn! More photos = smarter AI 🧠' },
-    { emoji: '🎯', step: '5', title: 'Can you trick it?', body: "Drop in a photo it's never seen. Does it guess Cat or Dog? Try to fool it! 😄" },
+    { emoji: '📸', step: '1', title: 'Feed it photos', body: <>Upload some <span className="text-pink-300 font-semibold">cat photos</span> and some <span className="text-teal-300 font-semibold">dog photos</span> using the panel on the left. Try at least 5 of each!</> },
+    { emoji: '🗂️', step: '2', title: 'Teach it the names', body: <>Drag a <span className="text-violet-300 font-semibold">Labelled block</span> onto the canvas. Make two labels: <span className="text-pink-300 font-semibold">Cat 🐱</span> and <span className="text-teal-300 font-semibold">Dog 🐶</span>, then sort your photos into them.</> },
+    { emoji: '🤖', step: '3', title: 'Add a Brain', body: <>Drag a <span className="text-teal-300 font-semibold">Model block</span> onto the canvas. Double-click it, link it to your labelled block, and pick <span className="text-emerald-300 font-semibold">Image Supervised</span>.</> },
+    { emoji: '🚀', step: '4', title: 'Train it!', body: <>Hit <span className="text-amber-300 font-semibold">Train Model</span> and watch your AI learn! More photos = <span className="text-emerald-300 font-semibold">smarter AI</span> 🧠</> },
+    { emoji: '🎯', step: '5', title: 'Can you trick it?', body: <>Drop in a photo it&apos;s never seen. Does it guess <span className="text-pink-300 font-semibold">Cat</span> or <span className="text-teal-300 font-semibold">Dog</span>? Try to fool it! 😄</> },
   ]
 
   return (
-    <div className="glass-card flex flex-col gap-4 p-5">
+    <div className="glass-panel flex flex-col gap-4 p-5">
       <div>
         <p className="text-base font-heading font-extrabold text-white">🐱 vs 🐶</p>
         <p className="text-sm font-heading font-bold text-violet-300 mt-0.5">
@@ -290,50 +304,62 @@ export default function DatasetBuilderPage() {
       <div className="h-screen flex flex-col overflow-hidden">
         <TopNav />
 
-        <div className="flex flex-1 gap-3 2xl:gap-4 p-3 2xl:p-4 overflow-hidden">
-          {/* Left panel — Data Bank + My Datasets + My Models */}
-          <div className="flex-shrink-0 flex items-stretch gap-1 min-h-0">
-            <div
-              className={`flex flex-col gap-3 overflow-hidden min-h-0 transition-[width,opacity] duration-300 ease-in-out ${
-                leftPanelCollapsed ? 'w-0 opacity-0' : 'w-60 2xl:w-72 opacity-100'
-              }`}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Full-bleed canvas */}
+          <div className="absolute inset-0">
+            <DatasetCanvas />
+          </div>
+
+          {/* Floating toolbar — top center */}
+          <div className="absolute top-4 left-[17rem] right-[18rem] 2xl:left-[20rem] 2xl:right-[22rem] z-20 flex justify-center pointer-events-none">
+            <div className="pointer-events-auto max-w-full">
+              <CanvasToolbar />
+            </div>
+          </div>
+
+          {/* Floating left panel — Data Bank */}
+          {leftPanelCollapsed ? (
+            <button
+              onClick={toggleLeftPanel}
+              title="Show Data Bank"
+              className="absolute top-4 left-4 z-20 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <div className="w-60 2xl:w-72 flex flex-col gap-3 min-h-0 flex-1">
+              <PanelToggleIcon side="left" />
+            </button>
+          ) : (
+            <div className="absolute top-4 left-4 z-20 w-60 2xl:w-72 max-h-[calc(100%-2rem)] flex flex-col">
+              <button
+                onClick={toggleLeftPanel}
+                title="Hide Data Bank"
+                className="absolute -top-3 -right-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <PanelToggleIcon side="left" />
+              </button>
+              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
                 <DataBank />
               </div>
             </div>
-            <button
-              onClick={toggleLeftPanel}
-              title={leftPanelCollapsed ? 'Show Data Bank' : 'Hide Data Bank'}
-              className="glass-card flex-shrink-0 w-6 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
-            >
-              <ChevronIcon direction={leftPanelCollapsed ? 'right' : 'left'} />
-            </button>
-          </div>
+          )}
 
-          {/* Center — Canvas */}
-          <div className="flex-1 flex flex-col gap-3 min-w-0">
-            <CanvasToolbar />
-            <div className="flex-1 glass-card overflow-hidden" style={{ minHeight: 400 }}>
-              <DatasetCanvas />
-            </div>
-          </div>
-
-          {/* Right panel — Inspector or Getting Started */}
-          <div className="flex-shrink-0 flex items-stretch gap-1 min-h-0">
+          {/* Floating right panel — Inspector or Getting Started */}
+          {rightPanelCollapsed ? (
             <button
               onClick={toggleRightPanel}
-              title={rightPanelCollapsed ? 'Show Inspector' : 'Hide Inspector'}
-              className="glass-card flex-shrink-0 w-6 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
+              title="Show Inspector"
+              className="absolute top-4 right-4 z-20 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
             >
-              <ChevronIcon direction={rightPanelCollapsed ? 'left' : 'right'} />
+              <PropertiesIcon />
             </button>
-            <div
-              className={`flex flex-col gap-3 overflow-hidden min-h-0 transition-[width,opacity] duration-300 ease-in-out ${
-                rightPanelCollapsed ? 'w-0 opacity-0' : 'w-64 2xl:w-80 opacity-100'
-              }`}
-            >
-              <div className="w-64 2xl:w-80 flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
+          ) : (
+            <div className="absolute top-4 right-4 z-20 w-64 2xl:w-80 max-h-[calc(100%-2rem)] flex flex-col">
+              <button
+                onClick={toggleRightPanel}
+                title="Hide Inspector"
+                className="absolute -top-3 -left-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <PropertiesIcon />
+              </button>
+              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
                 {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
                   <RLInspector key={selectedBlockId} />
                 ) : selectedBlockId && selectedBlockType === 'model' ? (
@@ -353,7 +379,7 @@ export default function DatasetBuilderPage() {
                 )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

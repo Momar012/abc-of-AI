@@ -86,7 +86,7 @@ export default function LogicNode({ data, selected }: NodeProps<{ block: LogicBl
           {outputLabel}
         </div>
 
-        <p className="text-[10px] text-white/25 font-body text-center italic">double-click to inspect</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to inspect</p>
       </div>
     </div>
   )

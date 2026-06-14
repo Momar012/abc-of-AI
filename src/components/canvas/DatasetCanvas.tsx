@@ -448,7 +448,7 @@ export default function DatasetCanvas() {
   return (
     <div
       ref={(el) => { setCanvasDropRef(el); (canvasRef as React.MutableRefObject<HTMLDivElement | null>).current = el }}
-      className="flex-1 rounded-xl overflow-hidden"
+      className="w-full h-full overflow-hidden"
       style={{
         width: '100%',
         height: '100%',

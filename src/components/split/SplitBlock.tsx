@@ -31,7 +31,7 @@ export default function SplitBlock() {
         <SliderInput
           label="Test data"
           value={splitConfig.testPercent}
-          color="#06B6D4"
+          color="#2DD4BF"
           onChange={(v) => updateSplit('testPercent', v)}
         />
         <SliderInput
@@ -44,7 +44,7 @@ export default function SplitBlock() {
 
       <div className="rounded-xl p-3 bg-white/5 border border-white/10 text-xs text-white/50 font-body leading-relaxed">
         <p><span className="text-violet-400 font-semibold">🧠 Training</span> — the AI learns from this data</p>
-        <p className="mt-1"><span className="text-cyan-400 font-semibold">📊 Testing</span> — we check how well it learned</p>
+        <p className="mt-1"><span className="text-teal-400 font-semibold">📊 Testing</span> — we check how well it learned</p>
         <p className="mt-1"><span className="text-emerald-400 font-semibold">✅ Validation</span> — fine-tuning to make it better</p>
       </div>
     </div>

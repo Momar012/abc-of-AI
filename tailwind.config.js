@@ -9,11 +9,12 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          purple: '#7C3AED',
-          cyan: '#06B6D4',
-          pink: '#EC4899',
-          mint: '#10B981',
-          amber: '#F59E0B',
+          purple: '#8B5CF6',
+          cyan: '#2DD4BF',
+          pink: '#F472B6',
+          mint: '#34D399',
+          amber: '#FBBF24',
+          frost: '#A5F3FC',
         },
       },
       backdropBlur: { glass: '16px' },
@@ -29,8 +30,8 @@ module.exports = {
           '50%': { transform: 'translateY(-6px)' },
         },
         glow: {
-          from: { boxShadow: '0 0 10px #7C3AED' },
-          to: { boxShadow: '0 0 24px #06B6D4' },
+          from: { boxShadow: '0 0 10px #8B5CF6' },
+          to: { boxShadow: '0 0 24px #2DD4BF' },
         },
         fadeIn: {
           from: { opacity: '0', transform: 'translateY(8px)' },

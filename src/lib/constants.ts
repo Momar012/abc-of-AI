@@ -7,7 +7,7 @@ export const LABEL_PALETTE = [
   '#F97316',
   '#EAB308',
   '#22C55E',
-  '#06B6D4',
+  '#2DD4BF',
   '#8B5CF6',
   '#EC4899',
 ]

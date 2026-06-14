@@ -5,7 +5,7 @@ import { SplitConfig } from '@/types/dataset'
 
 const SEGMENTS = [
   { key: 'trainPercent' as const, label: 'Train', color: '#7C3AED', emoji: '🧠' },
-  { key: 'testPercent' as const, label: 'Test', color: '#06B6D4', emoji: '📊' },
+  { key: 'testPercent' as const, label: 'Test', color: '#2DD4BF', emoji: '📊' },
   { key: 'validationPercent' as const, label: 'Validate', color: '#10B981', emoji: '✅' },
 ]
 

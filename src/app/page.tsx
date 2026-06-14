@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
+import AbitaWordmark from '@/components/ui/AbitaWordmark'
 
 export default function Home() {
   return (
@@ -15,8 +16,8 @@ export default function Home() {
           🤖
         </motion.div>
 
-        <h1 className="font-heading text-5xl font-extrabold mb-4 bg-gradient-to-r from-violet-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent">
-          abc of AI
+        <h1 className="mb-4">
+          <AbitaWordmark className="text-5xl" />
         </h1>
 
         <p className="text-xl text-white/80 mb-3 font-heading font-semibold">
@@ -31,13 +32,13 @@ export default function Home() {
           <motion.button
             whileHover={{ scale: 1.05, boxShadow: '0 0 28px rgba(124, 58, 237, 0.6)' }}
             whileTap={{ scale: 0.97 }}
-            className="px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-heading font-bold text-lg shadow-lg"
+            className="px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-500 to-teal-400 text-white font-heading font-bold text-lg shadow-lg"
           >
             🚀 Start Building
           </motion.button>
         </Link>
 
-        <p className="mt-6 text-white/30 text-sm">No sign-up needed · Works in your browser</p>
+        <p className="mt-6 text-white/40 text-sm">No sign-up needed · Works in your browser</p>
       </div>
     </main>
   )

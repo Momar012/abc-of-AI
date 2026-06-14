@@ -53,7 +53,7 @@ export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ bl
         </div>
 
         {/* Hint */}
-        <p className="text-xs text-white/25 font-body text-center mt-1">
+        <p className="text-xs text-white/35 font-body text-center mt-1">
           Click to inspect
         </p>
       </div>

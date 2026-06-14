@@ -19,35 +19,6 @@ type BlockType =
   | 'fan' | 'alarm' | 'ac' | 'timer'
   | 'model-image-supervised' | 'model-image-unsupervised' | 'model-text-corpus'
 
-function DraggablePaletteItem({
-  blockType,
-  children,
-  onClick,
-  variant,
-}: {
-  blockType: BlockType
-  children: React.ReactNode
-  onClick: () => void
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
-}) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `palette-${blockType}`,
-    data: { type: 'block-palette', blockType },
-  })
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={{ opacity: isDragging ? 0.5 : 1, touchAction: 'none' }}
-    >
-      <GlowButton size="sm" variant={variant} onClick={onClick}>
-        {children}
-      </GlowButton>
-    </div>
-  )
-}
-
 function DraggableActionItem({
   blockType,
   label,
@@ -75,11 +46,69 @@ function DraggableActionItem({
   )
 }
 
+function useDropdownPosition() {
+  const [pos, setPos] = useState({ top: 0, left: 0, maxHeight: 400 })
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const computePos = () => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    setPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      maxHeight: Math.max(160, window.innerHeight - rect.bottom - 4 - 16),
+    })
+  }
+  return { pos, wrapperRef, computePos }
+}
+
+function DataMenu() {
+  const [open, setOpen] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const { pos, wrapperRef, computePos } = useDropdownPosition()
+
+  const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
+  const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
+
+  useDndMonitor({
+    onDragStart:  () => setDragging(true),
+    onDragEnd:    () => { setDragging(false); setOpen(false) },
+    onDragCancel: () => { setDragging(false); setOpen(false) },
+  })
+
+  const handleToggle = () => {
+    if (!open) computePos()
+    setOpen((o) => !o)
+  }
+
+  return (
+    <div ref={wrapperRef}>
+      {open && createPortal(
+        <>
+          {!dragging && (
+            <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
+          )}
+          <div
+            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-36 shadow-xl"
+            style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
+          >
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🗂️ Data</p>
+            <DraggableActionItem blockType="labelled" label="🏷️ Labelled" onAdd={() => { addLabelledBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="unlabelled" label="📦 Unlabelled" onAdd={() => { addUnlabelledBlock(); setOpen(false) }} />
+          </div>
+        </>,
+        document.body
+      )}
+      <GlowButton size="xs" variant="primary" onClick={handleToggle}>
+        🗂️ Data {open ? '▴' : '▾'}
+      </GlowButton>
+    </div>
+  )
+}
+
 function ActionsMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const { pos, wrapperRef, computePos } = useDropdownPosition()
   const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
   const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
   const addFanBlock = useRuleStore((s) => s.addFanBlock)
@@ -93,10 +122,7 @@ function ActionsMenu() {
   })
 
   const handleToggle = () => {
-    if (!open && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 4, left: rect.left })
-    }
+    if (!open) computePos()
     setOpen((o) => !o)
   }
 
@@ -108,14 +134,14 @@ function ActionsMenu() {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-32 shadow-xl"
-            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-32 shadow-xl"
+            style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
-            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/30 font-heading uppercase tracking-wider">ML Actions</p>
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/40 font-heading uppercase tracking-wider">ML Actions</p>
             <DraggableActionItem blockType="door" label="🚪 Door" onAdd={() => { addDoorBlock(); setOpen(false) }} />
             <DraggableActionItem blockType="bulb" label="💡 Bulb" onAdd={() => { addBulbBlock(); setOpen(false) }} />
             <div className="my-1 border-t border-white/10" />
-            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/30 font-heading uppercase tracking-wider">Rule Actions</p>
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/40 font-heading uppercase tracking-wider">Rule Actions</p>
             <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => { addFanBlock(); setOpen(false) }} />
             <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => { addAlarmBlock(); setOpen(false) }} />
             <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => { addACBlock(); setOpen(false) }} />
@@ -123,7 +149,7 @@ function ActionsMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="sm" variant="secondary" onClick={handleToggle}>
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
         ⚡ Actions {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -133,10 +159,10 @@ function ActionsMenu() {
 function ModelMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const { pos, wrapperRef, computePos } = useDropdownPosition()
 
   const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
+  const addRLBlock = useRLStore((s) => s.addRLBlock)
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -145,10 +171,7 @@ function ModelMenu() {
   })
 
   const handleToggle = () => {
-    if (!open && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 4, left: rect.left })
-    }
+    if (!open) computePos()
     setOpen((o) => !o)
   }
 
@@ -160,8 +183,8 @@ function ModelMenu() {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-44 shadow-xl"
-            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-44 shadow-xl"
+            style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🤖 Models</p>
             {MODEL_CATALOG.filter((m) => m.available).map((m) => (
@@ -172,11 +195,16 @@ function ModelMenu() {
                 onAdd={() => { addModelBlockWithType(m.type); setOpen(false) }}
               />
             ))}
+
+            <div className="my-1 border-t border-white/10" />
+
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🎮 Reinforcement Learning</p>
+            <DraggableActionItem blockType="rl-gridworld" label="🎮 RL Gridworld" onAdd={() => { addRLBlock(); setOpen(false) }} />
           </div>
         </>,
         document.body
       )}
-      <GlowButton size="sm" variant="secondary" onClick={handleToggle}>
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
         🤖 Model {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -186,8 +214,7 @@ function ModelMenu() {
 function RuleBasedMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const { pos, wrapperRef, computePos } = useDropdownPosition()
 
   const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
   const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
@@ -202,10 +229,7 @@ function RuleBasedMenu() {
   })
 
   const handleToggle = () => {
-    if (!open && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 4, left: rect.left })
-    }
+    if (!open) computePos()
     setOpen((o) => !o)
   }
 
@@ -222,8 +246,8 @@ function RuleBasedMenu() {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-card-dark rounded-xl overflow-hidden flex flex-col p-1 min-w-40 shadow-xl"
-            style={{ top: pos.top, left: pos.left }}
+            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-40 shadow-xl"
+            style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             {/* Sensors */}
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-orange-400/70 font-heading uppercase tracking-wider">📡 Sensors</p>
@@ -257,7 +281,7 @@ function RuleBasedMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="sm" variant="ghost" onClick={handleToggle}>
+      <GlowButton size="xs" variant="ghost" onClick={handleToggle}>
         🔌 Rule-Based {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -265,22 +289,11 @@ function RuleBasedMenu() {
 }
 
 export default function CanvasToolbar() {
-  const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
-  const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
-  const addRLBlock = useRLStore((s) => s.addRLBlock)
   return (
-    <div className="flex items-center gap-2 p-2 glass-card-dark rounded-xl flex-wrap">
-      <span className="text-xs text-white/40 font-heading">Drag or click to add:</span>
-      <DraggablePaletteItem blockType="labelled" onClick={addLabelledBlock}>
-        🏷️ Labelled
-      </DraggablePaletteItem>
-      <DraggablePaletteItem blockType="unlabelled" variant="secondary" onClick={addUnlabelledBlock}>
-        📦 Unlabelled
-      </DraggablePaletteItem>
+    <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
+      <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>
+      <DataMenu />
       <ModelMenu />
-      <DraggablePaletteItem blockType="rl-gridworld" variant="secondary" onClick={addRLBlock}>
-        🎮 RL Gridworld
-      </DraggablePaletteItem>
       <ActionsMenu />
       <div className="w-px h-5 bg-white/10 self-center" />
       <RuleBasedMenu />

@@ -6,17 +6,18 @@ import { ReactNode, ButtonHTMLAttributes } from 'react'
 interface GlowButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
 }
 
 const variantStyles = {
-  primary: 'bg-gradient-to-r from-violet-600 to-cyan-500 text-white shadow-lg hover:shadow-violet-500/30',
+  primary: 'bg-gradient-to-r from-violet-500 to-teal-400 text-white shadow-lg hover:shadow-violet-500/30',
   secondary: 'bg-white/10 text-white border border-white/20 hover:bg-white/20',
   danger: 'bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30',
   ghost: 'text-white/70 hover:text-white hover:bg-white/10',
 }
 
 const sizeStyles = {
+  xs: 'px-2 py-1 text-xs',
   sm: 'px-3 py-1.5 text-sm',
   md: 'px-5 py-2.5 text-sm',
   lg: 'px-8 py-3.5 text-base',

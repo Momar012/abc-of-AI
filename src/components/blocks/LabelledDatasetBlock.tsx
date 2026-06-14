@@ -97,8 +97,8 @@ export default function LabelledDatasetBlock({ block }: LabelledDatasetBlockProp
             <p className="text-violet-300 font-heading font-semibold text-sm">✨ Drop here!</p>
           ) : (
             <>
-              <p className="text-white/30 text-sm font-body">Drag items from Data Bank here</p>
-              <p className="text-white/20 text-xs mt-1 font-body">Then assign labels in the table</p>
+              <p className="text-white/40 text-sm font-body">Drag items from Data Bank here</p>
+              <p className="text-white/30 text-xs mt-1 font-body">Then assign labels in the table</p>
             </>
           )}
         </div>

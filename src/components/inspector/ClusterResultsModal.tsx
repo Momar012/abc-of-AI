@@ -106,7 +106,7 @@ export default function ClusterResultsModal() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs text-white/30 font-body text-center px-0.5 leading-tight">
+                            <span className="text-xs text-white/40 font-body text-center px-0.5 leading-tight">
                               {bankItem?.name ?? '?'}
                             </span>
                           )}

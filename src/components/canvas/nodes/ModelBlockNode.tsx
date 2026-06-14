@@ -13,7 +13,7 @@ const MODEL_TYPE_LABELS: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, { color: string; label: string }> = {
   idle: { color: 'text-white/40', label: 'Not trained' },
-  loading: { color: 'text-cyan-400', label: 'Loading…' },
+  loading: { color: 'text-teal-400', label: 'Loading…' },
   training: { color: 'text-amber-400', label: 'Training…' },
   trained: { color: 'text-emerald-400', label: 'Trained ✓' },
   error: { color: 'text-red-400', label: 'Error' },
@@ -35,7 +35,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
         type="target"
         position={Position.Left}
         id="in"
-        style={{ background: '#06B6D4', border: '2px solid #164E63', width: 12, height: 12, left: -6, top: '38%' }}
+        style={{ background: '#2DD4BF', border: '2px solid #134E4A', width: 12, height: 12, left: -6, top: '38%' }}
       />
       {/* Target handle — bottom-left, receives test data from Unlabelled block */}
       <Handle
@@ -91,7 +91,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
               {MODEL_TYPE_LABELS[block.modelType] ?? block.modelType}
             </span>
           ) : (
-            <span className="text-xs text-white/30 font-body">No model selected</span>
+            <span className="text-xs text-white/40 font-body">No model selected</span>
           )}
           <span className={`text-xs font-body ${statusStyle.color}`}>
             · {statusStyle.label}
@@ -112,7 +112,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
         )}
 
         {/* Hint */}
-        <p className="text-xs text-white/25 font-body text-center mt-1">
+        <p className="text-xs text-white/35 font-body text-center mt-1">
           Click to inspect
         </p>
       </div>

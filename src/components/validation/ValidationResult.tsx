@@ -6,7 +6,7 @@ import { ValidationCheck } from '@/types/dataset'
 const statusConfig = {
   pass: { icon: '✅', color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
   warn: { icon: '⚠️', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
-  tip: { icon: '💡', color: '#06B6D4', bg: 'rgba(6,182,212,0.1)', border: 'rgba(6,182,212,0.25)' },
+  tip: { icon: '💡', color: '#2DD4BF', bg: 'rgba(45,212,191,0.1)', border: 'rgba(45,212,191,0.25)' },
 }
 
 const container = {

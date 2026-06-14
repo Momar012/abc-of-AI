@@ -55,7 +55,7 @@ export default function TimerInspector() {
   }
 
   return (
-    <div className="glass-card flex flex-col gap-4 p-4">
+    <div className="glass-panel flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export default function TimerInspector() {
           {trigger ? trigger.name : '— not connected —'}
         </p>
         {!trigger && (
-          <p className="text-xs text-white/30 font-body">Wire a 🔀 IF or logic block&apos;s output to this timer&apos;s left handle</p>
+          <p className="text-xs text-white/40 font-body">Wire a 🔀 IF or logic block&apos;s output to this timer&apos;s left handle</p>
         )}
       </div>
 
@@ -136,7 +136,7 @@ export default function TimerInspector() {
               onChange={(e) => updateTimerBlock(block.id, { durationMinutes: Math.max(0, Number(e.target.value)) })}
               className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-violet-400 bg-transparent"
             />
-            <span className="text-[10px] text-white/30 font-body text-center">minutes</span>
+            <span className="text-[10px] text-white/40 font-body text-center">minutes</span>
           </div>
           <div className="flex flex-col gap-1 flex-1">
             <input
@@ -147,7 +147,7 @@ export default function TimerInspector() {
               onChange={(e) => updateTimerBlock(block.id, { durationSeconds: Math.min(59, Math.max(0, Number(e.target.value))) })}
               className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-violet-400 bg-transparent"
             />
-            <span className="text-[10px] text-white/30 font-body text-center">seconds</span>
+            <span className="text-[10px] text-white/40 font-body text-center">seconds</span>
           </div>
         </div>
       </div>
@@ -158,7 +158,7 @@ export default function TimerInspector() {
         <p className={`text-lg font-heading font-extrabold ${statusColor}`}>{statusLabel}</p>
       </div>
 
-      <p className="text-[10px] text-white/25 font-body text-center italic">
+      <p className="text-[10px] text-white/35 font-body text-center italic">
         {timerMode === 'delay-on'
           ? 'When the connected rule turns TRUE, this timer waits, then turns its output ON — and OFF again as soon as the rule turns FALSE.'
           : 'When the connected rule turns TRUE, this timer counts down from the time above and keeps its output ON until it reaches 0.'}

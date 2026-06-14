@@ -128,7 +128,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-white/25 font-body italic">
+              <p className="text-xs text-white/35 font-body italic">
                 {block.linkedModelId ? 'Train the model first' : 'Connect a trained model'}
               </p>
             )}
@@ -146,7 +146,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
         </div>
 
         {!isModelMode && (
-          <p className="text-[10px] text-white/25 font-body text-center italic">double-click to edit</p>
+          <p className="text-[10px] text-white/35 font-body text-center italic">double-click to edit</p>
         )}
       </div>
     </div>

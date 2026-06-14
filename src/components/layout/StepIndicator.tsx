@@ -24,7 +24,7 @@ export default function StepIndicator({ currentStep }: StepIndicatorProps) {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-heading font-semibold transition-all
                 ${active ? 'bg-violet-600/70 text-white shadow-lg shadow-violet-500/30' : ''}
                 ${done ? 'bg-white/10 text-white/70' : ''}
-                ${!active && !done ? 'text-white/30' : ''}
+                ${!active && !done ? 'text-white/40' : ''}
               `}
             >
               <span>{step.icon}</span>

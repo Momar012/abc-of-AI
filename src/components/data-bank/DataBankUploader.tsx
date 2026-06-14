@@ -66,8 +66,8 @@ export default function DataBankUploader() {
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
       animate={{
-        borderColor: isDragOver ? '#06B6D4' : 'rgba(255,255,255,0.15)',
-        boxShadow: isDragOver ? '0 0 20px 4px rgba(6,182,212,0.3)' : 'none',
+        borderColor: isDragOver ? '#2DD4BF' : 'rgba(255,255,255,0.15)',
+        boxShadow: isDragOver ? '0 0 20px 4px rgba(45,212,191,0.3)' : 'none',
         scale: isDragOver ? 1.02 : 1,
       }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}

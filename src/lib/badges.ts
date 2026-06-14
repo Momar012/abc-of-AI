@@ -13,7 +13,7 @@ export const BADGES: Badge[] = [
     name: 'Label Master',
     description: 'Created 3 or more labels in one block',
     icon: '🏷️',
-    color: '#06B6D4',
+    color: '#2DD4BF',
   },
   {
     id: 'balanced-dataset',

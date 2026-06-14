@@ -12,7 +12,7 @@ interface GlassCardProps extends HTMLMotionProps<'div'> {
 export default function GlassCard({ children, className = '', dark = false, ...props }: GlassCardProps) {
   return (
     <motion.div
-      className={`${dark ? 'glass-card-dark' : 'glass-card'} ${className}`}
+      className={`${dark ? 'glass-panel' : 'glass-card'} ${className}`}
       {...props}
     >
       {children}

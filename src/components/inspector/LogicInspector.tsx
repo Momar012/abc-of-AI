@@ -54,7 +54,7 @@ function LogicBlockView({ id }: { id: string }) {
         <p className={`text-lg font-heading font-extrabold ${outputColor}`}>{outputLabel}</p>
       </div>
 
-      <p className="text-[10px] text-white/25 font-body text-center italic">
+      <p className="text-[10px] text-white/35 font-body text-center italic">
         Wire rule outputs into the handles on the left. The result feeds into the right handle.
       </p>
     </>
@@ -335,7 +335,7 @@ export default function LogicInspector() {
   if (!selectedBlockId) return null
 
   return (
-    <div className="glass-card flex flex-col gap-4 p-4">
+    <div className="glass-panel flex flex-col gap-4 p-4">
       <div className="flex justify-end">
         <button
           onClick={clearSelectedBlock}

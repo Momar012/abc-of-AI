@@ -72,7 +72,7 @@ export default function LabellingModal() {
                 <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
               </span>
             ))}
-            <span className="text-xs text-white/30 font-body self-center ml-1">
+            <span className="text-xs text-white/40 font-body self-center ml-1">
               {allRows.filter((r) => r.assignedLabelId !== null).length}/{allRows.length} labelled
             </span>
           </div>
@@ -80,7 +80,7 @@ export default function LabellingModal() {
 
         {/* Empty state */}
         {allRows.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-white/30">
+          <div className="flex-1 flex items-center justify-center text-white/40">
             <p className="text-sm font-body">No items in this block yet. Drag items from the Data Bank.</p>
           </div>
         )}
@@ -88,7 +88,7 @@ export default function LabellingModal() {
         {/* Image grid */}
         {allRows.length > 0 && (
           <div className="overflow-y-auto flex-1 p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
               {allRows.map(({ itemId, assignedLabelId }) => {
                 const item = bankItems.find((i) => i.id === itemId)
                 if (!item) return null
@@ -155,7 +155,7 @@ export default function LabellingModal() {
                           </select>
                         </div>
                       ) : (
-                        <p className="text-xs text-white/25 font-body">Add labels first</p>
+                        <p className="text-xs text-white/35 font-body">Add labels first</p>
                       )}
                     </div>
                   </div>

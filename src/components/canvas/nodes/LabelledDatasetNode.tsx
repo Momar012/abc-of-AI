@@ -56,7 +56,7 @@ export default function LabelledDatasetNode({ data, selected }: NodeProps<{ bloc
           <span>{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
           {block.labels.length > 0 && (
             <>
-              <span className="text-white/20">·</span>
+              <span className="text-white/30">·</span>
               <span>{labelledCount} labelled</span>
             </>
           )}
@@ -79,13 +79,13 @@ export default function LabelledDatasetNode({ data, selected }: NodeProps<{ bloc
               </span>
             ))}
             {block.labels.length > 4 && (
-              <span className="text-xs text-white/30 font-body">+{block.labels.length - 4} more</span>
+              <span className="text-xs text-white/40 font-body">+{block.labels.length - 4} more</span>
             )}
           </div>
         )}
 
         {/* Hint */}
-        <p className="text-xs text-white/25 font-body text-center mt-1">
+        <p className="text-xs text-white/35 font-body text-center mt-1">
           Click to inspect
         </p>
       </div>

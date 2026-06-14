@@ -259,7 +259,7 @@ export default function ModelInspector() {
   const testPct = testTotal > 0 ? Math.round((testProgress / testTotal) * 100) : 5
 
   return (
-    <div className="glass-card flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
+    <div className="glass-panel flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -338,10 +338,10 @@ export default function ModelInspector() {
               <div className="p-2 rounded-lg bg-white/5 border border-white/10">
                 <p className="text-xs text-white/40 font-body leading-relaxed">
                   {block.modelType === 'text-corpus'
-                    ? <>🔗 Upload .txt files to the Data Bank, drop them into a 📦 Unlabelled block, then drag from its <span className="text-violet-300 font-semibold">violet dot</span> to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
+                    ? <>🔗 Upload .txt files to the Data Bank, drop them into a 📦 Unlabelled block, then drag from its <span className="text-violet-300 font-semibold">violet dot</span> to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
                     : block.modelType === 'image-unsupervised'
-                    ? <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled or 📦 Unlabelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
-                    : <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-cyan-300 font-semibold">cyan dot</span> on this block.</>
+                    ? <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled or 📦 Unlabelled block to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
+                    : <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
                   }
                 </p>
               </div>
@@ -367,11 +367,11 @@ export default function ModelInspector() {
                 <p className="text-xs text-white/60 font-body">{progressMessage}</p>
                 <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-2 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-300"
+                    className="h-2 bg-gradient-to-r from-violet-500 to-teal-400 rounded-full transition-all duration-300"
                     style={{ width: `${Math.max(5, progressPct)}%` }}
                   />
                 </div>
-                <p className="text-xs text-white/30 font-body text-right">{progressPct}%</p>
+                <p className="text-xs text-white/40 font-body text-right">{progressPct}%</p>
               </div>
             )}
 
@@ -390,7 +390,7 @@ export default function ModelInspector() {
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                     isTrainable
                       ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                      : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
                 >
                   {block.status === 'trained' ? '🔁 Re-feed' : '🧠 Feed the Brain'}
@@ -443,7 +443,7 @@ export default function ModelInspector() {
                       ? 'bg-white/10 text-white/40 cursor-not-allowed'
                       : isTrainable
                       ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                      : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
                 >
                   {isWorking
@@ -477,7 +477,7 @@ export default function ModelInspector() {
                       ? 'bg-white/10 text-white/40 cursor-not-allowed'
                       : isTrainable
                       ? 'bg-violet-600 hover:bg-violet-500 text-white'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                      : 'bg-white/10 text-white/40 cursor-not-allowed'
                   }`}
                 >
                   {isWorking
@@ -503,7 +503,7 @@ export default function ModelInspector() {
             {/* Message list */}
             <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
               {chatMessages.length === 0 && (
-                <p className="text-xs text-white/30 font-body text-center py-4">
+                <p className="text-xs text-white/40 font-body text-center py-4">
                   {block.status === 'trained'
                     ? 'Ask me anything! Try: "Where did Humpty sit?"'
                     : 'Feed me some text first, then ask me anything!'}
@@ -535,19 +535,19 @@ export default function ModelInspector() {
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleChat()}
                 placeholder="Ask a question…"
-                className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-xs placeholder-white/30 outline-none focus:border-violet-400 font-body"
+                className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-xs placeholder-white/40 outline-none focus:border-violet-400 font-body"
               />
               <button
                 onClick={handleChat}
                 disabled={!chatInput.trim()}
-                className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-white/10 disabled:text-white/30 text-white text-xs font-heading font-semibold transition-all"
+                className="px-3 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:bg-white/10 disabled:text-white/40 text-white text-xs font-heading font-semibold transition-all"
               >
                 Ask
               </button>
             </div>
 
             {block.status === 'trained' && (
-              <p className="text-xs text-white/30 font-body text-center leading-relaxed">
+              <p className="text-xs text-white/40 font-body text-center leading-relaxed">
                 Try changing your text, hitting Re-feed, and asking again!
               </p>
             )}
@@ -564,7 +564,7 @@ export default function ModelInspector() {
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
               placeholder="Model name…"
-              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/30 outline-none focus:border-violet-400 font-body"
+              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/40 outline-none focus:border-violet-400 font-body"
               maxLength={60}
             />
             <button
@@ -579,7 +579,7 @@ export default function ModelInspector() {
               💾 Save Name
             </button>
             {block.modelType !== 'image-unsupervised' && (
-              <p className="text-xs text-white/30 font-body text-center">
+              <p className="text-xs text-white/40 font-body text-center">
                 Check the 🤖 My Models tab in the left panel
               </p>
             )}
@@ -652,7 +652,7 @@ export default function ModelInspector() {
                         style={{ width: `${Math.max(5, testPct)}%` }}
                       />
                     </div>
-                    <p className="text-xs text-white/30 font-body text-right">{testPct}%</p>
+                    <p className="text-xs text-white/40 font-body text-right">{testPct}%</p>
                   </div>
                 )}
 
@@ -663,7 +663,7 @@ export default function ModelInspector() {
                     disabled={testItems.length === 0 || !trainedModel}
                     className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                       testItems.length === 0 || !trainedModel
-                        ? 'bg-white/10 text-white/30 cursor-not-allowed'
+                        ? 'bg-white/10 text-white/40 cursor-not-allowed'
                         : 'bg-amber-600/80 hover:bg-amber-500/80 text-white'
                     }`}
                   >

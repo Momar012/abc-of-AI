@@ -32,8 +32,8 @@ export default function ACNode({ data, selected }: NodeProps<{ block: ACBlock }>
         className="glass-card w-40 flex flex-col items-center gap-3 px-4 py-3"
         style={{
           boxShadow: selected
-            ? '0 0 0 2px rgba(34,211,238,0.9), 0 0 20px rgba(34,211,238,0.3)'
-            : block.isOn ? '0 0 0 2px rgba(34,211,238,0.5), 0 0 30px rgba(34,211,238,0.3)' : undefined,
+            ? '0 0 0 2px rgba(165,243,252,0.9), 0 0 20px rgba(165,243,252,0.3)'
+            : block.isOn ? '0 0 0 2px rgba(165,243,252,0.5), 0 0 30px rgba(165,243,252,0.3)' : undefined,
           transition: 'box-shadow 0.2s ease',
         }}
       >
@@ -51,18 +51,18 @@ export default function ACNode({ data, selected }: NodeProps<{ block: ACBlock }>
         <motion.div
           animate={block.isOn ? { scale: [1, 1.12, 1], rotate: [0, 8, -8, 0] } : { scale: 1, rotate: 0, opacity: 0.3 }}
           transition={block.isOn ? { repeat: Infinity, duration: 1.4, ease: 'easeInOut' } : { duration: 0 }}
-          style={block.isOn ? { filter: 'drop-shadow(0 0 10px rgba(34,211,238,0.8))' } : {}}
+          style={block.isOn ? { filter: 'drop-shadow(0 0 10px rgba(165,243,252,0.8))' } : {}}
           className="text-5xl select-none"
         >
           ❄️
         </motion.div>
 
-        <p className={`text-xs font-heading font-bold ${block.isOn ? 'text-cyan-400' : 'text-white/40'}`}>
+        <p className={`text-xs font-heading font-bold ${block.isOn ? 'text-cyan-200' : 'text-white/40'}`}>
           {block.isOn ? '🥶 Cooling!' : '⬛ Off'}
         </p>
 
         {!block.linkedRuleBlockId && (
-          <p className="text-xs text-white/25 font-body text-center">Connect a rule</p>
+          <p className="text-xs text-white/35 font-body text-center">Connect a rule</p>
         )}
       </div>
     </div>

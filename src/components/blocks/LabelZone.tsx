@@ -66,19 +66,19 @@ export default function LabelZone({ blockId, label }: LabelZoneProps) {
               {label.name}
             </button>
           )}
-          <span className="text-xs text-white/30">{label.itemIds.length}</span>
+          <span className="text-xs text-white/40">{label.itemIds.length}</span>
         </div>
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); removeLabel(blockId, label.id) }}
-          className="text-white/20 hover:text-red-400 text-xs transition-colors leading-none"
+          className="text-white/30 hover:text-red-400 text-xs transition-colors leading-none"
         >
           ×
         </button>
       </div>
 
       {label.itemIds.length === 0 ? (
-        <p className="text-xs text-white/25 text-center py-2 font-body">
+        <p className="text-xs text-white/35 text-center py-2 font-body">
           {isOver ? '✨ Drop here!' : 'Drag items here'}
         </p>
       ) : (

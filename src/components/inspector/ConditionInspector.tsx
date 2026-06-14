@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
@@ -35,6 +36,7 @@ export default function ConditionInspector() {
   const trainedModels = useModelStore((s) => s.trainedModels)
 
   const block = conditionBlocks.find((b) => b.id === selectedBlockId)
+  const [thresholdText, setThresholdText] = useState(() => String(block?.threshold ?? 0))
   if (!block) return null
 
   const isModelMode = !!block.linkedModelId
@@ -62,7 +64,7 @@ export default function ConditionInspector() {
   }
 
   return (
-    <div className="glass-card flex flex-col gap-4 p-4">
+    <div className="glass-panel flex flex-col gap-4 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -120,7 +122,7 @@ export default function ConditionInspector() {
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-white/30 font-body">
+              <p className="text-xs text-white/40 font-body">
                 Train the model and run a test to see labels here.
               </p>
             )}
@@ -135,7 +137,7 @@ export default function ConditionInspector() {
               {sensor ? sensor.name : '— not connected —'}
             </p>
             {!sensor && (
-              <p className="text-xs text-white/30 font-body">Wire a 📡 Sensor to this IF block&apos;s left handle</p>
+              <p className="text-xs text-white/40 font-body">Wire a 📡 Sensor to this IF block&apos;s left handle</p>
             )}
           </div>
 
@@ -175,8 +177,19 @@ export default function ConditionInspector() {
             ) : (
               <input
                 type="number"
-                value={Number(block.threshold)}
-                onChange={(e) => update({ threshold: Number(e.target.value) })}
+                value={thresholdText}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setThresholdText(v)
+                  const n = Number(v)
+                  if (v !== '' && v !== '-' && !Number.isNaN(n)) update({ threshold: n })
+                }}
+                onBlur={() => {
+                  if (thresholdText === '' || Number.isNaN(Number(thresholdText))) {
+                    setThresholdText('0')
+                    update({ threshold: 0 })
+                  }
+                }}
                 className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 bg-transparent"
               />
             )}

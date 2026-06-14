@@ -391,7 +391,7 @@ export default function RLInspector() {
     : null
 
   return (
-    <div className="glass-card flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
+    <div className="glass-panel flex flex-col gap-0 overflow-hidden flex-1 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -560,7 +560,7 @@ export default function RLInspector() {
               value={block.userPrediction ?? ''}
               onChange={(e) => updateRLBlock(block.id, { userPrediction: parseInt(e.target.value) || null })}
               placeholder="Your guess…"
-              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/30 outline-none focus:border-violet-400 font-body mb-2"
+              className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/15 text-white text-sm placeholder-white/40 outline-none focus:border-violet-400 font-body mb-2"
             />
             <button
               onPointerDown={(e) => e.stopPropagation()}
@@ -594,7 +594,7 @@ export default function RLInspector() {
               </div>
               <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-2 bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full transition-all duration-300"
+                  className="h-2 bg-gradient-to-r from-violet-500 to-teal-400 rounded-full transition-all duration-300"
                   style={{ width: `${Math.max(2, (block.currentEpisode / block.episodes) * 100)}%` }}
                 />
               </div>
@@ -653,7 +653,7 @@ export default function RLInspector() {
             </div>
 
             {isTraining && (
-              <p className="text-xs text-white/25 font-body text-center mt-2">
+              <p className="text-xs text-white/35 font-body text-center mt-2">
                 Click any empty cell on the canvas to add a wall mid-training!
               </p>
             )}

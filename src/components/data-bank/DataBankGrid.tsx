@@ -16,7 +16,7 @@ export default function DataBankGrid({ items }: DataBankGridProps) {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-white/30">
+      <div className="flex flex-col items-center justify-center py-12 text-white/40">
         <span className="text-4xl mb-3">📂</span>
         <p className="text-sm font-heading">No data yet</p>
         <p className="text-xs mt-1">Upload images or text above</p>
