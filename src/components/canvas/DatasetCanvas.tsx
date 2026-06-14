@@ -222,6 +222,8 @@ export default function DatasetCanvas() {
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
+  const canvasInteractive = useUIStore((s) => s.canvasInteractive)
+  const setCanvasInteractive = useUIStore((s) => s.setCanvasInteractive)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -721,14 +723,16 @@ export default function DatasetCanvas() {
         panOnDrag={canvasTool === 'pan' || isSpacePressed ? true : canvasTool === 'text' ? false : [1, 2]}
         selectionOnDrag={canvasTool === 'select' && !isSpacePressed}
         selectionMode={SelectionMode.Partial}
-        nodesDraggable={canvasTool === 'select' && !isSpacePressed}
-        elementsSelectable={canvasTool !== 'pan'}
+        nodesDraggable={canvasInteractive && canvasTool === 'select' && !isSpacePressed}
+        nodesConnectable={canvasInteractive}
+        elementsSelectable={canvasInteractive && canvasTool !== 'pan'}
         deleteKeyCode={['Delete', 'Backspace']}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.18)" gap={24} size={1.5} />
         <Controls
           position="bottom-left"
+          onInteractiveChange={setCanvasInteractive}
           className={`!bg-white/10 !border-white/10 !rounded-xl !bottom-4 transition-[left] duration-200 ease-out ${
             leftPanelCollapsed ? '!left-[4.5rem]' : '!left-[17rem] 2xl:!left-[20rem]'
           }`}

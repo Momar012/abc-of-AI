@@ -33,7 +33,7 @@ function evalCondition(
     case '<=':       return Number(value) <= Number(threshold)
     case '==':       return String(value) === String(threshold)
     case '!=':       return String(value) !== String(threshold)
-    case 'contains': return String(value).toLowerCase().includes(String(threshold).toLowerCase())
+    case 'contains': return String(value).includes(String(threshold))
     case 'is':       return Boolean(value) === (threshold === true || threshold === 'true')
     default:         return false
   }
