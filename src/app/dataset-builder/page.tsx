@@ -78,7 +78,7 @@ function GettingStartedPanel() {
   ]
 
   return (
-    <div className="glass-panel flex flex-col gap-4 p-5">
+    <div className="glass-panel flex flex-col gap-4 p-5 min-h-full">
       <div>
         <p className="text-base font-heading font-extrabold text-white">🐱 vs 🐶</p>
         <p className="text-sm font-heading font-bold text-violet-300 mt-0.5">
@@ -327,7 +327,7 @@ export default function DatasetBuilderPage() {
               <PanelToggleIcon side="left" />
             </button>
           ) : (
-            <div className="absolute top-4 left-4 z-20 w-60 2xl:w-72 max-h-[calc(100%-2rem)] flex flex-col">
+            <div className="absolute top-4 left-4 z-20 w-60 2xl:w-72 h-[calc(100%-2rem)] flex flex-col">
               <button
                 onClick={toggleLeftPanel}
                 title="Hide Data Bank"
@@ -351,7 +351,7 @@ export default function DatasetBuilderPage() {
               <PropertiesIcon />
             </button>
           ) : (
-            <div className="absolute top-4 right-4 z-20 w-64 2xl:w-80 max-h-[calc(100%-2rem)] flex flex-col">
+            <div className="absolute top-4 right-4 z-20 w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
               <button
                 onClick={toggleRightPanel}
                 title="Hide Inspector"

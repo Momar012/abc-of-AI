@@ -55,7 +55,7 @@ export default function TimerInspector() {
   }
 
   return (
-    <div className="glass-panel flex flex-col gap-4 p-4">
+    <div className="glass-panel flex flex-col gap-4 p-4 min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

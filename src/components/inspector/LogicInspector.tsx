@@ -335,7 +335,7 @@ export default function LogicInspector() {
   if (!selectedBlockId) return null
 
   return (
-    <div className="glass-panel flex flex-col gap-4 p-4">
+    <div className="glass-panel flex flex-col gap-4 p-4 min-h-full">
       <div className="flex justify-end">
         <button
           onClick={clearSelectedBlock}

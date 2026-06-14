@@ -192,6 +192,7 @@ export default function DatasetCanvas() {
   const tickTimers = useRuleStore((s) => s.tickTimers)
 
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
+  const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -483,7 +484,12 @@ export default function DatasetCanvas() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.18)" gap={24} size={1.5} />
-        <Controls className="!bg-white/10 !border-white/10 !rounded-xl" />
+        <Controls
+          position="bottom-left"
+          className={`!bg-white/10 !border-white/10 !rounded-xl !bottom-4 transition-[left] duration-200 ease-out ${
+            leftPanelCollapsed ? '!left-[4.5rem]' : '!left-[17rem] 2xl:!left-[20rem]'
+          }`}
+        />
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
       </ReactFlow>
     </div>
