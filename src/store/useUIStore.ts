@@ -21,6 +21,7 @@ interface UIState {
   selectedBankItemIds: string[]
   leftPanelCollapsed: boolean
   rightPanelCollapsed: boolean
+  canvasTool: 'select' | 'pan' | 'text'
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
@@ -39,6 +40,7 @@ interface UIState {
   clearBankSelection: () => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
+  setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
 }
 
 export const useUIStore = create<UIState>()(persist((set) => ({
@@ -54,6 +56,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   selectedBankItemIds: [],
   leftPanelCollapsed: false,
   rightPanelCollapsed: false,
+  canvasTool: 'select',
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -97,6 +100,8 @@ export const useUIStore = create<UIState>()(persist((set) => ({
 
   toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
+
+  setCanvasTool: (tool) => set({ canvasTool: tool }),
 }), {
   name: 'abcai_ui_panels_v1',
   partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed }),

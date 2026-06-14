@@ -8,6 +8,7 @@ import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
+import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
@@ -18,6 +19,51 @@ type BlockType =
   | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
   | 'fan' | 'alarm' | 'ac' | 'timer'
   | 'model-image-supervised' | 'model-image-unsupervised' | 'model-text-corpus'
+
+function ToolButton({
+  active,
+  title,
+  onClick,
+  children,
+}: {
+  active: boolean
+  title: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-8 h-8 flex items-center justify-center rounded-lg text-base font-heading transition-all ${
+        active
+          ? 'bg-violet-500/30 border border-violet-400 text-white'
+          : 'text-white/60 border border-transparent hover:bg-white/10 hover:text-white'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function CanvasToolGroup() {
+  const canvasTool = useUIStore((s) => s.canvasTool)
+  const setCanvasTool = useUIStore((s) => s.setCanvasTool)
+
+  return (
+    <div className="flex items-center gap-1">
+      <ToolButton active={canvasTool === 'pan'} title="Hand tool (H)" onClick={() => setCanvasTool('pan')}>
+        ✋
+      </ToolButton>
+      <ToolButton active={canvasTool === 'select'} title="Selection (V)" onClick={() => setCanvasTool('select')}>
+        🖱️
+      </ToolButton>
+      <ToolButton active={canvasTool === 'text'} title="Text (T)" onClick={() => setCanvasTool('text')}>
+        🔤
+      </ToolButton>
+    </div>
+  )
+}
 
 function DraggableActionItem({
   blockType,
@@ -291,6 +337,8 @@ function RuleBasedMenu() {
 export default function CanvasToolbar() {
   return (
     <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
+      <CanvasToolGroup />
+      <div className="w-px h-5 bg-white/10 self-center" />
       <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>
       <DataMenu />
       <ModelMenu />

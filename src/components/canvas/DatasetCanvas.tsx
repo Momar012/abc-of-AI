@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -10,6 +10,8 @@ import ReactFlow, {
   NodeChange,
   Connection,
   ConnectionMode,
+  ReactFlowInstance,
+  SelectionMode,
   applyNodeChanges,
   useNodesState,
   useEdgesState,
@@ -22,6 +24,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
+import { useCanvasStore } from '@/store/useCanvasStore'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -38,6 +41,7 @@ import FanNode from './nodes/FanNode'
 import AlarmNode from './nodes/AlarmNode'
 import ACNode from './nodes/ACNode'
 import TimerNode from './nodes/TimerNode'
+import TextNode from './nodes/TextNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
@@ -140,6 +144,7 @@ const nodeTypes = {
   alarm: AlarmNode,
   ac: ACNode,
   timer: TimerNode,
+  text: TextNode,
 }
 
 const edgeTypes = {
@@ -153,17 +158,23 @@ export default function DatasetCanvas() {
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
   const unlabelledBlocks = useDatasetStore((s) => s.unlabelledBlocks)
   const updateBlockPosition = useDatasetStore((s) => s.updateBlockPosition)
+  const removeLabelledBlock = useDatasetStore((s) => s.removeLabelledBlock)
+  const removeUnlabelledBlock = useDatasetStore((s) => s.removeUnlabelledBlock)
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const updateModelBlockPosition = useModelStore((s) => s.updateModelBlockPosition)
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
+  const removeModelBlock = useModelStore((s) => s.removeModelBlock)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
   const updateRLBlockPosition = useRLStore((s) => s.updateRLBlockPosition)
+  const removeRLBlock = useRLStore((s) => s.removeRLBlock)
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const updateDoorBlockPosition = useWorkflowStore((s) => s.updateDoorBlockPosition)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
+  const removeDoorBlock = useWorkflowStore((s) => s.removeDoorBlock)
   const bulbBlocks = useWorkflowStore((s) => s.bulbBlocks)
   const updateBulbBlockPosition = useWorkflowStore((s) => s.updateBulbBlockPosition)
   const updateBulbBlock = useWorkflowStore((s) => s.updateBulbBlock)
+  const removeBulbBlock = useWorkflowStore((s) => s.removeBulbBlock)
 
   // Rule store
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
@@ -175,27 +186,44 @@ export default function DatasetCanvas() {
   const acBlocks = useRuleStore((s) => s.acBlocks)
   const timerBlocks = useRuleStore((s) => s.timerBlocks)
   const updateSensorBlockPosition = useRuleStore((s) => s.updateSensorBlockPosition)
+  const removeSensorBlock = useRuleStore((s) => s.removeSensorBlock)
   const updateConditionBlockPosition = useRuleStore((s) => s.updateConditionBlockPosition)
   const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
+  const removeConditionBlock = useRuleStore((s) => s.removeConditionBlock)
   const updateSwitchBlockPosition = useRuleStore((s) => s.updateSwitchBlockPosition)
+  const removeSwitchBlock = useRuleStore((s) => s.removeSwitchBlock)
   const updateLogicBlockPosition = useRuleStore((s) => s.updateLogicBlockPosition)
   const updateLogicBlock = useRuleStore((s) => s.updateLogicBlock)
+  const removeLogicBlock = useRuleStore((s) => s.removeLogicBlock)
   const updateFanBlockPosition = useRuleStore((s) => s.updateFanBlockPosition)
   const updateFanBlock = useRuleStore((s) => s.updateFanBlock)
+  const removeFanBlock = useRuleStore((s) => s.removeFanBlock)
   const updateAlarmBlockPosition = useRuleStore((s) => s.updateAlarmBlockPosition)
   const updateAlarmBlock = useRuleStore((s) => s.updateAlarmBlock)
+  const removeAlarmBlock = useRuleStore((s) => s.removeAlarmBlock)
   const updateACBlockPosition = useRuleStore((s) => s.updateACBlockPosition)
   const updateACBlock = useRuleStore((s) => s.updateACBlock)
+  const removeACBlock = useRuleStore((s) => s.removeACBlock)
   const updateTimerBlockPosition = useRuleStore((s) => s.updateTimerBlockPosition)
   const updateTimerBlock = useRuleStore((s) => s.updateTimerBlock)
+  const removeTimerBlock = useRuleStore((s) => s.removeTimerBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const tickTimers = useRuleStore((s) => s.tickTimers)
 
+  // Canvas annotations (text)
+  const textBlocks = useCanvasStore((s) => s.textBlocks)
+  const addTextBlock = useCanvasStore((s) => s.addTextBlock)
+  const updateTextBlockPosition = useCanvasStore((s) => s.updateTextBlockPosition)
+  const removeTextBlock = useCanvasStore((s) => s.removeTextBlock)
+
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
+  const canvasTool = useUIStore((s) => s.canvasTool)
+  const setCanvasTool = useUIStore((s) => s.setCanvasTool)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
+  const rfInstanceRef = useRef<ReactFlowInstance | null>(null)
 
   const isDraggingRef = useRef(false)
   useDndMonitor({
@@ -226,10 +254,11 @@ export default function DatasetCanvas() {
         ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
         ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+        ...textBlocks.map((b) => ({ id: b.id, type: 'text', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
       ]
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, setRfNodes])
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -344,6 +373,7 @@ export default function DatasetCanvas() {
           else if (alarmBlocks.some((b) => b.id === id)) updateAlarmBlockPosition(id, p)
           else if (acBlocks.some((b) => b.id === id)) updateACBlockPosition(id, p)
           else if (timerBlocks.some((b) => b.id === id)) updateTimerBlockPosition(id, p)
+          else if (textBlocks.some((b) => b.id === id)) updateTextBlockPosition(id, p)
           else {
             const type = labelledBlocks.some((b) => b.id === id) ? 'labelled' : 'unlabelled'
             updateBlockPosition(id, type, p)
@@ -353,11 +383,11 @@ export default function DatasetCanvas() {
     },
     [
       labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
       updateDoorBlockPosition, updateBulbBlockPosition,
       updateSensorBlockPosition, updateConditionBlockPosition, updateSwitchBlockPosition, updateLogicBlockPosition,
-      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, setRfNodes,
+      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, updateTextBlockPosition, setRfNodes,
     ]
   )
 
@@ -441,16 +471,186 @@ export default function DatasetCanvas() {
     ]
   )
 
+  // Delete selected nodes — dispatch to each block's owning store
+  const onNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      for (const node of deleted) {
+        switch (node.type) {
+          case 'labelled': removeLabelledBlock(node.id); break
+          case 'unlabelled': removeUnlabelledBlock(node.id); break
+          case 'model': removeModelBlock(node.id); break
+          case 'rl-gridworld': removeRLBlock(node.id); break
+          case 'door': removeDoorBlock(node.id); break
+          case 'bulb': removeBulbBlock(node.id); break
+          case 'sensor': removeSensorBlock(node.id); break
+          case 'condition': removeConditionBlock(node.id); break
+          case 'switch': removeSwitchBlock(node.id); break
+          case 'logic': removeLogicBlock(node.id); break
+          case 'fan': removeFanBlock(node.id); break
+          case 'alarm': removeAlarmBlock(node.id); break
+          case 'ac': removeACBlock(node.id); break
+          case 'timer': removeTimerBlock(node.id); break
+          case 'text': removeTextBlock(node.id); break
+        }
+      }
+      evaluateGraph()
+    },
+    [
+      removeLabelledBlock, removeUnlabelledBlock, removeModelBlock, removeRLBlock, removeDoorBlock, removeBulbBlock,
+      removeSensorBlock, removeConditionBlock, removeSwitchBlock, removeLogicBlock, removeFanBlock, removeAlarmBlock,
+      removeACBlock, removeTimerBlock, removeTextBlock, evaluateGraph,
+    ]
+  )
+
+  // Delete selected (or cascaded) edges — unlink the corresponding block reference
+  const onEdgesDelete = useCallback(
+    (deleted: Edge[]) => {
+      for (const edge of deleted) {
+        const { target, targetHandle, type } = edge
+        if (targetHandle === 'in') {
+          updateModelBlock(target, { linkedBlockId: null, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null })
+        } else if (targetHandle === 'test-in') {
+          updateModelBlock(target, { testLinkedBlockId: null, testStatus: 'idle', testResults: null })
+        } else if (targetHandle === 'condition-in') {
+          if (type === 'workflow') {
+            updateConditionBlock(target, { linkedModelId: null, currentOutput: null })
+          } else {
+            updateConditionBlock(target, { linkedSensorId: null, currentOutput: null })
+          }
+        } else if (targetHandle === 'logic-in-1') {
+          const block = logicBlocks.find((b) => b.id === target)
+          if (block) {
+            const ids = [...block.linkedInputIds]
+            ids[0] = null
+            updateLogicBlock(target, { linkedInputIds: ids, currentOutput: null })
+          }
+        } else if (targetHandle === 'logic-in-2') {
+          const block = logicBlocks.find((b) => b.id === target)
+          if (block) {
+            const ids = [...block.linkedInputIds]
+            ids[1] = null
+            updateLogicBlock(target, { linkedInputIds: ids, currentOutput: null })
+          }
+        } else if (targetHandle === 'logic-in') {
+          updateLogicBlock(target, { linkedInputIds: [null], currentOutput: null })
+        } else if (targetHandle === 'fan-in') {
+          updateFanBlock(target, { linkedRuleBlockId: null, isOn: false })
+        } else if (targetHandle === 'alarm-in') {
+          updateAlarmBlock(target, { linkedRuleBlockId: null, isOn: false })
+        } else if (targetHandle === 'ac-in') {
+          updateACBlock(target, { linkedRuleBlockId: null, isOn: false })
+        } else if (targetHandle === 'timer-in') {
+          updateTimerBlock(target, { linkedRuleBlockId: null, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null })
+        } else if (targetHandle === 'door-in') {
+          updateDoorBlock(target, { linkedRuleBlockId: null, isOpen: false })
+        } else if (targetHandle === 'bulb-in') {
+          updateBulbBlock(target, { linkedRuleBlockId: null, isOn: false })
+        }
+      }
+      evaluateGraph()
+    },
+    [
+      logicBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
+      updateAlarmBlock, updateACBlock, updateTimerBlock, updateDoorBlock, updateBulbBlock, evaluateGraph,
+    ]
+  )
+
+  // Drag-to-draw a text box while the Text tool is active. A simple click
+  // (no meaningful drag distance) falls back to placing a default-size box.
+  const textDragRef = useRef<{ startX: number; startY: number } | null>(null)
+  const [textDragRect, setTextDragRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+
+  const onTextToolMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      if (canvasTool !== 'text' || event.button !== 0 || !canvasRef.current) return
+
+      const bounds = canvasRef.current.getBoundingClientRect()
+      const startX = event.clientX - bounds.left
+      const startY = event.clientY - bounds.top
+      textDragRef.current = { startX, startY }
+      setTextDragRect({ x: startX, y: startY, width: 0, height: 0 })
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!textDragRef.current) return
+        const x = e.clientX - bounds.left
+        const y = e.clientY - bounds.top
+        const { startX: sx, startY: sy } = textDragRef.current
+        setTextDragRect({
+          x: Math.min(sx, x),
+          y: Math.min(sy, y),
+          width: Math.abs(x - sx),
+          height: Math.abs(y - sy),
+        })
+      }
+
+      const handleMouseUp = (e: MouseEvent) => {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseup', handleMouseUp)
+
+        const dragInfo = textDragRef.current
+        textDragRef.current = null
+        setTextDragRect(null)
+        if (!dragInfo || !rfInstanceRef.current) return
+
+        const endX = e.clientX - bounds.left
+        const endY = e.clientY - bounds.top
+        const dragDistance = Math.hypot(endX - dragInfo.startX, endY - dragInfo.startY)
+
+        if (dragDistance < 4) {
+          const pos = rfInstanceRef.current.screenToFlowPosition({ x: e.clientX, y: e.clientY })
+          addTextBlock(pos)
+        } else {
+          const topLeftScreen = {
+            x: bounds.left + Math.min(dragInfo.startX, endX),
+            y: bounds.top + Math.min(dragInfo.startY, endY),
+          }
+          const bottomRightScreen = {
+            x: bounds.left + Math.max(dragInfo.startX, endX),
+            y: bounds.top + Math.max(dragInfo.startY, endY),
+          }
+          const topLeftFlow = rfInstanceRef.current.screenToFlowPosition(topLeftScreen)
+          const bottomRightFlow = rfInstanceRef.current.screenToFlowPosition(bottomRightScreen)
+          const width = Math.max(60, bottomRightFlow.x - topLeftFlow.x)
+          const height = Math.max(24, bottomRightFlow.y - topLeftFlow.y)
+          addTextBlock(topLeftFlow, { width, height })
+        }
+        setCanvasTool('select')
+      }
+
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseup', handleMouseUp)
+    },
+    [canvasTool, addTextBlock, setCanvasTool]
+  )
+
   // Tick running timer blocks once per second
   useEffect(() => {
     const interval = setInterval(() => tickTimers(), 1000)
     return () => clearInterval(interval)
   }, [tickTimers])
 
+  // Keyboard shortcuts: H = hand/pan tool, Escape = back to selection tool
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      if (e.key === 'h' || e.key === 'H') {
+        setCanvasTool('pan')
+      } else if (e.key === 'Escape') {
+        setCanvasTool('select')
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [setCanvasTool])
+
   return (
     <div
       ref={(el) => { setCanvasDropRef(el); (canvasRef as React.MutableRefObject<HTMLDivElement | null>).current = el }}
-      className="w-full h-full overflow-hidden"
+      data-canvas-tool={canvasTool}
+      className={`relative w-full h-full overflow-hidden ${
+        canvasTool === 'pan' ? 'cursor-grab' : canvasTool === 'text' ? 'cursor-crosshair' : ''
+      }`}
       style={{
         width: '100%',
         height: '100%',
@@ -460,6 +660,7 @@ export default function DatasetCanvas() {
       onPointerDown={(e) => {
         if (isDraggingRef.current) e.stopPropagation()
       }}
+      onMouseDown={onTextToolMouseDown}
     >
       <ReactFlow
         nodes={rfNodes}
@@ -467,6 +668,9 @@ export default function DatasetCanvas() {
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
+        onNodesDelete={onNodesDelete}
+        onEdgesDelete={onEdgesDelete}
+        onInit={(instance) => { rfInstanceRef.current = instance }}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
@@ -480,7 +684,12 @@ export default function DatasetCanvas() {
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
         maxZoom={1.5}
-        deleteKeyCode={null}
+        panOnDrag={canvasTool === 'pan' ? true : canvasTool === 'text' ? false : [1, 2]}
+        selectionOnDrag={canvasTool === 'select'}
+        selectionMode={SelectionMode.Partial}
+        nodesDraggable={canvasTool === 'select'}
+        elementsSelectable={canvasTool !== 'pan'}
+        deleteKeyCode={['Delete', 'Backspace']}
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.18)" gap={24} size={1.5} />
@@ -492,6 +701,19 @@ export default function DatasetCanvas() {
         />
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
       </ReactFlow>
+      {textDragRect && (
+        <div
+          className="absolute pointer-events-none z-50 rounded"
+          style={{
+            left: textDragRect.x,
+            top: textDragRect.y,
+            width: textDragRect.width,
+            height: textDragRect.height,
+            border: '2px dashed #8B5CF6',
+            background: 'rgba(139,92,246,0.1)',
+          }}
+        />
+      )}
     </div>
   )
 }

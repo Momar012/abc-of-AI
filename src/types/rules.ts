@@ -85,3 +85,13 @@ export interface TimerBlock {
   currentOutput: boolean | null
   lastTriggerInput: boolean | null
 }
+
+export interface TextBlock {
+  id: string
+  type: 'text'
+  position: { x: number; y: number }
+  text: string
+  width: number
+  height: number
+  fontSize: number
+}
