@@ -558,6 +558,9 @@ export default function DatasetCanvas() {
     ]
   )
 
+  // Hold Space for a temporary "open hand" pan cursor (standard Figma/Photoshop behavior)
+  const [isSpacePressed, setIsSpacePressed] = useState(false)
+
   // Drag-to-draw a text box while the Text tool is active. A simple click
   // (no meaningful drag distance) falls back to placing a default-size box.
   const textDragRef = useRef<{ startX: number; startY: number } | null>(null)
@@ -565,7 +568,7 @@ export default function DatasetCanvas() {
 
   const onTextToolMouseDown = useCallback(
     (event: React.MouseEvent) => {
-      if (canvasTool !== 'text' || event.button !== 0 || !canvasRef.current) return
+      if (canvasTool !== 'text' || isSpacePressed || event.button !== 0 || !canvasRef.current) return
 
       const bounds = canvasRef.current.getBoundingClientRect()
       const startX = event.clientX - bounds.left
@@ -623,7 +626,7 @@ export default function DatasetCanvas() {
       window.addEventListener('mousemove', handleMouseMove)
       window.addEventListener('mouseup', handleMouseUp)
     },
-    [canvasTool, addTextBlock, setCanvasTool]
+    [canvasTool, isSpacePressed, addTextBlock, setCanvasTool]
   )
 
   // Tick running timer blocks once per second
@@ -632,13 +635,17 @@ export default function DatasetCanvas() {
     return () => clearInterval(interval)
   }, [tickTimers])
 
-  // Keyboard shortcuts: H = hand/pan tool, Escape = back to selection tool
+  // Keyboard shortcuts: H = hand/pan tool, V = selection tool, T = text tool, Escape = back to selection tool
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
       if (e.key === 'h' || e.key === 'H') {
         setCanvasTool('pan')
+      } else if (e.key === 'v' || e.key === 'V') {
+        setCanvasTool('select')
+      } else if (e.key === 't' || e.key === 'T') {
+        setCanvasTool('text')
       } else if (e.key === 'Escape') {
         setCanvasTool('select')
       }
@@ -647,12 +654,36 @@ export default function DatasetCanvas() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setCanvasTool])
 
+  // Hold Space for a temporary "open hand" pan cursor (standard Figma/Photoshop behavior)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.repeat) return
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      e.preventDefault()
+      setIsSpacePressed(true)
+    }
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') setIsSpacePressed(false)
+    }
+    const handleBlur = () => setIsSpacePressed(false)
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
+    }
+  }, [])
+
   return (
     <div
       ref={(el) => { setCanvasDropRef(el); (canvasRef as React.MutableRefObject<HTMLDivElement | null>).current = el }}
       data-canvas-tool={canvasTool}
+      data-space-pressed={isSpacePressed}
       className={`relative w-full h-full overflow-hidden ${
-        canvasTool === 'pan' ? 'cursor-grab' : canvasTool === 'text' ? 'cursor-crosshair' : ''
+        canvasTool === 'pan' ? 'cursor-grab' : canvasTool === 'text' && !isSpacePressed ? 'cursor-crosshair' : ''
       }`}
       style={{
         width: '100%',
@@ -687,10 +718,10 @@ export default function DatasetCanvas() {
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
         maxZoom={1.5}
-        panOnDrag={canvasTool === 'pan' ? true : canvasTool === 'text' ? false : [1, 2]}
-        selectionOnDrag={canvasTool === 'select'}
+        panOnDrag={canvasTool === 'pan' || isSpacePressed ? true : canvasTool === 'text' ? false : [1, 2]}
+        selectionOnDrag={canvasTool === 'select' && !isSpacePressed}
         selectionMode={SelectionMode.Partial}
-        nodesDraggable={canvasTool === 'select'}
+        nodesDraggable={canvasTool === 'select' && !isSpacePressed}
         elementsSelectable={canvasTool !== 'pan'}
         deleteKeyCode={['Delete', 'Backspace']}
         proOptions={{ hideAttribution: true }}

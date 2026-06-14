@@ -82,15 +82,15 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
           }
           setIsEditing(false)
         }}
-        className={`text-node-editable outline-none text-white font-body leading-snug whitespace-pre-wrap break-words px-1.5 py-1 border border-white/15 rounded ${
+        className={`text-node-editable outline-none text-white font-body leading-snug whitespace-pre-wrap break-words px-1.5 py-1 border border-transparent rounded ${
           isEditing ? 'nodrag nopan cursor-text' : 'cursor-grab'
         }`}
         style={{
           width: block.width,
           minHeight: block.height,
           fontSize: block.fontSize,
-          borderColor: selected || isEditing ? 'rgba(139,92,246,0.6)' : undefined,
-          boxShadow: selected || isEditing ? '0 0 0 1px rgba(139,92,246,0.6)' : undefined,
+          borderColor: isEditing ? 'rgba(139,92,246,0.6)' : undefined,
+          boxShadow: isEditing ? '0 0 0 1px rgba(139,92,246,0.6)' : undefined,
         }}
       />
     </div>

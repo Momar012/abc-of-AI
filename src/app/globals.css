@@ -139,6 +139,24 @@ body {
   cursor: crosshair;
 }
 
+/* Selection tool: open-hand cursor when hovering a component, closed hand while dragging it */
+[data-canvas-tool="select"] .react-flow__node {
+  cursor: grab;
+}
+[data-canvas-tool="select"] .react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+/* Holding Space: temporary "open hand" pan cursor everywhere, overriding any tool */
+[data-space-pressed="true"] .react-flow__pane,
+[data-space-pressed="true"] .react-flow__node {
+  cursor: grab;
+}
+[data-space-pressed="true"] .react-flow__pane.dragging,
+[data-space-pressed="true"] .react-flow__node.dragging {
+  cursor: grabbing;
+}
+
 /* Widen the text box's resize-handle hit areas (default is 1px) */
 .react-flow__node-text .react-flow__resize-control.line.left,
 .react-flow__node-text .react-flow__resize-control.line.right {
