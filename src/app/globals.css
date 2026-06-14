@@ -3,11 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 45%, #172554 100%);
+  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #172554 100%);
 }
 
 body {
   background: var(--bg-gradient);
+  background-attachment: fixed;
   min-height: 100vh;
   color: white;
   font-family: 'Inter', sans-serif;
