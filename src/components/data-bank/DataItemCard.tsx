@@ -40,6 +40,7 @@ export default function DataItemCard({ item, isOverlay = false }: DataItemCardPr
         ${isOverlay ? 'shadow-2xl shadow-violet-500/30 rotate-2 scale-105 border-white/10' : ''}
         ${!isOverlay && isSelected ? 'border-violet-400 ring-2 ring-violet-400/60' : !isOverlay ? 'border-white/10' : ''}
       `}
+      style={isOverlay ? undefined : { touchAction: 'none', userSelect: 'none' }}
       {...(isOverlay ? {} : { ...attributes, ...listeners })}
     >
       {item.type === 'image' && item.thumbnailUrl ? (

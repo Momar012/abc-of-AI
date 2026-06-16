@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic'
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   closestCenter,
@@ -104,7 +105,10 @@ function GettingStartedPanel() {
 }
 
 export default function DatasetBuilderPage() {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  )
   const { activeItem, activeTrainedModel, activeSavedDataset, activePaletteBlock, handleDragStart, handleDragEnd, selectionCount } = useDragFromBank()
 
   const bankItems = useDatasetStore((s) => s.bankItems)

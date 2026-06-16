@@ -30,6 +30,9 @@ export default function SensorInspector() {
   if (!block) return null
 
   const isNumeric = block.sensorType !== 'motion' && block.sensorType !== 'text-input'
+  const pct = isNumeric
+    ? Math.round(((Number(block.value) - (block.min ?? 0)) / ((block.max ?? 100) - (block.min ?? 0))) * 100)
+    : 0
   const emoji = SENSOR_EMOJI[block.sensorType] ?? '📡'
 
   const setValue = (v: number | boolean | string) => {
@@ -88,7 +91,8 @@ export default function SensorInspector() {
               step={1}
               value={Number(block.value)}
               onChange={(e) => setValue(Number(e.target.value))}
-              className="w-full h-3 rounded-full cursor-pointer accent-orange-400"
+              className="sensor-slider w-full"
+              style={{ background: `linear-gradient(to right, #fb923c ${pct}%, rgba(255,255,255,0.15) ${pct}%)` }}
             />
           </div>
         )}

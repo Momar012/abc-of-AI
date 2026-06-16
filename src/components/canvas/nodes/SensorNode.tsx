@@ -69,27 +69,33 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         </div>
 
         {/* Inline value control */}
-        {isNumeric && (
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-white/40 font-body">{block.min ?? 0}</span>
-              <span className="font-heading font-bold text-orange-300">
-                {String(block.value)}{block.unit}
-              </span>
-              <span className="text-white/40 font-body">{block.max ?? 100}</span>
+        {isNumeric && (() => {
+          const min = block.min ?? 0
+          const max = block.max ?? 100
+          const pct = Math.round(((Number(block.value) - min) / (max - min)) * 100)
+          return (
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-white/40 font-body">{min}</span>
+                <span className="font-heading font-bold text-orange-300">
+                  {String(block.value)}{block.unit}
+                </span>
+                <span className="text-white/40 font-body">{max}</span>
+              </div>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={1}
+                value={Number(block.value)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => handleValueChange(Number(e.target.value))}
+                className="sensor-slider w-full"
+                style={{ background: `linear-gradient(to right, #fb923c ${pct}%, rgba(255,255,255,0.15) ${pct}%)` }}
+              />
             </div>
-            <input
-              type="range"
-              min={block.min ?? 0}
-              max={block.max ?? 100}
-              step={block.sensorType === 'temperature' ? 1 : 1}
-              value={Number(block.value)}
-              onPointerDown={(e) => e.stopPropagation()}
-              onChange={(e) => handleValueChange(Number(e.target.value))}
-              className="w-full h-2 rounded-full cursor-pointer accent-orange-400"
-            />
-          </div>
-        )}
+          )
+        })()}
 
         {block.sensorType === 'motion' && (
           <button

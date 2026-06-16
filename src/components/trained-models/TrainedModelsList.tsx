@@ -34,6 +34,8 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
       style={{
         borderColor: 'rgba(52,211,153,0.2)',
         opacity: isDragging ? 0.4 : 1,
+        touchAction: 'none',
+        userSelect: 'none',
       }}
     >
       <div className="flex items-start justify-between gap-2">
