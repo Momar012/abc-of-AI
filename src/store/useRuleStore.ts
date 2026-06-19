@@ -4,6 +4,8 @@ import {
   SensorBlock, SensorType, ConditionBlock, RuleOperator, SwitchBlock,
   LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock,
 } from '@/types/rules'
+import { runTextInference } from '@/lib/textLearner'
+import type { DataItem } from '@/types/dataset'
 
 const SENSOR_DEFAULTS: Record<SensorType, Partial<SensorBlock>> = {
   temperature: { value: 25, min: -20, max: 100, unit: '°C' },
@@ -323,8 +325,30 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     const newConditions = conditionBlocks.map((c) => {
       if (c.linkedModelId) {
         // Model prediction path
-        const modelBlock = modelBlocks.find((m: { id: string; testResults?: { predictedLabel: string }[] }) => m.id === c.linkedModelId)
-        if (!modelBlock?.testResults?.length || !c.modelCondition) return { ...c, currentOutput: null }
+        const modelBlock = modelBlocks.find((m: {
+          id: string
+          liveLinkedSensorId?: string | null
+          trainedModelId?: string | null
+          testResults?: { predictedLabel: string }[]
+        }) => m.id === c.linkedModelId)
+        if (!c.modelCondition) return { ...c, currentOutput: null }
+
+        // Live sensor mode: run NB inference inline on the current sensor text
+        if (modelBlock?.liveLinkedSensorId) {
+          const sensor = sensorBlocks.find((s) => s.id === modelBlock.liveLinkedSensorId)
+          const text = typeof sensor?.value === 'string' ? sensor.value.trim() : ''
+          if (!text) return { ...c, currentOutput: null }
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          const { trainedModels } = require('@/store/useModelStore').useModelStore.getState()
+          const tm = trainedModels.find((m: { id: string; nbWordLogProbs?: unknown }) => m.id === modelBlock.trainedModelId)
+          if (!tm?.nbWordLogProbs) return { ...c, currentOutput: null }
+          const fakeItem: DataItem = { id: 'live', type: 'text', name: 'live', content: text, addedAt: 0 }
+          const results = runTextInference(tm, [fakeItem], () => {})
+          return { ...c, currentOutput: results[0]?.predictedLabel === c.modelCondition }
+        }
+
+        // Batch test mode (existing)
+        if (!modelBlock?.testResults?.length) return { ...c, currentOutput: null }
         const matchCount = modelBlock.testResults.filter((r: { predictedLabel: string }) => r.predictedLabel === c.modelCondition).length
         return { ...c, currentOutput: matchCount > 0 }
       }

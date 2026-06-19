@@ -60,7 +60,7 @@ export function saveToLocalStorage(state: {
       earnedBadges: state.earnedBadges,
       currentDatasetName: state.currentDatasetName,
       savedDatasets: state.savedDatasets,
-      modelBlocks: state.modelBlocks.map(({ testResults: _t, clusterResults: _c, ...rest }) => rest as ModelBlock),
+      modelBlocks: state.modelBlocks.map(({ testResults: _t, clusterResults: _c, liveResult: _l, ...rest }) => rest as ModelBlock),
       trainedModels: state.trainedModels,
       rlBlocks: state.rlBlocks.map(({ agentPos: _p, agentPath: _a, ...rest }) => rest as RLGridworldBlock),
       doorBlocks: state.doorBlocks.map(({ isOpen: _, ...rest }) => ({ ...rest, isOpen: false })),
@@ -119,6 +119,8 @@ export function loadFromLocalStorage(): PersistedState | null {
         testStatus: 'idle' as const,
         testResults: null,
         clusterResults: null,
+        liveLinkedSensorId: b.liveLinkedSensorId ?? null,
+        liveResult: null,
       })),
       trainedModels: parsed.trainedModels ?? [],
       rlBlocks: (parsed.rlBlocks ?? []).map((b) => ({

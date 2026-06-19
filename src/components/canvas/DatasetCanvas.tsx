@@ -285,6 +285,13 @@ export default function DatasetCanvas() {
         type: 'test',
         animated: b.testStatus === 'running',
       } as Edge)),
+      // sensor → model (live text inference)
+      ...modelBlocks.filter((b) => b.liveLinkedSensorId != null).map((b) => ({
+        id: `live-${b.liveLinkedSensorId}-${b.id}`,
+        source: b.liveLinkedSensorId!, sourceHandle: 'sensor-out',
+        target: b.id, targetHandle: 'live-in',
+        type: 'workflow',
+      } as Edge)),
       // model → condition (unified IF block in model mode)
       ...conditionBlocks.filter((b) => b.linkedModelId != null).map((b) => ({
         id: `model-cond-${b.linkedModelId}-${b.id}`,
@@ -468,6 +475,12 @@ export default function DatasetCanvas() {
       } else if (targetHandle === 'timer-in') {
         updateTimerBlock(target, { linkedRuleBlockId: source, isRunning: false, currentOutput: null, lastTriggerInput: null })
         evaluateGraph()
+      } else if (targetHandle === 'live-in') {
+        const sensor = sensorBlocks.find((b) => b.id === source)
+        if (sensor?.sensorType === 'text-input') {
+          updateModelBlock(target, { liveLinkedSensorId: source, liveResult: null })
+          evaluateGraph()
+        }
       }
     },
     [

@@ -45,8 +45,12 @@ export default function ConditionInspector() {
   const linkedModel = modelBlocks.find((m) => m.id === block.linkedModelId)
   const trainedModel = trainedModels.find((m) => m.id === linkedModel?.trainedModelId)
   const availableLabels = trainedModel?.labels ?? []
-  const currentPrediction = linkedModel?.testResults?.[0]?.predictedLabel ?? null
-  const labelMatchCount = (block.modelCondition && linkedModel?.testResults?.length)
+  const isLiveMode = !!linkedModel?.liveLinkedSensorId
+  const currentPrediction = isLiveMode
+    ? (linkedModel?.liveResult?.predictedLabel ?? null)
+    : (linkedModel?.testResults?.[0]?.predictedLabel ?? null)
+  const liveConfidence = isLiveMode ? (linkedModel?.liveResult?.confidence ?? null) : null
+  const labelMatchCount = (!isLiveMode && block.modelCondition && linkedModel?.testResults?.length)
     ? linkedModel.testResults.filter((r: { predictedLabel: string }) => r.predictedLabel === block.modelCondition).length
     : null
 
@@ -59,8 +63,11 @@ export default function ConditionInspector() {
     block.currentOutput === null ? 'text-white/40' :
     block.currentOutput ? 'text-emerald-400' : 'text-red-400'
   const outputLabel =
-    block.currentOutput === null ? (isModelMode ? 'Waiting for test result…' : 'Waiting for sensor…') :
-    block.currentOutput ? 'TRUE ✓' : 'FALSE ✗'
+    block.currentOutput === null
+      ? (isModelMode
+          ? (isLiveMode ? 'Type text in the sensor to predict…' : 'Waiting for test result…')
+          : 'Waiting for sensor…')
+      : block.currentOutput ? 'TRUE ✓' : 'FALSE ✗'
 
   const update = (updates: Parameters<typeof updateConditionBlock>[1]) => {
     updateConditionBlock(block.id, updates)
@@ -133,7 +140,9 @@ export default function ConditionInspector() {
           </div>
 
           <p className="text-[10px] text-white/25 font-body italic">
-            Tip: Add another IF condition connected to the same model to handle a different label.
+            {isLiveMode
+              ? 'Live mode: type in the sensor text box and the model predicts instantly.'
+              : 'Tip: Add another IF condition connected to the same model to handle a different label.'}
           </p>
         </>
       ) : (
@@ -226,10 +235,13 @@ export default function ConditionInspector() {
         )}
         {isModelMode && currentPrediction && (
           <p className="text-xs font-body text-white/40 mt-0.5">
-            Latest prediction:{' '}
+            {isLiveMode ? 'Live prediction:' : 'Latest prediction:'}{' '}
             <span className={currentPrediction === block.modelCondition ? 'text-emerald-400 font-semibold' : 'text-white/55'}>
               &quot;{currentPrediction}&quot;
             </span>
+            {liveConfidence !== null && (
+              <span className="text-white/30 ml-1">({Math.round(liveConfidence * 100)}%)</span>
+            )}
           </p>
         )}
         {labelMatchCount !== null && linkedModel?.testResults?.length && (

@@ -29,6 +29,13 @@ export interface ModelBlock {
   clusterCount: number | null
   clusterResults: ClusterResult[] | null
   textSentences?: string[]
+  liveLinkedSensorId?: string | null
+  liveResult?: {
+    predictedLabel: string
+    predictedLabelId: string
+    confidence: number
+    allConfidences: Record<string, number>
+  } | null
 }
 
 export interface TrainedModel {

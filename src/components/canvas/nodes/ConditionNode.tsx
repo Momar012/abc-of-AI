@@ -22,12 +22,12 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   const trainedModel = trainedModels.find((m) => m.id === linkedModel?.trainedModelId)
   const availableLabels = trainedModel?.labels ?? []
 
-  // Re-evaluate when model test results change
+  // Re-evaluate when model test results or live result change
   useEffect(() => {
     if (!block.linkedModelId) return
     evaluateGraph()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkedModel?.testResults, block.modelCondition])
+  }, [linkedModel?.testResults, linkedModel?.liveResult, block.modelCondition])
 
   // Self-heal: a motion sensor must always use the 'is' operator, otherwise
   // evalCondition's numeric branches produce stuck/inverted results.
@@ -52,7 +52,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   const isModelMode = !!block.linkedModelId
   const isSensorMode = !!block.linkedSensorId
 
-  const matchCount = (isModelMode && block.modelCondition && linkedModel?.testResults?.length)
+  const matchCount = (isModelMode && block.modelCondition && linkedModel?.testResults?.length && !linkedModel?.liveLinkedSensorId)
     ? linkedModel.testResults.filter((r) => r.predictedLabel === block.modelCondition).length
     : null
 
