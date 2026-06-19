@@ -12,6 +12,7 @@ import {
   closestCenter,
 } from '@dnd-kit/core'
 import TopNav from '@/components/layout/TopNav'
+import CurriculumPanel from '@/components/learn/CurriculumPanel'
 import DataBank from '@/components/data-bank/DataBank'
 import DataItemCard from '@/components/data-bank/DataItemCard'
 const DatasetCanvas = dynamic(() => import('@/components/canvas/DatasetCanvas'), { ssr: false })
@@ -36,6 +37,7 @@ import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
+import { useCurriculumStore } from '@/store/useCurriculumStore'
 
 function PropertiesIcon() {
   return (
@@ -125,8 +127,11 @@ export default function DatasetBuilderPage() {
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
   const rightPanelCollapsed = useUIStore((s) => s.rightPanelCollapsed)
+  const curriculumCollapsed = useUIStore((s) => s.curriculumCollapsed)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
   const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
+  const toggleCurriculumPanel = useUIStore((s) => s.toggleCurriculumPanel)
+  const { panelWidth, setPanelWidth } = useCurriculumStore()
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
   const rlBlocks = useRLStore((s) => s.rlBlocks)
@@ -264,6 +269,23 @@ export default function DatasetBuilderPage() {
     }
   })
 
+  function handleResizeStart(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = panelWidth
+    function onMove(ev: MouseEvent) {
+      const maxW = Math.min(380, Math.floor(window.innerWidth * 0.32))
+      const next = Math.max(200, Math.min(maxW, startWidth + ev.clientX - startX))
+      setPanelWidth(next)
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -335,82 +357,137 @@ export default function DatasetBuilderPage() {
       <div className="h-screen flex flex-col overflow-hidden">
         <TopNav />
 
-        <div className="relative flex-1 overflow-hidden">
-          {/* Full-bleed canvas */}
-          <div className="absolute inset-0">
-            <DatasetCanvas />
+        {/* Curriculum sidebar + canvas area */}
+        <div className="flex flex-1 min-h-0 overflow-hidden">
+
+          {/* Curriculum column — always a column; collapses to icon strip, never floats */}
+          <div
+            className="flex-shrink-0 relative overflow-hidden border-r border-white/10 transition-[width] duration-300 ease-in-out"
+            style={{
+              width: curriculumCollapsed ? 48 : panelWidth,
+              minWidth: curriculumCollapsed ? 48 : 200,
+            }}
+          >
+            {curriculumCollapsed ? (
+              /* Collapsed icon strip */
+              <div className="h-full flex flex-col items-center pt-3 gap-2">
+                <button
+                  onClick={toggleCurriculumPanel}
+                  title="Open Curriculum"
+                  className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl
+                    bg-gradient-to-br from-violet-500/30 to-teal-500/20
+                    border border-violet-500/30
+                    shadow-[0_0_14px_rgba(124,58,237,0.35)]
+                    hover:shadow-[0_0_20px_rgba(124,58,237,0.55)]
+                    hover:scale-110 transition-all duration-200"
+                >
+                  🧠
+                </button>
+                <div className="flex-1 flex items-center justify-center overflow-hidden">
+                  <span className="text-[9px] font-heading font-bold text-violet-300/50 uppercase tracking-[0.2em] select-none"
+                    style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
+                    Curriculum
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* Expanded full panel */
+              <div className="h-full" style={{ width: panelWidth, minWidth: panelWidth }}>
+                <CurriculumPanel />
+              </div>
+            )}
+            {!curriculumCollapsed && (
+              <div
+                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
+                onMouseDown={handleResizeStart}
+              />
+            )}
           </div>
 
-          {/* Floating toolbar — top center */}
-          <div className="absolute top-4 left-[17rem] right-[18rem] 2xl:left-[20rem] 2xl:right-[22rem] z-20 flex justify-center pointer-events-none">
-            <div className="pointer-events-auto max-w-full">
-              <CanvasToolbar />
+          {/* Canvas area — DataBank + Inspector float inside, exactly as committed build */}
+          <div className="relative flex-1 overflow-hidden">
+
+            {/* Full-bleed canvas */}
+            <div className="absolute inset-0">
+              <DatasetCanvas />
             </div>
-          </div>
 
-          {/* Floating left panel — Data Bank */}
-          {leftPanelCollapsed ? (
-            <button
-              onClick={toggleLeftPanel}
-              title="Show Data Bank"
-              className="absolute top-4 left-4 z-20 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+            {/* Toolbar — centered in the space between the floating panels */}
+            <div
+              className="absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300"
+              style={{
+                left: leftPanelCollapsed ? '1rem' : '16rem',
+                right: rightPanelCollapsed ? '1rem' : '17rem',
+              }}
             >
-              <PanelToggleIcon side="left" />
-            </button>
-          ) : (
-            <div className="absolute top-4 left-4 z-20 w-60 2xl:w-72 h-[calc(100%-2rem)] flex flex-col">
+              <div className="pointer-events-auto max-w-full">
+                <CanvasToolbar />
+              </div>
+            </div>
+
+            {/* Floating DataBank (left) */}
+            {leftPanelCollapsed ? (
               <button
                 onClick={toggleLeftPanel}
-                title="Hide Data Bank"
-                className="absolute -top-3 -right-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                title="Show Data Bank"
+                className="absolute top-4 left-4 z-20 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <PanelToggleIcon side="left" />
               </button>
-              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
+            ) : (
+              <div className="absolute top-4 left-4 z-20 w-52 lg:w-56 xl:w-60 2xl:w-72 h-[calc(100%-2rem)] flex flex-col">
+                <button
+                  onClick={toggleLeftPanel}
+                  title="Hide Data Bank"
+                  className="absolute -top-3 -right-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <PanelToggleIcon side="left" />
+                </button>
                 <DataBank />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Floating right panel — Inspector or Getting Started */}
-          {rightPanelCollapsed ? (
-            <button
-              onClick={toggleRightPanel}
-              title="Show Inspector"
-              className="absolute top-4 right-4 z-20 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-            >
-              <PropertiesIcon />
-            </button>
-          ) : (
-            <div className="absolute top-4 right-4 z-20 w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
+            {/* Floating Inspector (right) */}
+            {rightPanelCollapsed ? (
               <button
                 onClick={toggleRightPanel}
-                title="Hide Inspector"
-                className="absolute -top-3 -left-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                title="Show inspector"
+                className="absolute top-4 right-4 z-20 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
               >
                 <PropertiesIcon />
               </button>
-              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
-                {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
-                  <RLInspector key={selectedBlockId} />
-                ) : selectedBlockId && selectedBlockType === 'model' ? (
-                  <ModelInspector key={selectedBlockId} />
-                ) : selectedBlockId && selectedBlockType === 'sensor' ? (
-                  <SensorInspector key={selectedBlockId} />
-                ) : selectedBlockId && selectedBlockType === 'condition' ? (
-                  <ConditionInspector key={selectedBlockId} />
-                ) : selectedBlockId && selectedBlockType === 'timer' ? (
-                  <TimerInspector key={selectedBlockId} />
-                ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
-                  <LogicInspector key={selectedBlockId} />
-                ) : selectedBlockId ? (
-                  <BlockInspector key={selectedBlockId} />
-                ) : (
-                  <GettingStartedPanel />
-                )}
+            ) : (
+              <div className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
+                <button
+                  onClick={toggleRightPanel}
+                  title="Hide inspector"
+                  className="absolute -top-3 -left-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <PropertiesIcon />
+                </button>
+                <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
+                  {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
+                    <RLInspector key={selectedBlockId} />
+                  ) : selectedBlockId && selectedBlockType === 'model' ? (
+                    <ModelInspector key={selectedBlockId} />
+                  ) : selectedBlockId && selectedBlockType === 'sensor' ? (
+                    <SensorInspector key={selectedBlockId} />
+                  ) : selectedBlockId && selectedBlockType === 'condition' ? (
+                    <ConditionInspector key={selectedBlockId} />
+                  ) : selectedBlockId && selectedBlockType === 'timer' ? (
+                    <TimerInspector key={selectedBlockId} />
+                  ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
+                    <LogicInspector key={selectedBlockId} />
+                  ) : selectedBlockId ? (
+                    <BlockInspector key={selectedBlockId} />
+                  ) : (
+                    <GettingStartedPanel />
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+          </div>
         </div>
       </div>
 

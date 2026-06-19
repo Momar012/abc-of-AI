@@ -17,7 +17,7 @@ export default function DataBank() {
   const [activeTab, setActiveTab] = useState<Tab>('bank')
 
   return (
-    <aside className="w-full flex-shrink-0 flex flex-col gap-0 flex-1 min-h-0 overflow-hidden glass-panel">
+    <aside className="w-full flex flex-col flex-1 min-h-0 overflow-hidden glass-panel h-full">
       {/* Tab bar */}
       <div className="flex border-b border-white/10">
         <button

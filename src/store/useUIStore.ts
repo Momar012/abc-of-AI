@@ -21,6 +21,7 @@ interface UIState {
   selectedBankItemIds: string[]
   leftPanelCollapsed: boolean
   rightPanelCollapsed: boolean
+  curriculumCollapsed: boolean
   canvasTool: 'select' | 'pan' | 'text'
   canvasInteractive: boolean
 
@@ -41,6 +42,7 @@ interface UIState {
   clearBankSelection: () => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
+  toggleCurriculumPanel: () => void
   setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
   setCanvasInteractive: (v: boolean) => void
 }
@@ -56,8 +58,9 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   clusterResultsModalBlockId: null,
   labellingModalBlockId: null,
   selectedBankItemIds: [],
-  leftPanelCollapsed: false,
-  rightPanelCollapsed: false,
+  leftPanelCollapsed: true,
+  rightPanelCollapsed: true,
+  curriculumCollapsed: false,
   canvasTool: 'select',
   canvasInteractive: true,
 
@@ -103,10 +106,11 @@ export const useUIStore = create<UIState>()(persist((set) => ({
 
   toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
+  toggleCurriculumPanel: () => set((s) => ({ curriculumCollapsed: !s.curriculumCollapsed })),
 
   setCanvasTool: (tool) => set({ canvasTool: tool }),
   setCanvasInteractive: (v) => set({ canvasInteractive: v }),
 }), {
-  name: 'abcai_ui_panels_v1',
-  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed }),
+  name: 'abcai_ui_panels_v2',
+  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed }),
 }))
