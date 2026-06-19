@@ -45,6 +45,10 @@ export default function ConditionInspector() {
   const linkedModel = modelBlocks.find((m) => m.id === block.linkedModelId)
   const trainedModel = trainedModels.find((m) => m.id === linkedModel?.trainedModelId)
   const availableLabels = trainedModel?.labels ?? []
+  const currentPrediction = linkedModel?.testResults?.[0]?.predictedLabel ?? null
+  const labelMatchCount = (block.modelCondition && linkedModel?.testResults?.length)
+    ? linkedModel.testResults.filter((r: { predictedLabel: string }) => r.predictedLabel === block.modelCondition).length
+    : null
 
   const ops =
     sensorType === 'motion' ? MOTION_OPS :
@@ -127,6 +131,10 @@ export default function ConditionInspector() {
               </p>
             )}
           </div>
+
+          <p className="text-[10px] text-white/25 font-body italic">
+            Tip: Add another IF condition connected to the same model to handle a different label.
+          </p>
         </>
       ) : (
         /* ── Sensor condition mode ── */
@@ -214,6 +222,19 @@ export default function ConditionInspector() {
           <p className="text-xs font-body text-white/70">
             IF prediction =={' '}
             <span className="text-violet-300 font-semibold">&quot;{block.modelCondition}&quot;</span>
+          </p>
+        )}
+        {isModelMode && currentPrediction && (
+          <p className="text-xs font-body text-white/40 mt-0.5">
+            Latest prediction:{' '}
+            <span className={currentPrediction === block.modelCondition ? 'text-emerald-400 font-semibold' : 'text-white/55'}>
+              &quot;{currentPrediction}&quot;
+            </span>
+          </p>
+        )}
+        {labelMatchCount !== null && linkedModel?.testResults?.length && (
+          <p className="text-xs font-body text-white/40">
+            {labelMatchCount} of {linkedModel.testResults.length} items matched
           </p>
         )}
         <p className={`text-sm font-heading font-bold ${outputColor}`}>→ {outputLabel}</p>

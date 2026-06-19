@@ -52,6 +52,10 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   const isModelMode = !!block.linkedModelId
   const isSensorMode = !!block.linkedSensorId
 
+  const matchCount = (isModelMode && block.modelCondition && linkedModel?.testResults?.length)
+    ? linkedModel.testResults.filter((r) => r.predictedLabel === block.modelCondition).length
+    : null
+
   const sensorShortName = sensor ? (sensor.name.split(' ').slice(1).join(' ') || sensor.name) : ''
   const conditionPreview = isSensorMode
     ? `${sensorShortName} ${block.operator} ${block.threshold}`
@@ -73,7 +77,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
         type="source"
         position={Position.Right}
         id="rule-out"
-        style={{ background: '#84CC16', border: '2px solid #365314', width: 12, height: 12, right: -6, top: '50%' }}
+        style={{ background: '#84CC16', border: '2px solid #365314', width: 12, height: 12, right: -6, top: isModelMode ? '88%' : '50%' }}
       />
 
       <div className="drag-handle flex justify-center items-center py-1.5 px-4 rounded-t-xl cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors">
@@ -143,11 +147,12 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
 
         <div className={`text-xs font-heading font-bold text-center py-1 rounded-lg bg-white/5 ${outputColor}`}>
           {outputLabel}
+          {matchCount !== null && block.currentOutput !== null && (
+            <span className="text-white/40 font-body font-normal ml-1.5">({matchCount} matched)</span>
+          )}
         </div>
 
-        {!isModelMode && (
-          <p className="text-[10px] text-white/35 font-body text-center italic">double-click to edit</p>
-        )}
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to edit</p>
       </div>
     </div>
   )

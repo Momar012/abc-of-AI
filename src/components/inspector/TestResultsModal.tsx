@@ -59,7 +59,7 @@ export default function TestResultsModal() {
             <span className="text-lg">🔬</span>
             <div>
               <p className="text-sm font-heading font-bold text-white">Test Results: {block.name}</p>
-              <p className="text-xs text-white/40 font-body">{results.length} images evaluated</p>
+              <p className="text-xs text-white/40 font-body">{results.length} {block.modelType === 'text-supervised' ? 'texts' : 'images'} evaluated</p>
             </div>
           </div>
           <button
@@ -124,7 +124,13 @@ export default function TestResultsModal() {
                 >
                   {/* Thumbnail */}
                   <div className="relative">
-                    {bankItem?.thumbnailUrl ? (
+                    {block.modelType === 'text-supervised' ? (
+                      <div className="w-full aspect-square bg-white/5 flex items-center justify-center p-2 overflow-hidden">
+                        <p className="text-xs text-white/60 font-body leading-tight line-clamp-5 text-center">
+                          {bankItem?.content ?? '?'}
+                        </p>
+                      </div>
+                    ) : bankItem?.thumbnailUrl ? (
                       <img src={bankItem.thumbnailUrl} alt="" className="w-full aspect-square object-cover" />
                     ) : (
                       <div className="w-full aspect-square bg-white/5 flex items-center justify-center">

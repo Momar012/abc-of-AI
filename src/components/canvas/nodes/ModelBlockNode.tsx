@@ -9,6 +9,8 @@ const MODEL_TYPE_LABELS: Record<string, string> = {
   'image-supervised': 'Image Supervised',
   'image-classifier': 'Image Classifier',
   'image-unsupervised': 'Image Unsupervised',
+  'text-supervised': 'Text Supervised',
+  'text-unsupervised': 'Text Unsupervised',
 }
 
 const STATUS_STYLES: Record<string, { color: string; label: string }> = {

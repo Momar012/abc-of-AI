@@ -45,6 +45,7 @@ interface DatasetState {
   // Tabular labelling actions
   addItemToBlock: (blockId: string, itemId: string) => void
   removeItemFromBlock: (blockId: string, itemId: string) => void
+  bulkRemoveItemsFromBlock: (blockId: string, itemIds: string[]) => void
   assignItemLabel: (blockId: string, itemId: string, labelId: string | null) => void
 
   addUnlabelledBlock: (pos?: { x: number; y: number }) => void
@@ -52,10 +53,13 @@ interface DatasetState {
   renameUnlabelledBlock: (blockId: string, name: string) => void
   assignItemToUnlabelled: (blockId: string, itemId: string) => void
   removeItemFromUnlabelled: (blockId: string, itemId: string) => void
+  bulkImportUnlabelledTexts: (blockId: string, texts: string[]) => void
 
   runValidation: () => void
   clearValidation: () => void
   updateSplit: (field: 'trainPercent' | 'testPercent' | 'validationPercent', value: number) => void
+
+  bulkImportTextRows: (blockId: string, rows: Array<{ label: string; text: string }>) => void
 
   // Dataset naming + session save
   setDatasetName: (name: string) => void
@@ -197,6 +201,21 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       }),
     })),
 
+  bulkRemoveItemsFromBlock: (blockId, itemIds) =>
+    set((s) => {
+      const idSet = new Set(itemIds)
+      return {
+        labelledBlocks: s.labelledBlocks.map((b) => {
+          if (b.id !== blockId) return b
+          return {
+            ...b,
+            itemIds: b.itemIds.filter((id) => !idSet.has(id)),
+            labels: b.labels.map((l) => ({ ...l, itemIds: l.itemIds.filter((id) => !idSet.has(id)) })),
+          }
+        }),
+      }
+    }),
+
   assignItemLabel: (blockId, itemId, labelId) =>
     set((s) => ({
       labelledBlocks: s.labelledBlocks.map((b) => {
@@ -255,6 +274,27 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       ),
     })),
 
+  bulkImportUnlabelledTexts: (blockId, texts) =>
+    set((s) => {
+      if (!texts.length) return s
+      const now = Date.now()
+      const newItems: DataItem[] = texts.map((text, i) => ({
+        id: uuid(),
+        type: 'text' as const,
+        name: text.length > 40 ? text.slice(0, 40) + '…' : text,
+        content: text,
+        addedAt: now + i,
+      }))
+      return {
+        bankItems: [...newItems, ...s.bankItems],
+        unlabelledBlocks: s.unlabelledBlocks.map((b) =>
+          b.id === blockId
+            ? { ...b, itemIds: [...newItems.map((it) => it.id), ...b.itemIds] }
+            : b
+        ),
+      }
+    }),
+
   runValidation: () => {
     const state = get()
     const result = validateDataset(state.labelledBlocks, state.bankItems)
@@ -282,6 +322,50 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         split[last] = Math.max(1, split[last] + (100 - total))
       }
       return { splitConfig: split }
+    }),
+
+  bulkImportTextRows: (blockId, rows) =>
+    set((s) => {
+      const block = s.labelledBlocks.find((b) => b.id === blockId)
+      if (!block || !rows.length) return s
+
+      const now = Date.now()
+      const newBankItems: DataItem[] = rows.map((row, i) => ({
+        id: uuid(),
+        type: 'text' as const,
+        name: row.text.length > 40 ? row.text.slice(0, 40) + '…' : row.text,
+        content: row.text,
+        addedAt: now + i,
+      }))
+
+      // Build label map (name → id), creating new labels for unseen names
+      const labelMap: Record<string, string> = {}
+      for (const l of block.labels) labelMap[l.name] = l.id
+
+      const newLabels = block.labels.map((l) => ({ ...l, itemIds: [...l.itemIds] }))
+      const uniqueNames = [...new Set(rows.map((r) => r.label))]
+      for (const name of uniqueNames) {
+        if (!labelMap[name]) {
+          const id = uuid()
+          const colorIndex = newLabels.length % LABEL_PALETTE.length
+          newLabels.push({ id, name, color: LABEL_PALETTE[colorIndex], itemIds: [] })
+          labelMap[name] = id
+        }
+      }
+
+      // Assign each new item to its label
+      for (let i = 0; i < rows.length; i++) {
+        const labelId = labelMap[rows[i].label]
+        const label = newLabels.find((l) => l.id === labelId)
+        if (label) label.itemIds.push(newBankItems[i].id)
+      }
+
+      return {
+        bankItems: [...newBankItems, ...s.bankItems],
+        labelledBlocks: s.labelledBlocks.map((b) =>
+          b.id === blockId ? { ...b, labels: newLabels } : b
+        ),
+      }
     }),
 
   // --- Naming + session save ---

@@ -29,4 +29,18 @@ export const MODEL_CATALOG = [
     description: 'Feed it text and it learns the facts. Teach it wrong things and watch it get confused!',
     available: true,
   },
+  {
+    type: 'text-supervised' as ModelType,
+    name: 'Text Supervised',
+    icon: '📝',
+    description: 'Teach the AI to classify text into categories using labelled examples. Uses TF-IDF + KNN.',
+    available: true,
+  },
+  {
+    type: 'text-unsupervised' as ModelType,
+    name: 'Text Unsupervised',
+    icon: '🔤',
+    description: 'Group similar texts automatically. No labels needed. Uses TF-IDF + K-means.',
+    available: true,
+  },
 ]

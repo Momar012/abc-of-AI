@@ -8,6 +8,8 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import LabelTableRow from '@/components/blocks/LabelTableRow'
 import LabelCreator from '@/components/blocks/LabelCreator'
 import DroppedItemChip from '@/components/blocks/DroppedItemChip'
+import SpreadsheetPasteModal from '@/components/inspector/SpreadsheetPasteModal'
+import UnlabelledPasteModal from '@/components/inspector/UnlabelledPasteModal'
 
 function ExpandViewButton({ blockId }: { blockId: string }) {
   const openLabellingModal = useUIStore((s) => s.openLabellingModal)
@@ -29,6 +31,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
     id: `block-table-${blockId}`,
     data: { blockId, blockDrop: true },
   })
+  const [showPasteModal, setShowPasteModal] = useState(false)
 
   if (!block) return null
 
@@ -50,8 +53,21 @@ function LabelledContent({ blockId }: { blockId: string }) {
       {/* Items header with expand button */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <p className="text-xs text-white/40 font-heading font-semibold uppercase tracking-wider">Items</p>
-        <ExpandViewButton blockId={blockId} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowPasteModal(true)}
+            className="text-xs text-violet-300 hover:text-violet-200 font-body transition-colors whitespace-nowrap"
+            title="Import labelled text rows from a spreadsheet"
+          >
+            📋 Paste
+          </button>
+          <ExpandViewButton blockId={blockId} />
+        </div>
       </div>
+
+      {showPasteModal && (
+        <SpreadsheetPasteModal blockId={blockId} onClose={() => setShowPasteModal(false)} />
+      )}
 
       {/* Drop zone + table */}
       <motion.div
@@ -124,38 +140,58 @@ function UnlabelledContent({ blockId }: { blockId: string }) {
     id: `unlabelled-${blockId}`,
     data: { blockId, unlabelled: true },
   })
+  const [showPasteModal, setShowPasteModal] = useState(false)
 
   if (!block) return null
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      animate={{
-        boxShadow: isOver ? '0 0 20px 4px rgba(45,212,191,0.35)' : 'none',
-        scale: isOver ? 1.01 : 1,
-      }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className="drop-zone min-h-[120px] mx-4 my-3 p-3 flex flex-col gap-1 rounded-xl"
-      style={{ borderColor: isOver ? '#2DD4BF' : undefined }}
-    >
-      {block.itemIds.length === 0 ? (
-        <p className="text-xs text-white/35 text-center py-6 font-body">
-          {isOver ? '✨ Drop here!' : 'Drag items here (no labels)'}
-        </p>
-      ) : (
-        <AnimatePresence>
-          {block.itemIds.map((itemId) => (
-            <DroppedItemChip
-              key={itemId}
-              itemId={itemId}
-              blockId={block.id}
-              labelId="unlabelled"
-              color="#2DD4BF"
-            />
-          ))}
-        </AnimatePresence>
+    <div className="flex flex-col gap-0">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <p className="text-xs text-white/40 font-heading font-semibold uppercase tracking-wider">Items</p>
+        <button
+          onClick={() => setShowPasteModal(true)}
+          className="text-xs font-body transition-colors whitespace-nowrap"
+          style={{ color: '#2DD4BF' }}
+          title="Paste text items from a spreadsheet or clipboard"
+        >
+          📋 Paste
+        </button>
+      </div>
+
+      {showPasteModal && (
+        <UnlabelledPasteModal blockId={blockId} onClose={() => setShowPasteModal(false)} />
       )}
-    </motion.div>
+
+      <motion.div
+        ref={setNodeRef}
+        animate={{
+          boxShadow: isOver ? '0 0 20px 4px rgba(45,212,191,0.35)' : 'none',
+          scale: isOver ? 1.01 : 1,
+        }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        className="drop-zone min-h-[120px] mx-4 my-2 p-3 flex flex-col gap-1 rounded-xl"
+        style={{ borderColor: isOver ? '#2DD4BF' : undefined }}
+      >
+        {block.itemIds.length === 0 ? (
+          <p className="text-xs text-white/35 text-center py-6 font-body">
+            {isOver ? '✨ Drop here!' : 'Drag items here (no labels)'}
+          </p>
+        ) : (
+          <AnimatePresence>
+            {block.itemIds.map((itemId) => (
+              <DroppedItemChip
+                key={itemId}
+                itemId={itemId}
+                blockId={block.id}
+                labelId="unlabelled"
+                color="#2DD4BF"
+              />
+            ))}
+          </AnimatePresence>
+        )}
+      </motion.div>
+    </div>
   )
 }
 

@@ -87,6 +87,8 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
         else if (blockType === 'model-image-supervised') addModelBlockWithType('image-supervised', flowPos)
         else if (blockType === 'model-image-unsupervised') addModelBlockWithType('image-unsupervised', flowPos)
         else if (blockType === 'model-text-corpus') addModelBlockWithType('text-corpus', flowPos)
+        else if (blockType === 'model-text-supervised') addModelBlockWithType('text-supervised', flowPos)
+        else if (blockType === 'model-text-unsupervised') addModelBlockWithType('text-unsupervised', flowPos)
         else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
         else if (blockType === 'door') addDoorBlock(flowPos)
         else if (blockType === 'bulb') addBulbBlock(flowPos)
@@ -405,8 +407,9 @@ export default function DatasetCanvas() {
         updateModelBlock(target, { testLinkedBlockId: source, testStatus: 'idle', testResults: null })
       } else if (targetHandle === 'in') {
         const current = modelBlocks.find((b) => b.id === target)
-        if (current?.trainedModelId && current.trainedLinkedBlockId === source) {
-          // Reconnecting the same data the saved model was trained on — keep trained state.
+        if (current?.trainedModelId) {
+          // Model already trained — just update the linked block. Don't auto-reset;
+          // the user must explicitly retrain if they want to update the model.
           updateModelBlock(target, { linkedBlockId: source })
         } else {
           updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null })

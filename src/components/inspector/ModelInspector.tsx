@@ -6,7 +6,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { trainImageSupervisedModel, runInference, clusterImages } from '@/lib/trainModel'
-import { trainTextCorpus, queryTextCorpus } from '@/lib/textLearner'
+import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts } from '@/lib/textLearner'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import { TrainedModel, TestResult, ChatMessage } from '@/types/model'
 
@@ -49,7 +49,7 @@ export default function ModelInspector() {
   const linkedLabelledBlock = labelledBlocks.find((b) => b.id === block.linkedBlockId)
   const linkedUnlabelledBlock = unlabelledBlocks.find((b) => b.id === block.linkedBlockId)
   // For unsupervised and text-corpus, allow linking to either labelled or unlabelled blocks
-  const linkedBlock = (block.modelType === 'image-unsupervised' || block.modelType === 'text-corpus')
+  const linkedBlock = (block.modelType === 'image-unsupervised' || block.modelType === 'text-corpus' || block.modelType === 'text-unsupervised')
     ? (linkedLabelledBlock ?? linkedUnlabelledBlock)
     : linkedLabelledBlock
   const testLabelledBlock = labelledBlocks.find((b) => b.id === block.testLinkedBlockId)
@@ -61,6 +61,12 @@ export default function ModelInspector() {
       ? ('labels' in linkedBlock
           ? linkedBlock.labels.some((l) => l.itemIds.length > 0) || linkedBlock.itemIds.length > 0
           : linkedBlock.itemIds.length > 0)
+      : block.modelType === 'text-unsupervised'
+      ? ('labels' in linkedBlock
+          ? linkedBlock.labels.some((l) => l.itemIds.length > 0) || linkedBlock.itemIds.length > 0
+          : linkedBlock.itemIds.length > 0)
+      : block.modelType === 'text-supervised'
+      ? (linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).length ?? 0) >= 2
       : (linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).length ?? 0) >= 2
   )
   const isWorking = block.status === 'loading' || block.status === 'training'
@@ -81,7 +87,10 @@ export default function ModelInspector() {
     : (testUnlabelledBlock?.itemIds ?? [])
   const testItems = testItemIds
     .map((id) => bankItems.find((i) => i.id === id))
-    .filter((i): i is NonNullable<typeof i> => !!i && i.type === 'image' && !!i.content)
+    .filter((i): i is NonNullable<typeof i> => {
+      if (!i || !i.content) return false
+      return block.modelType === 'text-supervised' ? i.type === 'text' : i.type === 'image'
+    })
 
   // Find the TrainedModel object for inference
   const trainedModel = block.trainedModelId
@@ -136,6 +145,81 @@ export default function ModelInspector() {
       })
       updateModelBlock(block.id, { status: 'trained', clusterResults: result, trainedLinkedBlockId: block.linkedBlockId })
       addToast(`🧩 Grouped ${imageItems.length} images into ${k} clusters!`, 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Clustering failed'
+      updateModelBlock(block.id, { status: 'error', errorMessage: msg })
+      addToast(`❌ ${msg}`, 'warn')
+    }
+  }
+
+  const handleTrainTextSupervised = async () => {
+    if (!linkedLabelledBlock) return
+    setProgressStep(0)
+    setProgressTotal(100)
+    setProgressMessage('Starting…')
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null })
+
+    try {
+      const result = trainTextSupervisedModel(
+        linkedLabelledBlock,
+        bankItems,
+        (message, step, total) => {
+          setProgressMessage(message)
+          setProgressStep(step)
+          setProgressTotal(total)
+          if (step > 0) updateModelBlock(block.id, { status: 'training' })
+        }
+      )
+
+      const trained: TrainedModel = {
+        id: uuid(),
+        name: saveName.trim() || block.name,
+        trainedAt: Date.now(),
+        modelType: block.modelType!,
+        ...result,
+      }
+
+      saveTrainedModel(trained)
+      updateModelBlock(block.id, { status: 'trained', trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
+      addToast(`🎉 "${trained.name}" trained successfully!`, 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Training failed'
+      updateModelBlock(block.id, { status: 'error', errorMessage: msg })
+      addToast(`❌ ${msg}`, 'warn')
+    }
+  }
+
+  const handleClusterTexts = () => {
+    if (!linkedBlock) return
+    const k = block.clusterCount ?? 3
+
+    const allItemIds = 'labels' in linkedBlock
+      ? [...linkedBlock.itemIds, ...linkedBlock.labels.flatMap((l) => l.itemIds)]
+      : [...linkedBlock.itemIds]
+    const textItems = allItemIds
+      .map((id) => bankItems.find((i) => i.id === id))
+      .filter((i): i is NonNullable<typeof i> => !!i && i.type === 'text' && !!i.content)
+      .map((i) => ({ itemId: i.id, content: i.content! }))
+
+    if (!textItems.length) {
+      addToast('⚠ No text items found in the linked block.', 'warn')
+      return
+    }
+
+    setProgressStep(0)
+    setProgressTotal(100)
+    setProgressMessage('Starting…')
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
+
+    try {
+      const result = clusterTexts(textItems, k, (message, step, total) => {
+        setProgressMessage(message)
+        setProgressStep(step)
+        setProgressTotal(total)
+        if (step > 1) updateModelBlock(block.id, { status: 'training' })
+      })
+      updateModelBlock(block.id, { status: 'trained', clusterResults: result, trainedLinkedBlockId: block.linkedBlockId })
+      addToast(`📝 Grouped ${textItems.length} texts into ${k} clusters!`, 'success')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Clustering failed'
       updateModelBlock(block.id, { status: 'error', errorMessage: msg })
@@ -230,10 +314,9 @@ export default function ModelInspector() {
     updateModelBlock(block.id, { testStatus: 'running', testResults: null })
 
     try {
-      const raw = await runInference(trainedModel, testItems, (step, total) => {
-        setTestProgress(step)
-        setTestTotal(total)
-      })
+      const raw = block.modelType === 'text-supervised'
+        ? runTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+        : await runInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
       const enriched: TestResult[] = raw.map((r) => ({
         ...r,
         actualLabelId: groundTruthMap[r.itemId]?.labelId ?? null,
@@ -246,7 +329,8 @@ export default function ModelInspector() {
         const pct = Math.round((correct / enriched.length) * 100)
         addToast(`🔬 Test complete: ${pct}% accurate (${correct}/${enriched.length})`, 'success')
       } else {
-        addToast(`🔬 Test complete: ${enriched.length} images classified!`, 'success')
+        const itemWord = block.modelType === 'text-supervised' ? 'texts' : 'images'
+        addToast(`🔬 Test complete: ${enriched.length} ${itemWord} classified!`, 'success')
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Testing failed'
@@ -308,6 +392,36 @@ export default function ModelInspector() {
                       ? `${linkedBlock.itemIds.length + linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} images`
                       : `${linkedBlock.itemIds.length} images`}
                   </p>
+                ) : block.modelType === 'text-unsupervised' ? (
+                  <p className="text-xs text-white/50 font-body">
+                    {'labels' in linkedBlock
+                      ? `${linkedBlock.itemIds.length + linkedBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} text items`
+                      : `${linkedBlock.itemIds.length} text items`}
+                  </p>
+                ) : block.modelType === 'text-supervised' ? (
+                  <>
+                    <div className="flex flex-wrap gap-1">
+                      {linkedLabelledBlock?.labels.filter((l) => l.itemIds.length > 0).map((label) => (
+                        <span
+                          key={label.id}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-body"
+                          style={{
+                            background: `${label.color}22`,
+                            border: `1px solid ${label.color}55`,
+                            color: label.color,
+                          }}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />
+                          {label.name} ({label.itemIds.length})
+                        </span>
+                      ))}
+                    </div>
+                    {!isTrainable && (
+                      <p className="text-xs text-amber-400/80 font-body mt-0.5">
+                        ⚠ Need at least 2 labels with text items assigned.
+                      </p>
+                    )}
+                  </>
                 ) : (
                   <>
                     <div className="flex flex-wrap gap-1">
@@ -337,8 +451,10 @@ export default function ModelInspector() {
             ) : (
               <div className="p-2 rounded-lg bg-white/5 border border-white/10">
                 <p className="text-xs text-white/40 font-body leading-relaxed">
-                  {block.modelType === 'text-corpus'
+                  {block.modelType === 'text-corpus' || block.modelType === 'text-unsupervised'
                     ? <>🔗 Upload .txt files to the Data Bank, drop them into a 📦 Unlabelled block, then drag from its <span className="text-violet-300 font-semibold">violet dot</span> to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
+                    : block.modelType === 'text-supervised'
+                    ? <>🔗 Upload .txt files to the Data Bank, assign them to a 🏷️ Labelled block with at least 2 labels, then drag from its <span className="text-violet-300 font-semibold">violet dot</span> to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
                     : block.modelType === 'image-unsupervised'
                     ? <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled or 📦 Unlabelled block to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
                     : <>🔗 On the canvas, drag from the <span className="text-violet-300 font-semibold">violet dot</span> on a 🏷️ Labelled block to the <span className="text-teal-300 font-semibold">teal dot</span> on this block.</>
@@ -353,7 +469,7 @@ export default function ModelInspector() {
         {block.modelType && block.linkedBlockId && (
           <div className="px-4 py-3 border-b border-white/8">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider mb-2">
-              {block.modelType === 'image-unsupervised' ? '2 · Cluster' : block.modelType === 'text-corpus' ? '2 · Feed the Brain' : '2 · Train'}
+              {block.modelType === 'image-unsupervised' || block.modelType === 'text-unsupervised' ? '2 · Cluster' : block.modelType === 'text-corpus' ? '2 · Feed the Brain' : '2 · Train'}
             </p>
 
             {block.status === 'error' && block.errorMessage && (
@@ -453,6 +569,90 @@ export default function ModelInspector() {
                     : block.status === 'trained' && block.clusterResults
                     ? '🔁 Re-cluster'
                     : '🧩 Cluster Images'}
+                </button>
+              </>
+            ) : block.modelType === 'text-unsupervised' ? (
+              <>
+                {!isWorking && (
+                  <div className="mb-3 flex flex-col gap-1.5">
+                    <p className="text-xs text-white/50 font-body">Number of groups:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[2, 3, 4, 5, 6, 7, 8].map((n) => {
+                        const selected = (block.clusterCount ?? 3) === n
+                        return (
+                          <button
+                            key={n}
+                            onClick={() => updateModelBlock(block.id, {
+                              clusterCount: n,
+                              clusterResults: null,
+                              status: block.status === 'trained' ? 'idle' : block.status,
+                            })}
+                            className={`w-8 h-8 rounded-full text-sm font-heading font-bold transition-all ${
+                              selected
+                                ? 'bg-violet-600 text-white'
+                                : 'bg-white/10 text-white/60 hover:bg-white/20'
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {block.status === 'trained' && block.clusterResults && (
+                  <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-400 font-body font-semibold">
+                      ✓ {block.clusterResults.length} texts grouped into {block.clusterCount ?? 3} clusters
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleClusterTexts}
+                  disabled={!isTrainable || isWorking}
+                  className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isWorking
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : isTrainable
+                      ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                      : 'bg-white/10 text-white/40 cursor-not-allowed'
+                  }`}
+                >
+                  {isWorking
+                    ? block.status === 'loading' ? 'Loading…' : '🔄 Clustering…'
+                    : block.status === 'trained' && block.clusterResults ? '🔁 Re-cluster' : '📝 Cluster Texts'}
+                </button>
+              </>
+            ) : block.modelType === 'text-supervised' ? (
+              <>
+                {block.status === 'trained' && (
+                  <div className="mb-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-xs text-emerald-400 font-body font-semibold">✓ Training complete!</p>
+                    {linkedLabelledBlock && (
+                      <p className="text-xs text-white/50 font-body mt-0.5">
+                        {linkedLabelledBlock.labels.filter((l) => l.itemIds.length > 0).length} labels ·{' '}
+                        {linkedLabelledBlock.labels.reduce((s, l) => s + l.itemIds.length, 0)} texts trained
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleTrainTextSupervised}
+                  disabled={!isTrainable || isWorking}
+                  className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
+                    isWorking
+                      ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                      : isTrainable
+                      ? 'bg-violet-600 hover:bg-violet-500 text-white'
+                      : 'bg-white/10 text-white/40 cursor-not-allowed'
+                  }`}
+                >
+                  {isWorking
+                    ? block.status === 'loading' ? 'Loading…' : '🔄 Training…'
+                    : block.status === 'trained' ? '🔁 Retrain' : '📝 Train Model'}
                 </button>
               </>
             ) : (
@@ -558,7 +758,7 @@ export default function ModelInspector() {
         {block.status === 'trained' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 border-b border-white/8 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
-              {block.modelType === 'image-unsupervised' ? '3 · Name Your Result' : '3 · Save to My Models'}
+              {block.modelType === 'image-unsupervised' || block.modelType === 'text-unsupervised' ? '3 · Name Your Result' : '3 · Save to My Models'}
             </p>
             <input
               value={saveName}
@@ -578,7 +778,7 @@ export default function ModelInspector() {
             >
               💾 Save Name
             </button>
-            {block.modelType !== 'image-unsupervised' && (
+            {block.modelType !== 'image-unsupervised' && block.modelType !== 'text-unsupervised' && (
               <p className="text-xs text-white/40 font-body text-center">
                 Check the 🤖 My Models tab in the left panel
               </p>
@@ -587,14 +787,14 @@ export default function ModelInspector() {
         )}
 
         {/* Step 5: Explore Clusters (unsupervised) or Test Model (supervised) */}
-        {block.status === 'trained' && block.modelType === 'image-unsupervised' && block.clusterResults && (
+        {block.status === 'trained' && (block.modelType === 'image-unsupervised' || block.modelType === 'text-unsupervised') && block.clusterResults && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
               4 · Explore Clusters
             </p>
             <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/30">
               <p className="text-xs text-violet-300 font-body font-semibold">
-                ✓ {block.clusterResults.length} images grouped into {block.clusterCount ?? 3} clusters
+                ✓ {block.clusterResults.length} {block.modelType === 'text-unsupervised' ? 'texts' : 'images'} grouped into {block.clusterCount ?? 3} clusters
               </p>
             </div>
             <button
@@ -607,7 +807,7 @@ export default function ModelInspector() {
         )}
 
         {/* Step 5: Test with test set */}
-        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-corpus' && (
+        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-unsupervised' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
               4 · Test Model
@@ -624,7 +824,7 @@ export default function ModelInspector() {
                 {/* Test set info */}
                 <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex flex-col gap-1">
                   <p className="text-xs text-amber-300 font-body font-semibold">
-                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} · {testItems.length} image{testItems.length !== 1 ? 's' : ''}
+                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} · {testItems.length} {block.modelType === 'text-supervised' ? 'text' : 'image'}{testItems.length !== 1 ? 's' : ''}
                   </p>
                   {testLabelledBlock && (
                     <div className="flex flex-wrap gap-1">

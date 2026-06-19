@@ -44,7 +44,7 @@ export default function ClusterResultsModal() {
                 Clusters: {block.name}
               </p>
               <p className="text-xs text-white/40 font-body">
-                {block.clusterResults.length} images grouped into {k} clusters
+                {block.clusterResults.length} {block.modelType === 'text-unsupervised' ? 'texts' : 'images'} grouped into {k} clusters
               </p>
             </div>
           </div>
@@ -85,35 +85,56 @@ export default function ClusterResultsModal() {
                       className="text-xs font-body px-2 py-0.5 rounded-full"
                       style={{ background: `${color}22`, color }}
                     >
-                      {itemIds.length} image{itemIds.length !== 1 ? 's' : ''}
+                      {itemIds.length} {block.modelType === 'text-unsupervised' ? 'text' : 'image'}{itemIds.length !== 1 ? 's' : ''}
                     </span>
                   </div>
 
-                  {/* Thumbnail grid */}
-                  <div className="p-2 grid grid-cols-4 gap-1">
-                    {itemIds.map((itemId) => {
-                      const bankItem = bankItems.find((i) => i.id === itemId)
-                      return (
-                        <div
-                          key={itemId}
-                          className="aspect-square rounded-lg overflow-hidden bg-white/5 flex items-center justify-center"
-                          style={{ border: `1px solid ${color}22` }}
-                        >
-                          {bankItem?.thumbnailUrl ? (
-                            <img
-                              src={bankItem.thumbnailUrl}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-xs text-white/40 font-body text-center px-0.5 leading-tight">
-                              {bankItem?.name ?? '?'}
-                            </span>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                  {/* Item display: text list for text-unsupervised, image grid otherwise */}
+                  {block.modelType === 'text-unsupervised' ? (
+                    <div className="p-2 flex flex-col gap-1">
+                      {itemIds.slice(0, 8).map((itemId) => {
+                        const bankItem = bankItems.find((i) => i.id === itemId)
+                        return (
+                          <div
+                            key={itemId}
+                            className="px-2 py-1 rounded bg-white/5 text-xs text-white/60 font-body truncate"
+                            style={{ border: `1px solid ${color}22` }}
+                            title={bankItem?.content ?? ''}
+                          >
+                            {bankItem?.name ?? itemId}
+                          </div>
+                        )
+                      })}
+                      {itemIds.length > 8 && (
+                        <p className="text-xs text-white/30 font-body text-center">+{itemIds.length - 8} more</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-2 grid grid-cols-4 gap-1">
+                      {itemIds.map((itemId) => {
+                        const bankItem = bankItems.find((i) => i.id === itemId)
+                        return (
+                          <div
+                            key={itemId}
+                            className="aspect-square rounded-lg overflow-hidden bg-white/5 flex items-center justify-center"
+                            style={{ border: `1px solid ${color}22` }}
+                          >
+                            {bankItem?.thumbnailUrl ? (
+                              <img
+                                src={bankItem.thumbnailUrl}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-xs text-white/40 font-body text-center px-0.5 leading-tight">
+                                {bankItem?.name ?? '?'}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             })}

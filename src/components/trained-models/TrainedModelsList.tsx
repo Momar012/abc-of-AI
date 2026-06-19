@@ -9,6 +9,8 @@ const MODEL_TYPE_LABELS: Record<string, string> = {
   'image-supervised': 'Image Supervised',
   'image-classifier': 'Image Classifier',
   'image-unsupervised': 'Image Unsupervised',
+  'text-supervised': 'Text Supervised',
+  'text-unsupervised': 'Text Unsupervised',
 }
 
 function timeAgo(ts: number): string {
@@ -56,7 +58,7 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
         <span className="text-xs font-body px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
           {MODEL_TYPE_LABELS[model.modelType] ?? model.modelType}
         </span>
-        <span className="text-xs text-white/40 font-body">{model.itemCount} images</span>
+        <span className="text-xs text-white/40 font-body">{model.itemCount} {model.modelType.startsWith('text') ? 'texts' : 'images'}</span>
       </div>
 
       <div className="flex flex-wrap gap-1">

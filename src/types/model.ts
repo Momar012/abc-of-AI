@@ -1,4 +1,4 @@
-export type ModelType = 'image-supervised' | 'image-classifier' | 'image-unsupervised' | 'text-corpus'
+export type ModelType = 'image-supervised' | 'image-classifier' | 'image-unsupervised' | 'text-corpus' | 'text-supervised' | 'text-unsupervised'
 
 export interface ChatMessage {
   role: 'user' | 'ai'
@@ -40,6 +40,11 @@ export interface TrainedModel {
   labelIds: string[]
   itemCount: number
   knnData: Record<string, { values: number[]; shape: number[] }>
+  textVocab?: string[]
+  textIdfWeights?: number[]
+  textAllVectors?: Array<{ labelId: string; itemId?: string; vec: number[] }>
+  nbWordLogProbs?: Record<string, number[]>
+  nbClassLogPriors?: Record<string, number>
 }
 
 export interface TestResult {

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useCallback } from 'react'
 import { useUIStore } from '@/store/useUIStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 
@@ -9,22 +10,68 @@ export default function LabellingModal() {
   const block = useDatasetStore((s) => s.labelledBlocks.find((b) => b.id === blockId))
   const bankItems = useDatasetStore((s) => s.bankItems)
   const assignItemLabel = useDatasetStore((s) => s.assignItemLabel)
+  const removeItemFromBlock = useDatasetStore((s) => s.removeItemFromBlock)
+  const bulkRemoveItemsFromBlock = useDatasetStore((s) => s.bulkRemoveItemsFromBlock)
 
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  // Compute rows before any hooks that depend on them
+  const allRows = block
+    ? [
+        ...block.itemIds.map((id) => ({ itemId: id, assignedLabelId: null as string | null })),
+        ...block.labels.flatMap((label) =>
+          label.itemIds.map((id) => ({ itemId: id, assignedLabelId: label.id as string | null }))
+        ),
+      ].sort((a, b) => {
+        const aAt = bankItems.find((i) => i.id === a.itemId)?.addedAt ?? 0
+        const bAt = bankItems.find((i) => i.id === b.itemId)?.addedAt ?? 0
+        return bAt - aAt
+      })
+    : []
+
+  const allItemIds = allRows.map((r) => r.itemId)
+  const isAllSelected = allItemIds.length > 0 && allItemIds.every((id) => selected.has(id))
+
+  // All hooks before any early return
+  const toggleSelect = useCallback((itemId: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      next.has(itemId) ? next.delete(itemId) : next.add(itemId)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAll = useCallback(() => {
+    setSelected(isAllSelected ? new Set() : new Set(allItemIds))
+  }, [isAllSelected, allItemIds])
+
+  const handleDeleteSelected = useCallback(() => {
+    if (!blockId || selected.size === 0) return
+    bulkRemoveItemsFromBlock(blockId, [...selected])
+    setSelected(new Set())
+  }, [blockId, selected, bulkRemoveItemsFromBlock])
+
+  const handleDeleteOne = useCallback(
+    (itemId: string, e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (!blockId) return
+      removeItemFromBlock(blockId, itemId)
+      setSelected((prev) => {
+        const next = new Set(prev)
+        next.delete(itemId)
+        return next
+      })
+    },
+    [blockId, removeItemFromBlock]
+  )
+
+  // Early return after all hooks
   if (!block) return null
-
-  const allRows = [
-    ...block.itemIds.map((id) => ({ itemId: id, assignedLabelId: null as string | null })),
-    ...block.labels.flatMap((label) =>
-      label.itemIds.map((id) => ({ itemId: id, assignedLabelId: label.id as string | null }))
-    ),
-  ].sort((a, b) => {
-    const aAt = bankItems.find((i) => i.id === a.itemId)?.addedAt ?? 0
-    const bAt = bankItems.find((i) => i.id === b.itemId)?.addedAt ?? 0
-    return bAt - aAt
-  })
 
   const getLabel = (labelId: string | null) =>
     labelId ? block.labels.find((l) => l.id === labelId) : null
+
+  const labelledCount = allRows.filter((r) => r.assignedLabelId !== null).length
 
   return (
     <div
@@ -43,7 +90,9 @@ export default function LabellingModal() {
             <span className="text-lg">🏷️</span>
             <div>
               <p className="text-sm font-heading font-bold text-white">Label: {block.name}</p>
-              <p className="text-xs text-white/40 font-body">{allRows.length} items</p>
+              <p className="text-xs text-white/40 font-body">
+                {allRows.length} item{allRows.length !== 1 ? 's' : ''} · {labelledCount} labelled
+              </p>
             </div>
           </div>
           <button
@@ -72,8 +121,55 @@ export default function LabellingModal() {
                 <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
               </span>
             ))}
-            <span className="text-xs text-white/40 font-body self-center ml-1">
-              {allRows.filter((r) => r.assignedLabelId !== null).length}/{allRows.length} labelled
+          </div>
+        )}
+
+        {/* Selection toolbar — visible only when items are selected */}
+        {selected.size > 0 && (
+          <div
+            className="px-5 py-2.5 flex-shrink-0 flex items-center justify-between"
+            style={{ background: 'rgba(139,92,246,0.12)', borderBottom: '1px solid rgba(139,92,246,0.25)' }}
+          >
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={toggleSelectAll}
+                className="accent-violet-500 cursor-pointer"
+              />
+              <span className="text-xs text-violet-300 font-body font-semibold">
+                {selected.size} selected
+              </span>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="text-xs text-white/40 hover:text-white/70 font-body transition-colors"
+              >
+                Deselect all
+              </button>
+            </div>
+            <button
+              onClick={handleDeleteSelected}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/35 border border-red-500/40 text-red-400 hover:text-red-300 text-xs font-body font-semibold transition-all"
+            >
+              🗑 Delete {selected.size} item{selected.size !== 1 ? 's' : ''}
+            </button>
+          </div>
+        )}
+
+        {/* Select-all row — visible when nothing selected */}
+        {selected.size === 0 && allRows.length > 0 && (
+          <div className="px-5 py-2 flex-shrink-0 flex items-center gap-2 border-b border-white/5">
+            <input
+              type="checkbox"
+              checked={false}
+              onChange={toggleSelectAll}
+              className="accent-violet-500 cursor-pointer"
+            />
+            <span
+              className="text-xs text-white/30 font-body cursor-pointer select-none"
+              onClick={toggleSelectAll}
+            >
+              Select all
             </span>
           </div>
         )}
@@ -85,7 +181,7 @@ export default function LabellingModal() {
           </div>
         )}
 
-        {/* Image grid */}
+        {/* Grid */}
         {allRows.length > 0 && (
           <div className="overflow-y-auto flex-1 p-5">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
@@ -93,21 +189,57 @@ export default function LabellingModal() {
                 const item = bankItems.find((i) => i.id === itemId)
                 if (!item) return null
                 const assignedLabel = getLabel(assignedLabelId)
+                const isSelected = selected.has(itemId)
 
                 return (
                   <div
                     key={itemId}
-                    className="flex flex-col rounded-xl overflow-hidden border transition-all"
+                    className="flex flex-col rounded-xl overflow-hidden border transition-all cursor-pointer relative group"
                     style={{
-                      borderColor: assignedLabel
+                      borderColor: isSelected
+                        ? 'rgba(139,92,246,0.8)'
+                        : assignedLabel
                         ? assignedLabel.color + '66'
                         : 'rgba(255,255,255,0.1)',
-                      background: assignedLabel
+                      background: isSelected
+                        ? 'rgba(139,92,246,0.15)'
+                        : assignedLabel
                         ? assignedLabel.color + '11'
                         : 'rgba(255,255,255,0.04)',
+                      boxShadow: isSelected ? '0 0 0 2px rgba(139,92,246,0.4)' : 'none',
                     }}
+                    onClick={() => toggleSelect(itemId)}
                   >
-                    {/* Thumbnail */}
+                    {/* Select checkbox — top left */}
+                    <div
+                      className="absolute top-1.5 left-1.5 z-10"
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(itemId) }}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
+                          isSelected
+                            ? 'bg-violet-500 border-violet-400'
+                            : 'bg-black/40 border-white/30 opacity-0 group-hover:opacity-100'
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Delete button — top right, visible on hover */}
+                    <button
+                      className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded bg-black/50 border border-white/20 text-white/50 hover:text-red-400 hover:bg-red-500/20 hover:border-red-500/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-xs leading-none"
+                      title="Delete this item"
+                      onClick={(e) => handleDeleteOne(itemId, e)}
+                    >
+                      ×
+                    </button>
+
+                    {/* Thumbnail or text preview */}
                     {item.type === 'image' && item.thumbnailUrl ? (
                       <img
                         src={item.thumbnailUrl}
@@ -116,15 +248,15 @@ export default function LabellingModal() {
                         draggable={false}
                       />
                     ) : (
-                      <div className="w-full aspect-square bg-white/5 flex items-center justify-center">
-                        <p className="text-xs text-white/50 text-center px-2 line-clamp-4 font-body">
-                          {item.type === 'text' ? item.content.slice(0, 60) : '📄'}
+                      <div className="w-full aspect-square bg-white/5 flex items-center justify-center p-2">
+                        <p className="text-xs text-white/50 text-center line-clamp-4 font-body leading-relaxed">
+                          {item.type === 'text' ? item.content?.slice(0, 80) : '📄'}
                         </p>
                       </div>
                     )}
 
                     {/* Label selector */}
-                    <div className="px-2 py-2 flex flex-col gap-1.5">
+                    <div className="px-2 py-2 flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <p className="text-xs text-white/50 font-body truncate" title={item.name}>
                         {item.name}
                       </p>
@@ -166,7 +298,10 @@ export default function LabellingModal() {
         )}
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/10 flex-shrink-0 flex justify-end">
+        <div className="px-5 py-3 border-t border-white/10 flex-shrink-0 flex items-center justify-between">
+          <p className="text-xs text-white/30 font-body">
+            Click a card to select · hover for delete (×)
+          </p>
           <button
             onClick={closeLabellingModal}
             className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-heading font-semibold transition-colors"

@@ -325,7 +325,8 @@ export const useRuleStore = create<RuleState>((set, get) => ({
         // Model prediction path
         const modelBlock = modelBlocks.find((m: { id: string; testResults?: { predictedLabel: string }[] }) => m.id === c.linkedModelId)
         if (!modelBlock?.testResults?.length || !c.modelCondition) return { ...c, currentOutput: null }
-        return { ...c, currentOutput: modelBlock.testResults[0].predictedLabel === c.modelCondition }
+        const matchCount = modelBlock.testResults.filter((r: { predictedLabel: string }) => r.predictedLabel === c.modelCondition).length
+        return { ...c, currentOutput: matchCount > 0 }
       }
       if (!c.linkedSensorId) return { ...c, currentOutput: null }
       const sensor = sensorBlocks.find((s) => s.id === c.linkedSensorId)
