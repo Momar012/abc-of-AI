@@ -102,6 +102,14 @@
         "canvasHint": ""
       },
       {
+        "type": "challenge",
+        "id": "challenge-1781985677757",
+        "title": "Challenge Lab 1: Smart Classroom Starter",
+        "icon": "🏆",
+        "prompt": "- **Goal**  \nBuild a system where one Switch controls multiple devices.\n\n---\n\n- **Problem**  \n\nA teacher wants to save time when starting the class.\n\nWhen the teacher turns ON a single Switch, both the **Light** and **Fan** should turn ON automatically.\n\nCan you build this system?\n\n---\n\n- **Available Components**\n\n**Inputs**\n- Switch\n\n**Outputs**\n- Bulb\n- Fan\n\n---\n\n- **Challenge Rules**\n\n✅ Use only **one Switch**.\n\n---\n\n- **Expected Result**\n\n✅ When the **Switch** is ON, both the **Bulb** and **Fan** turn ON.\n\n❌ When the **Switch** is OFF, both devices turn OFF.\n\n---\n\n- **What You Learned**\n\n1. One input can control multiple outputs.\n\n2. A single action can trigger multiple devices.",
+        "successHint": ""
+      },
+      {
         "type": "lab",
         "id": "lab-train",
         "title": "4. Motion Light",
@@ -120,7 +128,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878181806",
-        "title": "Challenge Lab 1: Smart Study Lamp",
+        "title": "Challenge Lab 2: Smart Study Lamp",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn the **Bulb** ON when **Motion** is detected.\n\n\n\n**Requirements**\n\n- Use a **Motion Sensor**.\n- Use an **IF Condition**.\n- Use a **Bulb**.\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** turns **ON** when **Motion** is detected.\n\n✅ The **Bulb** remains **OFF** when there is **No Motion**.",
         "successHint": ""
@@ -128,7 +136,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878321762",
-        "title": "Challenge Lab 2: Welcome Home System",
+        "title": "Challenge Lab 3: Welcome Home System",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn ON both the **Bulb** and **Fan** when **Motion** is detected.\n\n\n\n**Requirements**\n\n- Use a **Motion Sensor**.\n- Use an **IF Condition**.\n- Use a **Bulb**.\n- Use a **Fan**.\n\n\n\n**Success Criteria**\n\n✅ Both the **Bulb** and **Fan** turn **ON** when **Motion** is detected.\n\n✅ Both devices remain **OFF** when there is **No Motion**.",
         "successHint": ""
@@ -168,7 +176,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878476326",
-        "title": "Challenge Lab 3: Secure Door",
+        "title": "Challenge Lab 4: Secure Door",
         "icon": "🏆",
         "prompt": "**Problem**\n\nOpen the **Door** only when the password is **Pakistan**.\n\n\n\n**Requirements**\n\n- Use **Text Input**.\n- Use an **IF Condition**.\n- Use a **Door**.\n\n\n\n**Success Criteria**\n\n✅ The **Door** opens when the text is **Pakistan**.\n\n✅ The **Door** remains closed for any other text.",
         "successHint": ""
@@ -200,7 +208,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878571513",
-        "title": "Challenge Lab 4: Security Approval System",
+        "title": "Challenge Lab 5: Security Approval System",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn the **AC** ON only when:\n\n- **Switch A** is ON.\n- **Switch B** is ON.\n- **Motion** is detected.\n\n\n\n**Requirements**\n\n- Use **2 Switches**.\n- Use a **Motion Sensor**.\n- Use **IF Conditions**.\n- Use **2** **AND Conditions**.\n- Use an **AC**.\n\n\n\n**Success Criteria**\n\n✅ The **AC** turns **ON** only when all three conditions are TRUE.\n\n✅ The **AC** remains **OFF** if any condition is FALSE.",
         "successHint": ""
@@ -224,7 +232,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878649709",
-        "title": "Challenge Lab 5: Comfort Zone Fan",
+        "title": "Challenge Lab 6: Comfort Zone Fan",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn the **Fan** ON only when the temperature is between **30°C** and **35°C**.\n\n\n\n**Requirements**\n\n- Use a **Temperature Sensor**.\n- Use **2 IF Conditions**.\n- Use an **AND Condition**.\n- Use a **Fan**.\n\n\n\n**Success Criteria**\n\n✅ The **Fan** turns **ON** when the temperature is between **30°C** and **35°C**.\n\n✅ The **Fan** remains **OFF** outside this range.",
         "successHint": ""
@@ -240,7 +248,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878706825",
-        "title": "Challenge Lab 6: Smart Classroom",
+        "title": "Challenge Lab 7: Smart Classroom",
         "icon": "🏆",
         "prompt": "**Problem**\n\nCreate a **Smart Classroom** that automatically controls lights and cooling.\n\n\n\n**Requirements**\n\n- If **Motion** is detected → Turn **Bulb** ON.\n- If **Temperature > 35°C** → Turn **Fan** ON.\n- If **Temperature > 40°C** → Turn **AC** ON.\n\n\n\n**Allowed Components**\n\n- **1 Motion Sensor**\n- **1 Temperature Sensor**\n- **1 Bulb**\n- **1 Fan**\n- **1 AC**\n- Any number of **IF Conditions**\n- Any number of **AND**, **OR**, and **NOT Conditions**\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** responds to **Motion**.\n\n✅ The **Fan** responds to **Temperature**.\n\n✅ The **AC** responds to higher **Temperature**.\n\n✅ Only the allowed components are used.\n\n✅ All rules work together correctly.",
         "successHint": ""
