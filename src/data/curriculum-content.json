@@ -106,7 +106,7 @@
         "id": "challenge-1781985677757",
         "title": "Challenge Lab 1: Smart Classroom Starter",
         "icon": "🏆",
-        "prompt": "- **Goal**  \nBuild a system where one Switch controls multiple devices.\n\n---\n\n- **Problem**  \n\nA teacher wants to save time when starting the class.\n\nWhen the teacher turns ON a single Switch, both the **Light** and **Fan** should turn ON automatically.\n\nCan you build this system?\n\n---\n\n- **Available Components**\n\n**Inputs**\n- Switch\n\n**Outputs**\n- Bulb\n- Fan\n\n---\n\n- **Challenge Rules**\n\n✅ Use only **one Switch**.\n\n---\n\n- **Expected Result**\n\n✅ When the **Switch** is ON, both the **Bulb** and **Fan** turn ON.\n\n❌ When the **Switch** is OFF, both devices turn OFF.\n\n---\n\n- **What You Learned**\n\n1. One input can control multiple outputs.\n\n2. A single action can trigger multiple devices.",
+        "prompt": "**Problem**\n\nA teacher wants the classroom to be ready when students arrive.\n\nTurn ON both the **Bulb** and **Fan** using a single **Switch**.\n\n---\n\n**Requirements**\n\n- Use one **Switch**.\n- Use a **Bulb**.\n- Use a **Fan**.\n\n---\n\n**Success Criteria**\n\n✅ Both the **Bulb** and **Fan** turn ON when the **Switch** is ON.\n\n✅ Both devices turn OFF when the **Switch** is OFF.",
         "successHint": ""
       },
       {
