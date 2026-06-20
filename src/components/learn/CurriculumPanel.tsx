@@ -65,6 +65,9 @@ export default function CurriculumPanel() {
   const module = CURRICULUM.find((m) => m.id === currentModuleId) ?? CURRICULUM[0]
   const totalSteps = module.steps.length
   const currentStep = module.steps[currentStepIndex] ?? module.steps[0]
+  const currentModuleIndex = CURRICULUM.findIndex((m) => m.id === currentModuleId)
+  const nextModule = CURRICULUM[currentModuleIndex + 1] ?? null
+  const isLastStep = currentStepIndex === totalSteps - 1
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
@@ -73,6 +76,12 @@ export default function CurriculumPanel() {
   function handleNext() {
     markStepComplete(currentStep.id)
     nextStep(totalSteps)
+  }
+
+  function handleNextChapter() {
+    markStepComplete(currentStep.id)
+    setModule(nextModule!.id)
+    goToStep(0)
   }
 
   function handlePrev() {
@@ -199,17 +208,30 @@ export default function CurriculumPanel() {
           ← Prev
         </button>
 
-        <button
-          onClick={handleNext}
-          disabled={currentStepIndex === totalSteps - 1}
-          className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
-            disabled:opacity-30 disabled:cursor-not-allowed
-            bg-gradient-to-r from-violet-500 to-teal-400
-            hover:shadow-[0_0_16px_rgba(124,58,237,0.5)]
-            text-white"
-        >
-          Next →
-        </button>
+        {isLastStep && nextModule ? (
+          <button
+            onClick={handleNextChapter}
+            className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
+              bg-gradient-to-r from-teal-500 to-violet-500
+              hover:shadow-[0_0_16px_rgba(124,58,237,0.5)]
+              text-white flex flex-col items-center gap-0.5"
+          >
+            <span>Next Chapter →</span>
+            <span className="text-[10px] opacity-70">{nextModule.emoji} {nextModule.title}</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleNext}
+            disabled={isLastStep}
+            className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
+              disabled:opacity-30 disabled:cursor-not-allowed
+              bg-gradient-to-r from-violet-500 to-teal-400
+              hover:shadow-[0_0_16px_rgba(124,58,237,0.5)]
+              text-white"
+          >
+            Next →
+          </button>
+        )}
       </div>
     </div>
   )
