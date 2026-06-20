@@ -81,7 +81,7 @@ function GettingStartedPanel() {
   ]
 
   return (
-    <div className="glass-panel flex flex-col gap-4 p-5 min-h-full">
+    <div className="glass-panel flex flex-col gap-4 p-5">
       <div>
         <p className="text-base font-heading font-extrabold text-white">🐱 vs 🐶</p>
         <p className="text-sm font-heading font-bold text-violet-300 mt-0.5">
@@ -465,7 +465,7 @@ export default function DatasetBuilderPage() {
                 >
                   <PropertiesIcon />
                 </button>
-                <div className="flex flex-col gap-3 overflow-y-auto min-h-0 flex-1">
+                <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 flex-1">
                   {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
                     <RLInspector key={selectedBlockId} />
                   ) : selectedBlockId && selectedBlockType === 'model' ? (

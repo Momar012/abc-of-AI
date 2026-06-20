@@ -179,7 +179,7 @@ export default function CurriculumPanel() {
       </div>
 
       {/* Step content — scrollable */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep.id}
