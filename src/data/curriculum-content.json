@@ -1,7 +1,71 @@
 [
   {
+    "id": "ch-1781963460308",
+    "title": "1. Understanding Intelligence",
+    "subtitle": "Humans and AI",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1781964469029",
+        "title": "1. 🧠 What is Intelligence?",
+        "icon": "📖",
+        "body": "**Intelligence** is the ability to:\n\n📚 **Learn**\n\n🤔 **Think**\n\n✅ **Make Decisions**\n\n\n\n\nThere are **two types of intelligence** we will learn about in this course:\n\n🧠 **Human Intelligence**\n\n🤖 **Artificial Intelligence (AI)**\n\n\n\n\nLet's explore both!",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781964546437",
+        "title": "2. 🧠 Human Intelligence",
+        "icon": "📖",
+        "body": "Human Intelligence helps us:\n\n📚 **Learn from Experience**\n\n🤔 **Think About Situations**\n\n✅ **Make Decisions**\n\n\nLet's see how humans use intelligence every day.\n\n---\n\n📚 **Learn from Experience**\n\nImagine you are riding your bicycle.\n\n🚲 One day, you hit a small obstacle and almost fall.\n\nThe next day, when you see the same obstacle, you go around it.\n\n👉 **You learned from your experience.**\n\n---\n\n🤔 **Think About Situations**\n\nImagine it is raining outside.\n\n🌧️ Before leaving home, you think:\n\n- **Should I take an umbrella?**\n- **What if it rains more?**\n- **Will I get wet?**\n\nAfter thinking about the situation, you prepare accordingly.\n\n👉 **You used intelligence to think before acting.**\n\n---\n\n ✅ ** Make Decisions **\n\nImagine you have:\n\n📖 **Homework to complete**\n\n🎮 **A game you want to play**\n\nYou decide to finish your homework first and play later.\n\n👉 **You made a decision.**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781964800757",
+        "title": "3. 🌟 Human Intelligence Summary",
+        "icon": "📖",
+        "body": "Every day, humans use intelligence to:\n\n📚 **Learn from Experience**\n\n🤔 **Think About Situations**\n\n✅ **Make Decisions**\n\nWhether we are studying, playing sports, or solving problems, **we use intelligence all the time.**\n",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781964833789",
+        "title": "4. 🤖 Artificial Intelligence (AI)",
+        "icon": "📖",
+        "body": "**Artificial Intelligence (AI)** is intelligence created by humans.\n\nAI can:\n\n📋 **Follow Instructions**\n\n📚 **Learn from Data**\n\n✅ **Make Decisions or Predictions**\n\n\nLet's see how AI works.\n\n\n\n---\n\n\n\n**1. 📋 Follow Instructions**\n\nImagine you tell a robot:\n\n**\"If the room is dark, turn on the light.\"**\n\nThe robot follows your instruction.\n\n👉 **It is doing exactly what you told it to do.**\n\n\n\n---\n\n\n\n**2.  📚 Learn from Data**\n\nImagine an AI sees thousands of pictures of cats.\n\n🐱 🐱 🐱 🐱\n\nOver time, it learns what cats usually look like.\n\n👉 **It learned from data.**\n\n\n\n---\n\n\n\n**3. ✅ Make Decisions or Predictions**\n\nImagine you watch cricket videos every day on YouTube.\n\n🏏 🏏 🏏\n\nSoon, YouTube starts recommending more cricket videos.\n\n\n\n👉 **The AI predicts what you might like to watch.**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781964939917",
+        "title": "5. 🌟 Artificial Intelligence Summary",
+        "icon": "📖",
+        "body": "AI can:\n\n📋 **Follow Instructions**\n\n📚 **Learn from Data**\n\n✅ **Make Decisions or Predictions**\n\n\nAI can perform some tasks that appear intelligent, but it is created by humans.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781964976860",
+        "title": "6. 🚀 Why Do We Build AI?",
+        "icon": "📖",
+        "body": "The goal of AI is to **mimic some parts of human intelligence**.\n\nWhy?\n\n⚡ **To Save Time**\n\n📈 **To Improve Efficiency**\n\n🔍 **To Process Large Amounts of Information**\n\n🤝 **To Help Humans Solve Problems**\n\n\n\n\n---\n\n\n\n**🌟 Remember**\n\n🧠 **Humans create AI.**\n\n🤖 **AI helps humans.**\n\n👉 **AI is a tool designed to help us solve problems and make life easier.**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781965222911",
+        "title": "7. 🤔 How Does AI Know What To Do?",
+        "icon": "📖",
+        "body": "We learned that AI can:\n\n📋 **Follow Instructions**\n\n📚 **Learn from Data**\n\n✅ **Make Decisions or Predictions**\n\n\n\n\nBut who teaches AI what to do?\n\n👉 Humans do!\n\nAI follows instructions called **rules**.\n\n\n\n\n\n🌟 In the next chapter, we will learn how to teach computers using rules.",
+        "tip": ""
+      }
+    ]
+  },
+  {
     "id": "ch1-teach-an-ai",
-    "title": "1. Rule-Based AI",
+    "title": "2. Rule-Based AI",
     "subtitle": "Make decisions using rules. ⭐",
     "emoji": "🤖",
     "steps": [
@@ -122,7 +186,7 @@
         "id": "lab-1781876810309",
         "title": "11. Backup Light System",
         "icon": "🧪",
-        "instruction": "**Goal**\nLearn how to use an **OR Condition**.\n\n\n\n**Problem**\nTurn the **Bulb** ON if **either switch** is ON.\n\n\n\n**Instructions**\n\n**Step 1:**\nDrag **Switch** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag another **Switch** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag **OR Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nDrag **Bulb** from the **Actions** menu.\n\n**Step 5:**\nConnect the first **Switch** to the **OR Condition**.\n\n**Step 6:**\nConnect the second **Switch** to the **OR Condition**.\n\n**Step 7:**\nConnect the **OR Condition** to the **Bulb**.\n\n**Step 8:**\nTurn ON only the first **Switch** and observe the result.\n\n**Step 9:**\nTurn ON only the second **Switch** and observe the result.\n\n**Step 10:**\nTurn ON both **Switches** and observe the result.\n\n\n\n**Expected Result**\n\n✅ When the first **Switch** is ON, the **Bulb** turns **ON**.\n\n✅ When the second **Switch** is ON, the **Bulb** turns **ON**.\n\n✅ When both **Switches** are ON, the **Bulb** turns **ON**.\n\n✅ When both **Switches** are OFF, the **Bulb** remains **OFF**.\n\n\n\n\n\n**What You Learned**\n\nAn **OR Condition** requires at least one condition to be true.\n\nThe output turns ON when either input is ON.",
+        "instruction": "**Goal**\n\nLearn how to use the **Contains Condition** to detect spam messages.\n\n\n\n**Problem**\n\nTurn the **Alarm** ON if a message contains the word **MONEY**.\n\n\n\n**Instructions**\n\n**Step 1:**\nDrag **Text Input** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag **IF Condition** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag **Alarm** from the **Actions menu**.\n\n**Step 4:**\nConnect the **Text Input** to the **IF Condition**.\n\n**Step 5:**\nConnect the **IF Condition** to the **Alarm**.\n\n**Step 6:**\nDouble-click the **IF Condition** block.\n\n**Step 7:**\nChange the condition to **Contains**.\n\n**Step 8:**\nEnter the word: **MONEY**\n\n**Step 9:**\nEnter the following message in the **Text Input**: **MONEY**\nRun the project and observe the result.\n\n\n**Step 10:**\nNow enter: **HELLO FRIEND**\nRun the project and observe the result.\n\n\n\n\n**Expected Result**\n\n✅ When the message contains **MONEY**, the **Alarm** turns **ON**.\n\n✅ When the message does not contain **MONEY**, the **Alarm** remains **OFF**.\n\n\n\n\n\n**What You Learned**\n\nA rule can check whether a message contains a specific word.\n\nAI can use rules to identify spam messages.\n\n**IF** a message contains **MONEY** → **THEN** turn ON the Alarm.",
         "canvasHint": ""
       },
       {
@@ -180,6 +244,110 @@
         "icon": "🏆",
         "prompt": "**Problem**\n\nCreate a **Smart Classroom** that automatically controls lights and cooling.\n\n\n\n**Requirements**\n\n- If **Motion** is detected → Turn **Bulb** ON.\n- If **Temperature > 35°C** → Turn **Fan** ON.\n- If **Temperature > 40°C** → Turn **AC** ON.\n\n\n\n**Allowed Components**\n\n- **1 Motion Sensor**\n- **1 Temperature Sensor**\n- **1 Bulb**\n- **1 Fan**\n- **1 AC**\n- Any number of **IF Conditions**\n- Any number of **AND**, **OR**, and **NOT Conditions**\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** responds to **Motion**.\n\n✅ The **Fan** responds to **Temperature**.\n\n✅ The **AC** responds to higher **Temperature**.\n\n✅ Only the allowed components are used.\n\n✅ All rules work together correctly.",
         "successHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781965857291",
+        "title": "16. Summary",
+        "icon": "📖",
+        "body": "Great job!\n\nIn this chapter, you learned that:\n\n\n\n📋 **AI follows instructions.**\n\n🔀 **Rules use IF–THEN logic.**\n\n🤖 **AI follows rules exactly as they are written.**\n\n✅ **The same input produces the same output.**\n\n✅ **Rules work well in simple and predictable situations.**\n\n\n\n\nUsing ABITA, you built your own **rule-based AI systems** and taught AI how to respond to different situations.\n\n\n\n🌟 **You are now ready to explore a bigger question: Can rules solve every problem?**",
+        "tip": ""
+      }
+    ]
+  },
+  {
+    "id": "ch-1781966127326",
+    "title": "3. When Rules Fail",
+    "subtitle": "Limits of Rules",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1781966244189",
+        "title": "1. 🤔 When Rules Are Not Enough",
+        "icon": "📖",
+        "body": "In the last chapter, you taught AI using **rules**.\n\nYou learned that rules can help AI make decisions.\n\nBut can rules solve **every problem**?\n\nLet's find out!",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781966276249",
+        "title": "2. ⚠️ What is a Spam Detector?",
+        "icon": "📖",
+        "body": "📧 **What is a Spam Detector?**\n\nA **Spam Detector** is a system that helps identify unwanted messages, such as advertisements, scams, or messages you do not want to receive.\n\n\nExamples:\n\n📧 **\"Congratulations! You won a prize!\"**\n\n📧 **\"Click here to claim your reward!\"**\n\n📧 **\"You have won $1,000,000!\"**\n\n\n\nThese messages might be marked as **Spam**.\n",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781966382893",
+        "title": "3. 🚀 Your Mission",
+        "icon": "📖",
+        "body": "\n🚀 **Your Mission**\n\nCan you build a spam detector using only **rules**?\n\n\n\n👉 In this chapter, we will discover whether simple rules are enough to build a good spam detector.",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1781966924064",
+        "title": "4. Build Your First Spam Detector",
+        "icon": "🔬",
+        "instruction": "🎯 **Goal**\n\nCreate a spam detector that activates an Alarm when a message contains the word **MONEY**.\n\n---\n\n**Step 1: Add the Text Input Component**\n\nFrom the **Rule-Based** menu:\n\n1. Drag a **Text Input** component onto the canvas.\n\n---\n\n**Step 2: Add the IF Condition**\n\nFrom the **Rule-Based** menu:\n\n1. Drag an **IF Condition** component onto the canvas.\n\n---\n\n**Step 3: Add the Alarm**\n\nFrom the **Rule-Based** menu:\n\n1. Drag an **Alarm** component onto the canvas.\n\n---\n\n**Step 4: Connect the Components**\n\nCreate the following connections:\n\n**Text Input → IF Condition**\n\n**IF Condition → Alarm**\n\n---\n\n## **Step 5: Configure the Rule**\n\n1. Double-click the **IF Condition** block.\n2. Change the condition to **Contains**.\n3. Enter the word:\n\n**MONEY**\n\n4. Click **Save**.\n\n---\n\n## **Step 6: Test Your Spam Detector**\n\n1. Click on the **Text Input** component.\n2. Enter:\n\n**MONEY**\n\n3. Run the project.\n\n✅ The Alarm should turn ON.\n\n---\n\n## **Step 7: Test a Normal Message**\n\n1. Click on the **Text Input** component.\n2. Enter:\n\n**HELLO FRIEND**\n\n3. Run the project.\n\n✅ The Alarm should remain OFF.\n\n---\n\n## 🌟 **What Happened?**\n\nYour AI followed a rule:\n\n📧 **IF a message contains MONEY → Turn ON Alarm**\n\nYou have built your first spam detector!",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1781967272183",
+        "title": "Challenge Lab 1: Detect More Spam",
+        "icon": "🏆",
+        "prompt": "**Goal**\n\nImprove your spam detector by detecting more spam messages.\n\n\n---\n\n\n**Problem**\n\nYour current spam detector only detects messages containing the word **MONEY**.\n\nCan you make it detect other spam messages too?\n\n\n---\n\n\n**Instructions**\n\nAdd more rules so the **Alarm** turns ON when a message contains:\n\n📧 **MONEY**\n\n📧 **PRIZE**\n\n📧 **REWARD**\n\n\n---\n\n\n**Test Messages**\n\n📧 MONEY\n\n📧 PRIZE\n\n📧 REWARD\n\n📧 HELLO FRIEND\n\n📧 GOOD MORNING\n\n\n---\n\n\n**Expected Result**\n\n✅ The Alarm turns ON for spam messages.\n\n✅ The Alarm remains OFF for normal messages.\n\n\n---\n\n\n**What You Learned**\n\nMore situations often require more rules.",
+        "successHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1781967631455",
+        "title": "5. Improving the Spam Detector",
+        "icon": "🔬",
+        "instruction": "**Goal**\n\nLearn how to improve a spam detector by adding more rules.\n\n---\n\n**Problem**\n\nYour spam detector can detect:\n\n📧 **MONEY**\n\nBut what happens if someone writes:\n\n📧 **Money**\n\nThe Alarm does not turn ON.\n\nLet's improve the spam detector.\n\n---\n\n**Instructions**\n\n**Step 1:**\nOpen your spam detector from the previous lab.\n\n**Step 2:**\nTest the following message:\n\n**Money**\n\nObserve the result.\n\n**Step 3:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nConnect the **Text Input** to the new **IF Condition**.\n\n**Step 5:**\nConnect the new **IF Condition** to the **Alarm**.\n\n**Step 6:**\nDouble-click the new **IF Condition** block.\n\n**Step 7:**\nChange the condition to **Contains**.\n\n**Step 8:**\nEnter the word:\n\n**Money**\n\n---\n\n**Step 9:**\nTest the following messages:\n\n📧 **MONEY**\n\n📧 **Money**\n\nRun the project and observe the results.\n\n---\n\n**Expected Result**\n\n✅ The Alarm turns ON for **MONEY**.\n\n✅ The Alarm turns ON for **Money**.\n\n---\n\n**What You Learned**\n\nSometimes one rule is not enough.\n\nTo handle more situations, we may need to add more rules.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1781967755615",
+        "title": "Challenge Lab 2: Catch More Variations",
+        "icon": "🏆",
+        "prompt": "**Goal**\n\nImprove your spam detector by detecting more variations of the same word.\n\n---\n\n**Problem**\n\nYour spam detector can currently detect:\n\n📧 **MONEY**\n\n📧 **Money**\n\nBut there are still other variations that it cannot detect.\n\nCan you improve it?\n\n---\n\n**Instructions**\n\nAdd more rules so the Alarm turns ON for the following messages:\n\n📧 **money**\n\n📧 **MoNEY**\n\n📧 **mOneY**\n\n---\n\n**Test Messages**\n\n📧 MONEY\n\n📧 Money\n\n📧 money\n\n📧 MoNEY\n\n📧 mOneY\n\n📧 HELLO FRIEND\n\n---\n\n**Expected Result**\n\n✅ The Alarm turns ON for all spam messages.\n\n✅ The Alarm remains OFF for normal messages.",
+        "successHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1781968062090",
+        "title": "6. Detect Even More Variations",
+        "icon": "🔬",
+        "instruction": "**Goal**\n\nLearn how complex problems may require many rules.\n\n---\n\n**Problem**\n\nYour spam detector can already detect some variations of the word:\n\n📧 **MONEY**\n\n📧 **Money**\n\n📧 **money**\n\nBut there are still more variations that it cannot detect.\n\nLet's improve it again.\n\n---\n\n**Instructions**\n\n**Step 1:**\nOpen your spam detector from the previous lab.\n\n**Step 2:**\nTest the following messages:\n\n📧 **MoNEY**\n\n📧 **mOneY**\n\n📧 **monEY**\n\nObserve the results.\n\n---\n\n**Step 3:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nConnect the **Text Input** to the new **IF Condition**.\n\n**Step 5:**\nConnect the new **IF Condition** to the **Alarm**.\n\n**Step 6:**\nDouble-click the new **IF Condition** block.\n\n**Step 7:**\nChange the condition to **Contains**.\n\n**Step 8:**\nEnter:\n\n**MoNEY**\n\n---\n\n**Step 9:**\nRepeat the process for:\n\n📧 **mOneY**\n\n📧 **monEY**\n\n---\n\n**Step 10:**\nTest all of the following messages:\n\n📧 MONEY\n\n📧 Money\n\n📧 money\n\n📧 MoNEY\n\n📧 mOneY\n\n📧 monEY\n\n---\n\n**Expected Result**\n\n✅ The Alarm turns ON for all of the messages above.\n\n---\n\n**What You Learned**\n\nAs new situations appear, we often need to add more rules.\n\nSome problems can require many rules to handle different possibilities.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1781968153773",
+        "title": "Challenge Lab 3: Break the Spam Detector",
+        "icon": "🏆",
+        "prompt": "**Goal**\n\nTest the limits of your spam detector.\n\n---\n\n**Problem**\n\nYour spam detector can detect many variations of the word **MONEY**.\n\nCan you find a new variation that it cannot detect?\n\n---\n\n**Instructions**\n\nTry different variations of the word:\n\n📧 **moNeY**\n\n📧 **MONey**\n\n📧 **mONeY**\n\n📧 **MoneY**\n\nOr create your own variations.\n\n---\n\n**Challenge**\n\nKeep testing new variations until you find one that does **not** activate the Alarm.\n\n---\n\n**Expected Result**\n\n🤔 Some new variations may not be detected.\n\n---\n\n**What You Learned**\n\nEven after adding many rules, new situations can still appear.\n\nAs problems become more complex, we may need more and more rules.",
+        "successHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781968368729",
+        "title": "7. Summary",
+        "icon": "📖",
+        "body": "Great job!\n\nIn this chapter, you improved your spam detector by adding more and more rules.\n\nAt first, detecting the word:\n\n📧 MONEY\n\nwas easy.\n\nBut then you had to handle:\n\n📧 Money\n\n📧 money\n\n📧 MoNEY\n\n📧 mOneY\n\n📧 monEY\n\nAnd many more variations.\n\nEach new variation required another rule.\n\n🤔 If detecting a single word needs so many rules...\n\nWhat about a longer word?\n\n📧 CONGRATULATIONS\n\nOr an entire sentence?\n\n📧 Congratulations! You have won a free prize.\n\nImagine how many rules we would need to create.\n\nImagine how many rules the system would need to check every time a message arrives.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1781968477401",
+        "title": "8. 🐱 A Bigger Challenge",
+        "icon": "📖",
+        "body": "Now imagine you want AI to recognize a cat.\n\nCould you write rules for:\n\n🐱 Black cats?\n\n🐱 White cats?\n\n🐱 Small cats?\n\n🐱 Big cats?\n\n🐱 Sleeping cats?\n\n🐱 Running cats?\n\n🐱 Cats hiding behind objects?\n\n\n\nHow many rules would we need?\n\n\n❓ Can we really write rules for every possible cat?\n\n🌟 In the next chapter, we will explore a different way to teach AI.",
+        "tip": ""
       }
     ]
   }
