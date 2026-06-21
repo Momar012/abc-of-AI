@@ -46,7 +46,7 @@ export default function SimpleContent({ body, className = '' }: Props) {
     const dataRows = rest.filter(r => !isSep(r))
     nodes.push(
       <div key={`tbl-${tableKey++}`} className="overflow-hidden rounded-lg my-2">
-        <table className="w-full table-fixed border-collapse text-xs font-body">
+        <table className="w-full table-auto border-collapse text-xs font-body">
           <thead>
             <tr>
               {header.map((cell, ci) => (
