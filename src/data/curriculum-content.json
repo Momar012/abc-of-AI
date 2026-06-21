@@ -339,7 +339,7 @@
         "title": "7. 🔄 More Variations, More Rules",
         "icon": "📖",
         "body": "## How Many Rules Do We Need?\n\nThe word **MONEY** has 5 letters.\n\nEach letter can be **uppercase** or **lowercase**.\n\nThis means there are many possible variations.\n\nJust to detect one word, we may need dozens of **IF Conditions**.\n\nAnd we still might miss some variations.",
-        "tip": "The word \"MONEY\" has 5 letters.\n\nEach letter can be uppercase or lowercase.\n\nThis means there are:\n\n**2 × 2 × 2 × 2 × 2 = 32 possible variations.\n\nWould you create 32 different IF Conditions just to detect one word?"
+        "tip": "The word \"MONEY\" has 5 letters.\n\nEach letter can be uppercase or lowercase.\n\nThis means there are:\n\n2 × 2 × 2 × 2 × 2 = 32 possible variations.\n\nWould you create 32 different IF Conditions just to detect one word?"
       },
       {
         "type": "learn",
@@ -347,7 +347,7 @@
         "title": "8. 🚀 The Bigger Word Problem",
         "icon": "📖",
         "body": "## What About a Longer Word?\n\nNow imagine we want to detect:\n\n**CONGRATULATIONS**\n\nPossible variations include:\n\n- **Congratulations**\n- **CONGRATULATIONS**\n- **congratulations**\n- **CoNgRaTuLaTiOnS**\n\nAnd many more.\n\nWould we create a new rule for every variation?\n\nThat would require a lot of IF Conditions.",
-        "tip": "The word \"CONGRATULATIONS\" has 15 letters.\n\nThat means it can be written in:\n\n\"32,768\" different ways\n\nWould you create \"32,768\" IF Conditions for a single word?"
+        "tip": "The word \"CONGRATULATIONS\" has 15 letters.\n\nThat means it can be written in:\n\n\"32,768\" different ways.\n\nWould you create 32,768 \"IF Conditions\" for a single word?"
       },
       {
         "type": "learn",
