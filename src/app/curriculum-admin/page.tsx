@@ -107,6 +107,7 @@ function StepEditor({
   onChangeType: (t: 'learn' | 'lab' | 'challenge') => void
 }) {
   const [showOptional, setShowOptional] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const mainLabel   = step.type === 'learn' ? 'Body text' : step.type === 'lab' ? 'Instruction' : 'Prompt / challenge'
   const mainValue   = step.type === 'learn' ? step.body : step.type === 'lab' ? step.instruction : step.prompt
@@ -121,6 +122,55 @@ function StepEditor({
     challenge: 'bg-amber-500/20 border-amber-500/40 text-amber-300',
   }
   const TAB_IDLE = 'border-white/10 text-white/35 hover:text-white/60 hover:bg-white/5'
+
+  function insertAtCursor(snippet: string) {
+    const el = textareaRef.current
+    if (!el) return
+    const start = el.selectionStart
+    const end   = el.selectionEnd
+    const before = mainValue.slice(0, start)
+    const after  = mainValue.slice(end)
+    const newValue = before + snippet + after
+    onUpdate({ [mainKey]: newValue } as Partial<CurriculumStep>)
+    const newCursor = start + snippet.length
+    requestAnimationFrame(() => { el.selectionStart = newCursor; el.selectionEnd = newCursor; el.focus() })
+  }
+
+  function insertHeadingPrefix(prefix: string) {
+    const el = textareaRef.current
+    if (!el) return
+    const pos = el.selectionStart
+    const lineStart = mainValue.lastIndexOf('\n', pos - 1) + 1
+    const newValue = mainValue.slice(0, lineStart) + prefix + mainValue.slice(lineStart)
+    onUpdate({ [mainKey]: newValue } as Partial<CurriculumStep>)
+    const newCursor = lineStart + prefix.length + (pos - lineStart)
+    requestAnimationFrame(() => { el.selectionStart = newCursor; el.selectionEnd = newCursor; el.focus() })
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const text = e.clipboardData.getData('text/plain')
+    if (!text.includes('\t')) return
+    e.preventDefault()
+    const rows = text.split('\n').map(r => r.replace(/\t+$/, '')).filter(r => r.trim() !== '')
+    const tableLines: string[] = []
+    rows.forEach((row, idx) => {
+      const cells = row.split('\t').map(c => c.trim())
+      tableLines.push('| ' + cells.join(' | ') + ' |')
+      if (idx === 0) tableLines.push('| ' + cells.map(() => '---').join(' | ') + ' |')
+    })
+    const tableText = tableLines.join('\n')
+    const el = textareaRef.current
+    if (!el) return
+    const start = el.selectionStart
+    const before = mainValue.slice(0, start)
+    const after  = mainValue.slice(el.selectionEnd)
+    const prefix = (before.length > 0 && !before.endsWith('\n\n')) ? '\n\n' : ''
+    const suffix = (after.length > 0 && !after.startsWith('\n')) ? '\n' : ''
+    const newValue = before + prefix + tableText + suffix + after
+    onUpdate({ [mainKey]: newValue } as Partial<CurriculumStep>)
+    const newCursor = start + prefix.length + tableText.length
+    requestAnimationFrame(() => { el.selectionStart = newCursor; el.selectionEnd = newCursor; el.focus() })
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -178,14 +228,41 @@ function StepEditor({
       {/* Main content */}
       <div>
         <FieldLabel>{mainLabel}</FieldLabel>
+
+        {/* Formatting toolbar */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <button
+            type="button"
+            onClick={() => insertHeadingPrefix('# ')}
+            className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-200 hover:border-violet-500/30 transition-colors"
+            title="Insert H1 heading"
+          >H1</button>
+          <button
+            type="button"
+            onClick={() => insertHeadingPrefix('## ')}
+            className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-200 hover:border-violet-500/30 transition-colors"
+            title="Insert H2 heading"
+          >H2</button>
+          <div className="w-px h-4 bg-white/10 mx-0.5" />
+          <button
+            type="button"
+            onClick={() => insertAtCursor('\n| Column A | Column B |\n| --- | --- |\n| Value 1 | Value 2 |\n| Value 3 | Value 4 |\n')}
+            className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-teal-300/70 hover:bg-teal-500/15 hover:text-teal-200 hover:border-teal-500/30 transition-colors"
+            title="Insert blank table (or just paste from Excel/Sheets)"
+          >Table</button>
+        </div>
+
         <p className="text-[10px] text-white/30 font-body mb-2">
           Use <code className="text-violet-300">**word**</code> for bold,{' '}
           <code className="text-teal-300">- item</code> for bullets,{' '}
-          blank line for paragraph break.
+          <code className="text-violet-300"># Heading</code> / <code className="text-violet-300">## Heading</code> for headings,{' '}
+          blank line for paragraph break. Paste from Excel/Sheets to auto-insert a table.
         </p>
         <textarea
+          ref={textareaRef}
           value={mainValue}
           onChange={(e) => onUpdate({ [mainKey]: e.target.value } as Partial<CurriculumStep>)}
+          onPaste={handlePaste}
           rows={7}
           placeholder={`Write the ${mainLabel.toLowerCase()} here…`}
           className={textareaCls}
