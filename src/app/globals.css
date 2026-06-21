@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #172554 100%);
+  --bg-gradient: linear-gradient(135deg, #0d1f3c 0%, #1a3a6e 45%, #0f2d5e 100%);
 }
 
 body {
@@ -34,7 +34,7 @@ body {
   }
 
   .glass-panel {
-    background: rgba(30, 27, 75, 0.72);
+    background: rgba(13, 31, 60, 0.72);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
