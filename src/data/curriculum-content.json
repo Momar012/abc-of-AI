@@ -1,5 +1,45 @@
 [
   {
+    "id": "ch-1782200140421",
+    "title": "🧭 Your AI Learning Journey,",
+    "subtitle": "Learn How AI Works by Building It",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1782200167405",
+        "title": "👋 Welcome to the AI Literacy Journey",
+        "icon": "📖",
+        "body": "Artificial Intelligence is changing the world, but before we can build AI systems, we first need to understand how they work.\n\nIn this curriculum, you will learn AI step by step, from the very beginning to modern AI systems.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782200380408",
+        "title": "💡What You Will Learn",
+        "icon": "📖",
+        "body": "# 🧠 Human Intelligence vs Artificial Intelligence\n\n\n\nDiscover what intelligence is and how humans learn, think, solve problems, and make decisions.\n\nExplore how Artificial Intelligence was inspired by human intelligence and compare how humans and machines solve problems differently.\n\n\n\n\n\n# 📖 The First AI Systems: Rule-Based AI\n\n\n\nLearn how early AI systems worked using rules such as **IF**, **AND**, **OR**, and **NOT**.\n\n🧪 **Build Rule-Based Systems in ABITA**\n\nCreate smart systems such as alarms, doors, fans, lights, and automated rooms using rules.\n\n\n\n\n\n# 📖 Why Rule-Based AI Has Limitations\n\n\n\nDiscover the challenges of rule-based systems and why they struggle with complex real-world problems.\n\n🧪 **Test the Limits of Rule-Based AI**\n\nBuild rule-based systems in **ABITA** and explore situations where rules start to fail.\n\n\n\n\n\n# 📖 Modern AI: Machine Learning\n\n\n\nLearn how modern AI systems learn from examples instead of following fixed rules.\n\nUnderstand why Machine Learning became the foundation of today's AI systems.\n\n🧪 **Train AI Models in ABITA**\n\nTeach AI systems by providing examples instead of writing rules.\n\n\n\n\n\n# 📖 Data and AI Models\n\n\n\nLearn how data helps AI discover patterns and make predictions.\n\nExplore different types of data and understand how AI models learn from them.\n\n🧪 **Build and Improve AI Models**\n\nCreate datasets, train image models, train text models, test their performance, and improve their accuracy.\n\n",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782200533310",
+        "title": "🎯 Learn by Doing",
+        "icon": "📖",
+        "body": "Throughout this curriculum, you will find:\n\n- **Mini Lessons** to build your understanding of AI concepts.\n- **Guided Labs** that show you exactly how to use AI tools in ABITA.\n- **Challenge Labs** where you apply your knowledge independently.\n\n\n\nBy the end of this journey, you will not only understand how AI works, but you will also be able to **collect data, train models, test AI systems, and improve their performance using ABITA**.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782200627277",
+        "title": "🤖 Your Journey into AI",
+        "icon": "📖",
+        "body": "Every AI system was inspired by intelligence.\nLet's start by exploring what intelligence really is.\n\n\n🚀 See you in Chapter 1: Understanding Intelligence.",
+        "tip": ""
+      }
+    ]
+  },
+  {
     "id": "ch-1781963460308",
     "title": "1. Understanding Intelligence",
     "subtitle": "Humans and AI",
@@ -372,6 +412,222 @@
         "icon": "📖",
         "body": "\n## What We Learned\n\n- Rules can help computers make decisions.\n- A spam detector can be created using IF Conditions.\n- Every new variation requires additional rules.\n- Longer words need even more rules.\n- Full sentences can be written in many different ways.\n- As rules increase, systems become larger and harder to manage.\n\n\n📌 Sometimes writing more rules is not the best solution.\n\n\n\n🌟 What if we could teach AI without writing thousands of rules?\n\nHow would that work?\n\nLet's find out in the next chapter.\n",
         "tip": ""
+      }
+    ]
+  },
+  {
+    "id": "ch-1782122250554",
+    "title": "Working",
+    "subtitle": "Untitled",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1782202084400",
+        "title": "🤔 When Rules Are Not Enough",
+        "icon": "📖",
+        "body": "In the last chapter, we discovered a problem.\n\nOur spam detector could recognise:\n\n**MONEY**\n\nBut when we changed it to:\n\n**MonEy**\n\nThe rule stopped working.\n\nTo fix it, we had to create another rule.\n\nThen another.\n\nAnd another.\n\n\n🤔 Imagine doing this for thousands of words.\n\nOr millions of messages.\n\nIt would be almost impossible.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782202173743",
+        "title": "A Big Question",
+        "icon": "📖",
+        "body": "If rules keep breaking...\n\nIs there another way for machines to learn?\n\nCan a machine learn from **examples** instead of being given every rule?",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782202322865",
+        "title": "The Beginning of Machine Learning",
+        "icon": "📖",
+        "body": "This is where **Machine Learning** begins.\n\nInstead of writing rules ourselves, we give the machine examples.\n\nThe machine studies those examples and learns patterns.\n\n\n\n## Example\n\n\n\nInstead of writing:\n\n**IF message contains MONEY → Spam**\n\nWe show the machine examples:\n\n| Message | Answer |\n|----------|----------|\n| Win free money now | Spam |\n| Claim your prize | Spam |\n| Meeting at 3 PM | Not Spam |\n| Bring your notebook tomorrow | Not Spam |\n\n\n\nAfter seeing many examples:\n\n🤔 The machine starts learning patterns on its own.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782202446419",
+        "title": "Key Idea",
+        "icon": "📖",
+        "body": "\n\n✅ **Rule-Based AI learns from rules.**\n\n✅ **Machine Learning learns from examples.**\n\n✅ **Instead of telling the machine every rule, we show it examples and let it discover patterns.**",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782123097904",
+        "title": "Guided Lab 1: Collect Your First AI Dataset",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to collect and upload data for an AI system.\n\n\n\n## Problem\n\nAn AI cannot learn to recognise **cats** and **dogs** unless it has examples to learn from.\n\nYour job is to collect the data.\n\n\n\n## Instructions\n\n\n\n**Step 1:**\nSearch online for **10 images of cats**.\n\n**Step 2:**\nDownload all **10 cat images** to your computer.\n\n**Step 3:**\nSearch online for **10 images of dogs**.\n\n**Step 4:**\nDownload all **10 dog images** to your computer.\n\n**Step 5:**\nOpen **ABITA**.\n\n**Step 6:**\nGo to the **Data Panel**.\n\n**Step 7:**\nClick **Add Data**.\n\n**Step 8:**\nUpload all **20 images** into the **Data Bank**.\n\n**Step 9:**\nCheck that all uploaded images appear in the **Data Bank**.\n\n\n\n\n## Success Criteria\n\n\n- ✅ 10 cat images downloaded\n- ✅ 10 dog images downloaded\n- ✅ All 20 images uploaded successfully\n- ✅ All images appear in the Data Bank\n\n\n\n## Expected Result\n\n\n🤔 You have collected and uploaded data.\n\n🤔 The AI still does not know which images are cats and which are dogs.\n\n🤔 In the next lab, you will organise and label the data so it can be used for learning.",
+        "canvasHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782123219120",
+        "title": "Guided Lab 2: Create a Labelled Dataset",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to create labelled data for AI training.\n\n\n\n## Problem\n\nYou have collected cat and dog images, but the AI does not know what each image contains.\n\nYour job is to label every image correctly.\n\n\n\n## Instructions\n\n**Step 1:**\nOpen **ABITA**.\n\n**Step 2:**\nFrom the **Data Menu**, drag a **Label Data** block onto the canvas.\n\n**Step 3:**\nDouble-click the **Label Data** block to open its **Properties Panel**.\n\n**Step 4:**\nIn the **Labels** section, create two labels:\n\n- Cat\n- Dog\n\n**Step 5:**\nSelect all images from the **Data Bank**.\n\n**Step 6:**\nDrag the selected images into the **Items** section of the **Label Data** block.\n\n**Step 7:**\nAssign the correct label to each image:\n\n- Cat images → **Cat**\n- Dog images → **Dog**\n\n**Step 8:**\nUse **Expand View** if you need a larger workspace for labelling.\n\n**Step 9:**\nIn the **Save Dataset** section, enter the name:\n\n**Training Data Cat & Dog**\n\n**Step 10:**\nClick **Save Data**.\n\n**Step 11:**\nOpen the **Datasets** tab from the left panel.\n\n**Step 12:**\nCheck that **Training Data Cat & Dog** appears in the list of saved datasets.\n\n\n\n## Success Criteria\n\n- ✅ A **Cat** label has been created\n- ✅ A **Dog** label has been created\n- ✅ All images have been labelled correctly\n- ✅ The dataset is saved as **Training Data Cat & Dog**\n- ✅ **Training Data Cat & Dog** appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n🤔 You have created a labelled dataset.\n\n🤔 Each image now has a correct answer attached to it.\n\n🤔 The dataset is stored in the **Datasets** tab and is ready to be used for AI training.",
+        "canvasHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782123328235",
+        "title": "Guided Lab 3: Create Another Labelled Dataset",
+        "icon": "🔬",
+        "instruction": "## Goal\n\n\n- Practise creating labelled datasets for AI training.\n- Learn why correct labels are important for teaching an AI model.\n\n\n\n## Problem\n\n\nBefore an AI can learn, humans must organise and label the data.\n\nYour job is to create a new labelled dataset using cat images.\n\nThis time, you will organise the cats into two groups:\n\n- **Serious Cat**\n- **Smiling Cat**\n\n\n\n## Instructions\n\n\n**Step 1:**\nSearch online for **10 images of serious cats**.\n\n**Step 2:**\nDownload all **10 serious cat images** to your computer.\n\n**Step 3:**\nSearch online for **10 images of smiling cats**.\n\n**Step 4:**\nDownload all **10 smiling cat images** to your computer.\n\n**Step 5:**\nOpen **ABITA**.\n\n**Step 6:**\nGo to the **Data Panel**.\n\n**Step 7:**\nClick **Add Data**.\n\n**Step 8:**\nUpload all **20 cat images** into the **Data Bank**.\n\n**Step 9:**\nFrom the **Data Menu**, drag a **Label Data** block onto the canvas.\n\n**Step 10:**\nDouble-click the **Label Data** block to open its **Properties Panel**.\n\n**Step 11:**\nIn the **Labels** section, create two labels:\n\n- Serious Cat\n- Smiling Cat\n\n**Step 12:**\nSelect all uploaded images from the **Data Bank**.\n\n**Step 13:**\nDrag the selected images into the **Items** section of the **Label Data** block.\n\n**Step 14:**\nAssign the correct label to each image:\n\n- Serious cat images → **Serious Cat**\n- Smiling cat images → **Smiling Cat**\n\n**Step 15:**\nUse **Expand View** if you need a larger workspace for labelling.\n\n**Step 16:**\nIn the **Save Dataset** section, enter the name:\n\n**Training Data Serious Cats & Smiling Cats**\n\n**Step 17:**\nClick **Save Data**.\n\n**Step 18:**\nOpen the **Datasets** tab from the left panel.\n\n**Step 19:**\nCheck that **Training Data Serious Cats & Smiling Cats** appears in the list of saved datasets.\n\n\n\n## Success Criteria\n\n\n- ✅ A **Serious Cat** label has been created\n- ✅ A **Smiling Cat** label has been created\n- ✅ All images have been labelled correctly\n- ✅ The dataset is saved as **Training Data Serious Cats & Smiling Cats**\n- ✅ The dataset appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n\n🤔 You have practised creating another labelled dataset.\n\n🤔 Every image has been assigned a label by a human.\n\n🤔 AI models learn from the labels we provide.\n\n🤔 Creating good labelled datasets is an important step in building AI systems.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782123622045",
+        "title": "Challenge Lab 1: Build a Lion and Tiger Dataset",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nYou are working as a **Data Labeler** for a wildlife technology company.\n\nYour team is building a smart camera that can automatically recognise whether an animal is a **lion** or a **tiger**.\n\nBefore the AI can learn, it needs labelled data.\n\nYour job is to collect and label the images that will be used to train the AI.\n\n\n\n## Requirements\n\n- Collect **10 images of lions**\n- Collect **10 images of tigers**\n- Upload all images into **ABITA**\n- Create a **Label Data** block\n- Create two labels:\n  - Lion\n  - Tiger\n- Label all images correctly\n- Save the dataset with the name:\n\n**WildLifeTigerLion**\n\n\n\n## Success Criteria\n\n- ✅ A **Lion** label has been created\n- ✅ A **Tiger** label has been created\n- ✅ All images have been labelled correctly\n- ✅ The dataset is saved as **WildLifeTigerLion**\n- ✅ **WildLifeTigerLion** appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n🤔 You have created a labelled dataset for a wildlife AI system.\n\n🤔 Every image has been assigned the correct label.\n\n🤔 The dataset is ready to be used for AI training.",
+        "successHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782123666116",
+        "title": "Challenge Lab 2: Build a Cars and Bikes Dataset",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nYou are working as a **Data Labeler** for a smart traffic management company.\n\nYour team is building an AI system that can automatically recognise **cars** and **bikes** from traffic camera images.\n\nBefore the AI can learn, it needs labelled data.\n\nYour job is to collect and label the images that will be used to train the AI.\n\n\n\n## Requirements\n\n- Collect **10 images of cars**\n- Collect **10 images of bikes**\n- Upload all images into **ABITA**\n- Create a **Label Data** block\n- Create two labels:\n  - Car\n  - Bike\n- Label all images correctly\n- Save the dataset with the name:\n\n**TrafficCarBike**\n\n\n\n## Success Criteria\n\n\n- ✅ A **Car** label has been created\n- ✅ A **Bike** label has been created\n- ✅ All images have been labelled correctly\n- ✅ The dataset is saved as **TrafficCarBike**\n- ✅ **TrafficCarBike** appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n\n🤔 You have created a labelled dataset for a traffic AI system.\n\n🤔 Every image has been assigned the correct label.\n\n🤔 The dataset is ready to be used for AI training.",
+        "successHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782128085491",
+        "title": "Guided Lab 4: Create a Labelled Text Dataset",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to create a labelled dataset using text data.\n\n\n\n## Problem\n\nYou are working as a **Data Labeler** for an email company.\n\nYour team is building an AI system that can automatically recognise **Spam** and **Not Spam** messages.\n\nBefore the AI can be trained, it needs labelled text data.\n\nYour job is to create the dataset.\n\n\n\n## Labelled Dataset\n\nDataset Name : **Training Data SpamDetection**\n\n| Text Message | Label |\n|-------------|--------|\n| Win free money now | Spam |\n| Your meeting is at 3 PM | Not Spam |\n| Claim your prize today | Spam |\n| Please submit your homework | Not Spam |\n| Get cheap loan instantly | Spam |\n| Class will start at 10 AM | Not Spam |\n| Congratulations, you won a gift | Spam |\n| I will call you later | Not Spam |\n| Click here to get cash | Spam |\n| Bring your notebook tomorrow | Not Spam |\n\n\n\n## Instructions\n\n**Step 1:**\nOpen **ABITA**.\n\n**Step 2:**\nFrom the **Data Menu**, drag a **Label Data** block onto the canvas.\n\n**Step 3:**\nDouble-click the **Label Data** block to open its properties.\n\n**Step 4:**\nCopy the labelled dataset provided above.\n\n**Step 5:**\nClick the **Paste Data** button.\n\n**Step 6:**\nPaste the dataset into the text area.\n\n**Step 7:**\nCreate two labels:\n\n- Spam\n- Not Spam\n\n**Step 8:**\nVerify that all messages have been assigned the correct labels.\n\n**Step 9:**\nIn the **Save Dataset** section, enter the name:\n\n**Training Data SpamDetection**\n\n**Step 10:**\nClick **Save Data**.\n\n**Step 11:**\nOpen the **Datasets** tab.\n\n**Step 12:**\nCheck that **Training Data SpamDetection** appears in the list of saved datasets.\n\n\n\n## Success Criteria\n\n- ✅ A **Spam** label has been created\n- ✅ A **Not Spam** label has been created\n- ✅ All text messages have been labelled correctly\n- ✅ The dataset is saved as **Training Data SpamDetection**\n- ✅ **Training Data SpamDetection** appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n🤔 You have created a labelled text dataset.\n\n🤔 Data can be images or text.\n\n🤔 AI systems can learn from text in the same way they learn from images.\n\n🤔 The dataset is ready to be used for AI training.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782129756577",
+        "title": "Challenge Lab 3: Create a News Classification Dataset",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nYou are working as a **Data Labeler** for a news company.\n\nYour team is building an AI system that can automatically recognise **Sports News** and **Technology News** articles.\n\nBefore the AI can be trained, it needs labelled text data.\n\nYour job is to create the dataset.\n\n\n\n## Requirements\n\n- Create a **Label Data** block.\n- Create two labels:\n  - Sports\n  - Technology\n- Copy the labelled dataset provided below.\n- Paste the dataset into the **Label Data** block.\n- Verify that all headlines have the correct labels.\n- Save the dataset with the name:\n\n**NewsClassificationData**\n\n\n\n## Labelled Dataset\n\n# Dataset Name: **NewsClassificationData**\n\n| News Headline | Label |\n|--------------|--------|\n| Pakistan Wins T20 Series After Thrilling Final Match | Sports |\n| Star Football Club Secures Victory in League Opener | Sports |\n| National Cricket Team Announces New Captain | Sports |\n| Tennis Champion Advances to Grand Slam Final | Sports |\n| Local Marathon Attracts Record Number of Participants | Sports |\n| Basketball Team Extends Winning Streak to Ten Games | Sports |\n| Hockey Federation Reveals Schedule for Upcoming Tournament | Sports |\n| Young Athlete Breaks National Sprint Record | Sports |\n| International Football Tournament Kicks Off This Weekend | Sports |\n| Cricket Board Launches New Youth Development Program | Sports |\n| AI-Powered Assistant Introduces Advanced Language Features | Technology |\n| Tech Company Unveils Next-Generation Smartphone | Technology |\n| Researchers Develop More Efficient Solar Panel Technology | Technology |\n| New Cybersecurity Tool Helps Protect Small Businesses | Technology |\n| Robotics Startup Launches Autonomous Delivery System | Technology |\n| Scientists Use AI to Improve Medical Diagnostics | Technology |\n| Cloud Computing Platform Expands Global Infrastructure | Technology |\n| Electric Vehicle Manufacturer Announces Battery Breakthrough | Technology |\n| Software Update Brings Enhanced Security Features | Technology |\n| Education Platform Introduces AI-Based Learning Tools | Technology |\n\n\n\n## Success Criteria\n\n- ✅ A **Sports** label has been created\n- ✅ A **Technology** label has been created\n- ✅ All headlines have been imported correctly\n- ✅ All labels have been verified\n- ✅ The dataset is saved as **NewsClassificationData**\n- ✅ **NewsClassificationData** appears in the **Datasets** tab\n\n\n\n## Expected Result\n\n🤔 You have created a labelled text dataset.\n\n🤔 AI can learn from different types of text.\n\n🤔 Labels help organise text into categories.\n\n🤔 The dataset is ready to be used for AI training.",
+        "successHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782122529088",
+        "title": "🤔 The Problem",
+        "icon": "📖",
+        "body": "## The Problem\n\nImagine you want to teach an AI to recognise **cats** and **dogs**.\n\nYou have collected **20 images**:\n\n- 10 Cat Images\n- 10 Dog Images\n\n\nShould we use all 20 images for training?\n\n🤔 Not quite.\n\nIf the AI learns from all the images, how will we know whether it has really learned?\n\nTo solve this problem, we divide our data into two groups.\n\n- 1. Training Data\n- 2. Test Data",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782122926757",
+        "title": "🎓 Training Data",
+        "icon": "📖",
+        "body": "# Training Data\n\n\n**Training Data** is used to teach the AI.\n\nThe model looks at these examples and learns patterns.\n\n\n## Example\n\n\n- 8 Cat Images\n- 8 Dog Images\n\n**Total = 16 Images**\n\nThese images are used for learning.\n\n✅ **Training Data = Data used to teach the AI.**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782122686828",
+        "title": "🧪 Test Data",
+        "icon": "📖",
+        "body": "# Test Data\n\n**Test Data** is used after training.\n\nThe model has never seen these images before.\n\n# Example\n\n- 2 Cat Images\n- 2 Dog Images\n\n**Total = 4 Images**\n\nThese images are used to check whether the AI has learned successfully.\n\n✅ **Test Data = Data used to check the AI.**\n\n\n\n## Why Do We Need Test Data?\n\nImagine a student memorises practice questions before an exam.\n\nThey might do well on those exact questions, but that does not mean they truly understand the subject or can answer new ones.\n\nIn the same way, an AI should be tested using new examples it has never seen before.\n\n\n\n✅ **Test Data helps us measure how well the AI performs on new data.**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782122822147",
+        "title": "📝 Quick Summary",
+        "icon": "📖",
+        "body": "## Quick Summary\n\n\n| Dataset  Role (How will we use the data?) | Purpose |\n|------------|----------|\n| Training Data | Teach the AI |\n| Test Data | Check if the AI learned |\n\n\n\n👉 **Training Data helps the AI learn.**\n\n👉 **Test Data helps us measure how well the AI performs.**",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782125907995",
+        "title": "Guided Lab 5: Create Training Data and Test Data",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to divide data into **Training Data** and **Test Data**.\n\n\n\n## Problem\n\nYou are working as a **Data Labeler** for a furniture company.\n\nYour team is building an AI system that can automatically recognise **Office Tables** and **Office Chairs** from product images.\n\nBefore the AI can be trained, the data must be divided into **Training Data** and **Test Data**.\n\nYour job is to create both datasets.\n\n\n\n## Instructions\n\n\n# Collect the Data\n\n**Step 1:**\nSearch online for **10 images of Office Tables**.\n\n**Step 2:**\nDownload all **10 Office Table images** to your computer.\n\n**Step 3:**\nSearch online for **10 images of Office Chairs**.\n\n**Step 4:**\nDownload all **10 Office Chair images** to your computer.\n\n**Step 5:**\nOpen **ABITA**.\n\n**Step 6:**\nUpload all **20 images** into the **Data Bank**.\n\n\n\n# Create the Training Dataset\n\n**Step 7:**\nDrag a **Label Data** block onto the canvas.\n\n**Step 8:**\nDouble-click the **Label Data** block to open its properties.\n\n**Step 9:**\nCreate two labels:\n\n- Office Table\n- Office Chair\n\n**Step 10:**\nSelect **8 Office Table images** and **8 Office Chair images** from the Data Bank.\n\n**Step 11:**\nDrag the selected images into the **Items** section.\n\n**Step 12:**\nAssign the correct label to each image.\n\n**Step 13:**\nSave the dataset with the name:\n\n**Training Data OfficeFurniture**\n\n\n\n# Create the Test Dataset\n\n**Step 14:**\nDrag another **Label Data** block onto the canvas.\n\n**Step 15:**\nDouble-click the **Label Data** block to open its properties.\n\n**Step 16:**\nCreate two labels:\n\n- Office Table\n- Office Chair\n\n**Step 17:**\nSelect the remaining **2 Office Table images** and **2 Office Chair images** from the Data Bank.\n\n**Step 18:**\nDrag the selected images into the **Items** section.\n\n**Step 19:**\nAssign the correct label to each image.\n\n**Step 20:**\nSave the dataset with the name:\n\n**Test Data OfficeFurniture**\n\n\n\n\n# Verify Your Work\n\n**Step 21:**\nOpen the **Datasets** tab.\n\n**Step 22:**\nConfirm that both datasets appear:\n\n- Training Data OfficeFurniture\n- Test Data OfficeFurniture\n\n\n\n## Success Criteria\n\n\n- ✅ A **Training Data OfficeFurniture** dataset has been created\n- ✅ A **Test Data OfficeFurniture** dataset has been created\n- ✅ Training Data contains **8 Office Tables** and **8 Office Chairs**\n- ✅ Test Data contains **2 Office Tables** and **2 Office Chairs**\n- ✅ Both datasets appear in the **Datasets** tab\n\n\n\n## Expected Result\n\n🤔 You have divided your data into **Training Data** and **Test Data**.\n\n🤔 The **Training Data** will be used to teach the AI.\n\n🤔 The **Test Data** will be used later to check how well the AI has learned.\n\n🤔 Not all collected data should be used for training.",
+        "canvasHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782204618526",
+        "title": "Guided Lab 6: Train Your First AI Model",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to train an AI model using Training Data.\n\n---\n\n\n## Problem\n\nYou have already created a dataset called:\n\n**Training Data OfficeFurniture**\n\nThis dataset contains labelled images of:\n\n* Office Tables\n* Office Chairs\n\nNow it is time to teach an AI model using this data.\n\nIn ABITA, we will use an **Image Supervised Model**.\n\nYour job is to train the model.\n\n---\n\n\n## Instructions\n\n**Step 1:**\nOpen **ABITA**.\n\n\n**Step 2:**\nFrom the **Models** menu, drag an **Image Supervised Model** onto the canvas.\n\n\n**Step 3:**\nOpen the **Datasets** tab. If the left panel is hidden, use the floating icon to open it.\n\n\n**Step 4:**\nLocate:\n\n**Training Data OfficeFurniture**\n\n\n**Step 5:**\nDrag **Training Data OfficeFurniture** onto the canvas.\n\n\n**Step 6:**\nDouble-click the **Image Supervised Model** to open its properties.\n\nYou should see:\n\n**1 · Link Training Data**\n\n\n**Step 7:**\nDrag from the **violet dot** on **Training Data OfficeFurniture** to the **teal dot** on the **Image Supervised Model**.\n\n\n**Step 8:**\nDouble click the model & verify that the model shows:\n\n✅ Connected\n\n**Training Data OfficeFurniture**\n\n---\n\n\n## Train the Model\n\n**Step 9:**\nIf the model properties are not visible, double-click the **Image Supervised Model** again.\n\nUnder:\n\n**2 · Train**\n\nClick:\n\n🚀 **Train Model**\n\n\n**Step 10:**\nObserve the training progress.\n\nYou may see messages such as:\n\n* Initialising classifier...\n* Loading AI...\n* Training in progress...\n\n\n**Step 11:**\nWait for the training process to complete.\n\n\n**Step 12:**\nVerify that the model displays:\n\n✅ Training Complete\n\nand shows the number of labels and images trained.\n\n---\n\n\n## Save the Model\n\n**Step 13:**\nScroll to:\n\n**3 · Save to My Models**\n\n\n**Step 14:**\nEnter the model name:\n\n**OfficeFurnitureModel**\n\n\n**Step 15:**\nClick:\n\n💾 **Save Name**\n\n\n**Step 16:**\nOpen the **Models** tab on the left side menu.\n\n\n**Step 17:**\nConfirm that:\n\n**OfficeFurnitureModel**\n\nappears in the list of saved models.\n\n---\n\n\n## Success Criteria\n\n✅ Training Data OfficeFurniture is added to the canvas\n\n✅ Training Data OfficeFurniture is connected to the Image Supervised Model\n\n✅ The model shows **Training Complete**\n\n✅ OfficeFurnitureModel is saved\n\n✅ OfficeFurnitureModel appears in the My Models tab\n\n---\n\n\n## Expected Result\n\n🤔 The model has learned from the examples in the Training Data.\n\n🤔 The model has learned patterns for recognising Office Tables and Office Chairs.\n\n🤔 The model is now ready to make predictions.\n\n🤔 Training teaches the AI, but it does not tell us how well the AI has learned.\n\n👉 In the next lab, you will test the model using **Test Data OfficeFurniture**.\n",
+        "canvasHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782206353313",
+        "title": "📖 How Do We Know If Our AI Learned?",
+        "icon": "📖",
+        "body": "In the last lab, we trained our model.\n\nThe model studied examples of:\n\n- Office Tables\n- Office Chairs\n\nBut one important question remains.\n\n🤔 Did the model actually learn?\n\nTo find out, we must test it using data it has never seen before.\n\nThis is called: **Test Data**\n",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782206448962",
+        "title": "📊 Understanding Test Results",
+        "icon": "📖",
+        "body": "\nWhen a model is tested, it makes predictions.\n\nSome predictions may be:\n\n✅ **Correct**\n\nSome predictions may be:\n\n❌ **Incorrect**\n\n\n\n## 📈 Accuracy\n\nAccuracy tells us how many predictions were correct.\n\n| Images Tested | Correct Predictions | Accuracy |\n|--------------|--------------------|----------|\n| 4 | 4 | 100% |\n| 4 | 3 | 75% |\n| 4 | 2 | 50% |\n\nThe higher the accuracy, the better the model performed.\n\n",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782206536846",
+        "title": "🤔 Can Models Make Mistakes?",
+        "icon": "📖",
+        "body": "\n# 🤔 Can Models Make Mistakes?\n\n**Yes.**\n\nEven trained models can sometimes make mistakes.\n\nFor now, it is enough to know that not every prediction will always be correct.\n\n\n👉 In future chapters, we will explore why models make mistakes and how they can be improved.\n\n\n\n# 🚀 Looking Ahead\n\nNow it is time to test our model and see how well it performs.",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782205538725",
+        "title": "Guided Lab 7: Test Your First AI Model",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to test an AI model using **Test Data**.\n\n\n\n\n## Problem\n\nYou have successfully trained:\n\n**OfficeFurnitureModel**\n\nusing:\n\n**Training Data OfficeFurniture**\n\nBut how do we know if the model has learned well?\n\nTo find out, we must test the model using data it has never seen before.\n\nYour job is to test the model using:\n\n**Test Data OfficeFurniture**\n\n\n\n\n## Instructions\n\n**Step 1:**\nOpen **ABITA**.\n\n\n**Step 2:**\nOpen the **Models** tab.\n\n\n**Step 3:**\nLocate:\n\n**OfficeFurnitureModel**\n\n\n**Step 4:**\nDrag **OfficeFurnitureModel** onto the canvas.\n\n**Step 5:**\nOpen the **Datasets** tab.\n\n\n**Step 6:**\nLocate:\n\n**Test Data OfficeFurniture**\n\n\n**Step 7:**\nDrag **Test Data OfficeFurniture** onto the canvas.\n\n\n**Step 8:**\nDouble-click **OfficeFurnitureModel** to open its properties.\n\nYou should see:\n\n**4 · Test Model**\n\n\n**Step 9:**\nDrag from the **amber dot** on **Test Data OfficeFurniture** to the **amber dot** on **OfficeFurnitureModel**.\n\n\n**Step 10:**\nDouble-click the model again.\n\n\n**Step 11:**\nVerify that the model shows:\n\n🗂️ **Test Data OfficeFurniture**\n\nand displays the number of test images.\n\n\n\n\n\n## Run the Test\n\n**Step 12:**\nClick:\n\n🔬 **Run Test**\n\n\n**Step 13:**\nWait for the testing process to complete.\n\nYou may see:\n\n**Running inference...**\n\n\n**Step 14:**\nVerify that the model displays results similar to:\n\n- ✅ Images Tested\n- ✅ Accuracy Percentage\n- ✅ Correct Predictions\n\n\n\n\n## View Detailed Results\n\n**Step 15:**\nClick:\n\n↗ **Expand Results**\n\n\n**Step 16:**\nReview the results for each image.\n\nObserve:\n\n- Predicted Label\n- Actual Label\n- Confidence Score\n- Correct Predictions\n- Incorrect Predictions\n\n\n\n\n\n## Success Criteria\n\n\n- ✅ OfficeFurnitureModel is added to the canvas\n- ✅ Test Data OfficeFurniture is connected to the model\n- ✅ Testing completes successfully\n- ✅ An accuracy score is displayed\n- ✅ Detailed results can be viewed\n\n\n\n\n\n## Expected Result\n\n🤔 The model has been tested using data it has never seen before.\n\n🤔 Test Data helps us measure how well the AI has learned.\n\n🤔 Accuracy tells us how many predictions were correct.\n\n🤔 A trained model is not always a good model.\n\n🤔 Testing helps us understand the strengths and weaknesses of a model.",
+        "canvasHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782207058084",
+        "title": "📖 Understanding Your Results",
+        "icon": "📖",
+        "body": "You have now tested your AI model using data it had never seen before.\n\nTake a moment to look at your results.\n\n\n\n## 🤔 Were Your Results Different?\n\n\n\nSome students may achieve:\n\n✅ **High Accuracy**\n\n\nWhile others may achieve:\n\n⚠️ **Lower Accuracy**\n\nThis is completely normal.",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782207107266",
+        "title": "🔍 An Important Observation",
+        "icon": "🔬",
+        "instruction": "# Not all AI models perform the same way.\n\nEven when two students follow similar steps, their models may produce different results.\n\nA trained model is not always a perfect model.\n\nThat is why testing is important.\n\nWithout testing, we would never know how well a model has learned.\n\n\n\n\n\n## ❓ A Big Question\n\nIf every student followed similar steps...\n\n🤔 Why did some models perform better than others?\n\n🤔 Why do some models make mistakes?\n\n🤔 Can a model be improved?\n\nThese are important questions.\n\n\n👉 In future chapters, we will explore how models learn, why they make mistakes, and how they can be improved.\n",
+        "canvasHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782207249449",
+        "title": "📖 What Did We Just Build?",
+        "icon": "📖",
+        "body": "You have now completed your first **Machine Learning Project**.\n\nAlong the way, you worked like a real AI team.\n\n\nYou:\n\n\n- ✅ Collected data\n- ✅ Labelled data\n- ✅ Created Training Data\n- ✅ Created Test Data\n- ✅ Trained an AI model\n- ✅ Tested an AI model\n\n\n## 🔄 The Machine Learning Process\n\n\n\n**1️⃣ Collect Data**\n\n⬇\n\n**2️⃣ Label Data**\n\n⬇\n\n**3️⃣ Create Training Data**\n\n⬇\n\n**4️⃣ Create Test Data**\n\n⬇\n\n**5️⃣ Train the Model**\n\n⬇\n\n**6️⃣ Test the Model**\n\n",
+        "tip": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782205837195",
+        "title": "🏆 Challenge Lab 4: Wildlife Animal Classifier",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nYou are working as a **Machine Learning Engineer** for a wildlife research company.\n\nYour team wants to build an AI system that can automatically recognise:\n\n- Lions\n- Tigers\n\nYour job is to create the datasets, train the model, and test the model.\n\n\n\n\n## Requirements\n\n- Collect **10 Lion images**\n- Collect **10 Tiger images**\n- Create:\n  - **Training Data WildLife**\n  - **Test Data WildLife**\n- Train an **Image Supervised Model**\n- Save the model as:\n\n**WildLifeModel**\n\n- Test the model using **Test Data WildLife**\n\n\n\n\n\n## Success Criteria\n\n- ✅ Training and Test datasets created\n- ✅ Model trained successfully\n- ✅ Model tested successfully\n- ✅ Accuracy results displayed\n\n\n\n\n\n## Expected Result\n\n🤔 You have built a complete AI system from start to finish.\n\n🤔 The AI has learned to recognise lions and tigers using examples.\n\n🤔 The model has been tested using data it has never seen before.\n\n🤔 The accuracy score shows how well the model performs on new data.",
+        "successHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782205898612",
+        "title": "🏆 Challenge Lab 5: Traffic Vehicle Classifier",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nYou are working as a **Machine Learning Engineer** for a smart traffic company.\n\nYour team wants to build an AI system that can automatically recognise:\n\n- Cars\n- Bikes\n\n\nYour job is to create the datasets, train the model, and test the model.\n\n\n\n\n\n## Requirements\n\n- Collect **10 Car images**\n- Collect **10 Bike images**\n- Create:\n  - **Training Data Traffic**\n  - **Test Data Traffic**\n- Train an **Image Supervised Model**\n- Save the model as:\n\n**TrafficModel**\n\n- Test the model using **Test Data Traffic**\n\n\n\n\n\n## Success Criteria\n\n- ✅ Training and Test datasets created\n- ✅ Model trained successfully\n- ✅ Model tested successfully\n- ✅ Accuracy results displayed\n\n\n\n\n\n## Expected Result\n\n🤔 You have built a complete AI system from start to finish.\n\n🤔 The AI has learned to recognise cars and bikes using examples.\n\n🤔 The model has been tested using data it has never seen before.\n\n🤔 The accuracy score shows how well the model performs on new data.",
+        "successHint": ""
       }
     ]
   }
