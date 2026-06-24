@@ -64,6 +64,9 @@ export function validateExportSelection(selectedIds: Set<string>): {
     if (rule.switchBlocks.some(b => b.id === id)) return true
     if (rule.sensorBlocks.some(b => b.id === id)) return true
 
+    const timer = rule.timerBlocks.find(b => b.id === id)
+    if (timer) return !!timer.linkedRuleBlockId && check(timer.linkedRuleBlockId)
+
     return false
   }
 
@@ -162,6 +165,12 @@ export function exportRuleApp(
     acs:    rule.acBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
     bulbs:  workflow.bulbBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
     doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
+    timers: rule.timerBlocks.filter(t => keep(t.id)).map(t => ({
+      id: t.id, name: t.name,
+      timerMode: t.timerMode ?? 'duration',
+      totalSeconds: t.durationMinutes * 60 + t.durationSeconds,
+      linkedRuleBlockId: t.linkedRuleBlockId,
+    })),
     models,
   }
 
@@ -343,6 +352,7 @@ const state = {
   acs:    APP.acs.map(function(x){return Object.assign({},x,{_on:false})}),
   bulbs:  APP.bulbs.map(function(x){return Object.assign({},x,{_on:false})}),
   doors:  APP.doors.map(function(x){return Object.assign({},x,{_open:false})}),
+  timers: APP.timers.map(function(x){return Object.assign({},x,{_remaining:null,_on:false,_lastInput:false})}),
 };
 
 function evalCond(v,op,t){
@@ -384,6 +394,7 @@ function getOut(id){
   var c=state.conditions.find(function(x){return x.id===id}); if(c) return c._out;
   var s=state.switches.find(function(x){return x.id===id});   if(s) return s.isOn;
   var l=state.logic.find(function(x){return x.id===id});      if(l) return l._out;
+  var tm=state.timers.find(function(x){return x.id===id});    if(tm) return tm._on;
   return false;
 }
 function evaluate(){
@@ -397,6 +408,17 @@ function evaluate(){
       var sen=state.sensors.find(function(s){return s.id===c.linkedSensorId});
       c._out=sen?evalCond(sen.value,c.operator,c.threshold):false;
     }
+  }
+  for(var ti=0;ti<state.timers.length;ti++){
+    var tm=state.timers[ti];
+    var up=tm.linkedRuleBlockId?getOut(tm.linkedRuleBlockId):false;
+    if(tm.timerMode==='delay-on'){
+      if(up&&!tm._lastInput&&tm._remaining===null){ tm._remaining=tm.totalSeconds; }
+      else if(!up){ tm._remaining=null; tm._on=false; }
+    } else {
+      if(up&&!tm._lastInput&&tm._remaining===null){ tm._remaining=tm.totalSeconds; tm._on=true; }
+    }
+    tm._lastInput=up;
   }
   for(var pass=0;pass<5;pass++){
     for(var j=0;j<state.logic.length;j++){
@@ -440,7 +462,23 @@ function updateOutputs(){
     document.getElementById('st-'+a.id).textContent=a._on?'● COOLING':'○ OFF';
   }
 }
-function refresh(){ evaluate(); updateOutputs(); }
+function fmtTime(s){var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+function updateTimerDisplay(tm){
+  var numEl=document.getElementById('tc-'+tm.id);
+  var stEl=document.getElementById('ts-'+tm.id);
+  if(!numEl||!stEl) return;
+  if(tm._remaining!==null&&tm._remaining>0){
+    numEl.textContent=fmtTime(tm._remaining); stEl.textContent='⏳ Running…';
+  } else if(tm._on){
+    numEl.textContent='0:00'; stEl.textContent='✅ Done';
+  } else {
+    numEl.textContent=fmtTime(tm.totalSeconds); stEl.textContent='⬛ Idle';
+  }
+}
+function refresh(){
+  evaluate(); updateOutputs();
+  for(var i=0;i<state.timers.length;i++) updateTimerDisplay(state.timers[i]);
+}
 
 var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
 (function initParticles(){
@@ -453,6 +491,23 @@ var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
     document.body.appendChild(s);
   }
 })();
+
+setInterval(function(){
+  var changed=false;
+  for(var i=0;i<state.timers.length;i++){
+    var tm=state.timers[i];
+    if(tm._remaining!==null&&tm._remaining>0){
+      tm._remaining--; changed=true;
+      updateTimerDisplay(tm);
+      if(tm._remaining<=0){
+        tm._remaining=null;
+        if(tm.timerMode==='duration'){ tm._on=false; }
+        else{ var up=tm.linkedRuleBlockId?getOut(tm.linkedRuleBlockId):false; tm._on=up; }
+      }
+    }
+  }
+  if(changed){ evaluate(); updateOutputs(); }
+},1000);
 
 var inputCont=document.getElementById('input-cards');
 inputCont.style.cssText='display:flex;flex-direction:column;gap:0.75rem';
@@ -538,6 +593,19 @@ for(var wi=0;wi<state.switches.length;wi++){
       '</div>';
     inputCont.appendChild(card);
   })(state.switches[wi]);
+}
+
+for(var tmi=0;tmi<state.timers.length;tmi++){
+  (function(tm){
+    var card=document.createElement('div'); card.className='in-card';
+    card.innerHTML=
+      '<div class="in-lbl">⏱️ '+tm.name+'</div>'+
+      '<div style="display:flex;align-items:baseline;gap:0.5rem">'+
+        '<span class="slider-num" id="tc-'+tm.id+'">'+fmtTime(tm.totalSeconds)+'</span>'+
+        '<span class="slider-unit" id="ts-'+tm.id+'">⬛ Idle</span>'+
+      '</div>';
+    inputCont.appendChild(card);
+  })(state.timers[tmi]);
 }
 
 var outCont=document.getElementById('output-cards');
