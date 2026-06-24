@@ -13,7 +13,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
-import { exportRuleApp, validateExportSelection } from '@/lib/exportRuleApp'
+import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport } from '@/lib/exportRuleApp'
 
 type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
@@ -337,10 +337,18 @@ function RuleBasedMenu() {
 }
 
 const EXPORT_TOOLTIPS: Record<string, string> = {
-  ok:                   'Export selection as interactive app',
-  'no-outputs':         'Select at least one output device (fan, bulb, door, alarm, AC)',
-  'unconnected-output': 'An output has nothing connected — wire it up first',
-  'incomplete-chain':   'Select the full connected flow — some nodes in the chain are missing',
+  ok:                       'Export selection as interactive app',
+  'no-outputs':             'Select at least one output device (fan, bulb, door, alarm, AC)',
+  'unconnected-output':     'An output has nothing connected — wire it up first',
+  'incomplete-chain':       'Select the full connected flow — some nodes in the chain are missing',
+  'untrained-model':        "A model in the flow hasn't been trained yet",
+  'unsupported-model-type': 'Only text classifier models can be exported (not image models)',
+}
+const AI_EXPORT_TOOLTIPS: Record<string, string> = {
+  ok:               'Export your AI classifier as a standalone demo',
+  'no-model':       'Select a trained text model to export',
+  'untrained-model':'This model hasn\'t been trained yet',
+  'unsupported-type':'Only text classifier models can be exported (not image models)',
 }
 
 function SelectionBar() {
@@ -348,6 +356,7 @@ function SelectionBar() {
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
 
   const [showNaming, setShowNaming] = useState(false)
+  const [exportMode, setExportMode] = useState<'app' | 'ai-model'>('app')
   const [appName, setAppName] = useState('My AI App')
   const [theme, setTheme] = useState('space')
   const [layout, setLayout] = useState('classic')
@@ -374,13 +383,14 @@ function SelectionBar() {
   const count = canvasSelection.length
 
   useEffect(() => {
-    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic') }
+    if (count <= 1) { setShowNaming(false); setExportMode('app'); setTheme('space'); setLayout('classic') }
   }, [count])
 
   if (count <= 1) return null
 
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
   const exportCheck = validateExportSelection(selectedIds)
+  const aiModelCheck = validateAIModelExport(selectedIds)
 
   const SWATCHES = [
     { id: 'space',  emoji: '🚀', label: 'Space',     from: '#8b5cf6', to: '#2dd4bf' },
@@ -396,9 +406,16 @@ function SelectionBar() {
   ]
 
   function handleConfirm() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    exportRuleApp(appName.trim() || 'My AI App', selectedIds, theme as any, layout as any)
+    const name = appName.trim() || (exportMode === 'ai-model' ? 'My AI Model' : 'My AI App')
+    if (exportMode === 'ai-model') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exportAIModel(name, selectedIds, theme as any)
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exportRuleApp(name, selectedIds, theme as any, layout as any)
+    }
     setShowNaming(false)
+    setExportMode('app')
     setAppName('My AI App')
     setTheme('space')
     setLayout('classic')
@@ -428,12 +445,13 @@ function SelectionBar() {
   }
 
   if (showNaming) {
+    const isAI = exportMode === 'ai-model'
     return (
       <div className="flex flex-col gap-2 px-3 py-2.5 glass-panel rounded-xl">
         {/* row 1: name + download + close */}
         <div className="flex items-center gap-2">
-          <span className="text-base leading-none">🚀</span>
-          <span className="text-xs font-heading text-white/55 whitespace-nowrap">App name:</span>
+          <span className="text-base leading-none">{isAI ? '🧠' : '🚀'}</span>
+          <span className="text-xs font-heading text-white/55 whitespace-nowrap">{isAI ? 'Model name:' : 'App name:'}</span>
           <input
             type="text"
             value={appName}
@@ -444,7 +462,7 @@ function SelectionBar() {
             }}
             autoFocus
             maxLength={40}
-            placeholder="My AI App"
+            placeholder={isAI ? 'My AI Model' : 'My AI App'}
             className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-36 transition-all"
           />
           <button
@@ -460,7 +478,7 @@ function SelectionBar() {
             ✕
           </button>
         </div>
-        {/* row 2: theme + layout pickers */}
+        {/* row 2: theme + (layout only for app mode) */}
         <div className="flex items-center gap-3 pl-7">
           <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Theme</span>
           <div className="flex items-center gap-1.5">
@@ -480,23 +498,27 @@ function SelectionBar() {
               </button>
             ))}
           </div>
-          <span className="text-white/15 text-xs">·</span>
-          <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Layout</span>
-          <div className="flex items-center gap-1">
-            {LAYOUTS.map((l) => (
-              <button
-                key={l.id}
-                onClick={() => setLayout(l.id)}
-                className={`px-2 py-0.5 rounded-md text-[0.65rem] font-heading font-semibold transition-all whitespace-nowrap ${
-                  layout === l.id
-                    ? 'bg-white/15 text-white border border-white/30'
-                    : 'text-white/35 border border-white/10 hover:text-white/60 hover:border-white/20'
-                }`}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
+          {!isAI && (
+            <>
+              <span className="text-white/15 text-xs">·</span>
+              <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Layout</span>
+              <div className="flex items-center gap-1">
+                {LAYOUTS.map((l) => (
+                  <button
+                    key={l.id}
+                    onClick={() => setLayout(l.id)}
+                    className={`px-2 py-0.5 rounded-md text-[0.65rem] font-heading font-semibold transition-all whitespace-nowrap ${
+                      layout === l.id
+                        ? 'bg-white/15 text-white border border-white/30'
+                        : 'text-white/35 border border-white/10 hover:text-white/60 hover:border-white/20'
+                    }`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
@@ -509,7 +531,7 @@ function SelectionBar() {
       </span>
       <div className="w-px h-4 bg-white/10 self-center" />
       <button
-        onClick={() => setShowNaming(true)}
+        onClick={() => { setExportMode('app'); setShowNaming(true) }}
         disabled={!exportCheck.valid}
         title={EXPORT_TOOLTIPS[exportCheck.reason]}
         className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
@@ -519,6 +541,18 @@ function SelectionBar() {
         }`}
       >
         📱 Export App
+      </button>
+      <button
+        onClick={() => { setExportMode('ai-model'); setShowNaming(true) }}
+        disabled={!aiModelCheck.valid}
+        title={AI_EXPORT_TOOLTIPS[aiModelCheck.reason]}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
+          aiModelCheck.valid
+            ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 border border-teal-500/40 text-white hover:from-teal-500/30 hover:to-emerald-500/30'
+            : 'border border-white/10 text-white/25 cursor-not-allowed'
+        }`}
+      >
+        🧠 Export AI
       </button>
       <button
         onClick={handleDelete}

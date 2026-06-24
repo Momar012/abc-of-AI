@@ -1,12 +1,25 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useModelStore } from '@/store/useModelStore'
 
 export function validateExportSelection(selectedIds: Set<string>): {
   valid: boolean
-  reason: 'ok' | 'no-outputs' | 'unconnected-output' | 'incomplete-chain'
+  reason: 'ok' | 'no-outputs' | 'unconnected-output' | 'incomplete-chain' | 'untrained-model' | 'unsupported-model-type'
 } {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
+  const modelState = useModelStore.getState()
+
+  // Early check: any selected condition using a model must be trained + text-supervised
+  for (const cond of rule.conditionBlocks.filter(c => selectedIds.has(c.id) && c.linkedModelId)) {
+    const mb = modelState.modelBlocks.find(b => b.id === cond.linkedModelId)
+    if (!mb || mb.status !== 'trained' || !mb.trainedModelId) {
+      return { valid: false, reason: 'untrained-model' }
+    }
+    if (mb.modelType !== 'text-supervised') {
+      return { valid: false, reason: 'unsupported-model-type' }
+    }
+  }
 
   const outputDevices = [
     ...rule.fanBlocks,
@@ -39,7 +52,13 @@ export function validateExportSelection(selectedIds: Set<string>): {
 
     const cond = rule.conditionBlocks.find(b => b.id === id)
     if (cond) {
-      return !!cond.linkedSensorId && selectedIds.has(cond.linkedSensorId)
+      if (cond.linkedSensorId) return selectedIds.has(cond.linkedSensorId)
+      if (cond.linkedModelId) {
+        if (!selectedIds.has(cond.linkedModelId)) return false
+        const mb = modelState.modelBlocks.find(b => b.id === cond.linkedModelId)
+        return !!mb?.liveLinkedSensorId && selectedIds.has(mb.liveLinkedSensorId)
+      }
+      return false
     }
 
     if (rule.switchBlocks.some(b => b.id === id)) return true
@@ -54,6 +73,20 @@ export function validateExportSelection(selectedIds: Set<string>): {
     }
   }
 
+  return { valid: true, reason: 'ok' }
+}
+
+export function validateAIModelExport(selectedIds: Set<string>): {
+  valid: boolean
+  reason: 'ok' | 'no-model' | 'untrained-model' | 'unsupported-type'
+} {
+  const modelState = useModelStore.getState()
+  const selected = modelState.modelBlocks.filter(b => selectedIds.has(b.id))
+  if (selected.length === 0) return { valid: false, reason: 'no-model' }
+  for (const mb of selected) {
+    if (mb.status !== 'trained' || !mb.trainedModelId) return { valid: false, reason: 'untrained-model' }
+    if (mb.modelType !== 'text-supervised') return { valid: false, reason: 'unsupported-type' }
+  }
   return { valid: true, reason: 'ok' }
 }
 
@@ -88,6 +121,23 @@ export function exportRuleApp(
   const workflow = useWorkflowStore.getState()
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
 
+  const modelState = useModelStore.getState()
+  const models = modelState.modelBlocks
+    .filter(b => keep(b.id) && b.modelType === 'text-supervised' && b.trainedModelId)
+    .map(mb => {
+      const tm = modelState.trainedModels.find(m => m.id === mb.trainedModelId)
+      return {
+        id: mb.id,
+        name: mb.name,
+        liveSensorId: mb.liveLinkedSensorId ?? null,
+        vocab: tm?.textVocab ?? [],
+        wordLogProbs: tm?.nbWordLogProbs ?? {},
+        classLogPriors: tm?.nbClassLogPriors ?? {},
+        labels: tm?.labels ?? [],
+        labelIds: tm?.labelIds ?? [],
+      }
+    })
+
   const data = {
     sensors: rule.sensorBlocks.filter(s => keep(s.id)).map(s => ({
       id: s.id, name: s.name, sensorType: s.sensorType,
@@ -97,8 +147,11 @@ export function exportRuleApp(
       id: s.id, name: s.name, isOn: s.isOn,
     })),
     conditions: rule.conditionBlocks.filter(c => keep(c.id)).map(c => ({
-      id: c.id, name: c.name, linkedSensorId: c.linkedSensorId,
+      id: c.id, name: c.name,
+      linkedSensorId: c.linkedSensorId,
       operator: c.operator, threshold: c.threshold,
+      linkedModelId: c.linkedModelId ?? null,
+      modelCondition: c.modelCondition ?? null,
     })),
     logic: rule.logicBlocks.filter(l => keep(l.id)).map(l => ({
       id: l.id, logicType: l.logicType,
@@ -109,6 +162,7 @@ export function exportRuleApp(
     acs:    rule.acBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
     bulbs:  workflow.bulbBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
     doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
+    models,
   }
 
   const html = buildHTML(appName, data, THEMES[theme], layout)
@@ -304,6 +358,27 @@ function evalCond(v,op,t){
     default:   return false;
   }
 }
+function tokenizeNB(t){
+  return t.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(function(w){return w.length>1;});
+}
+function runNB(modelId,text){
+  var m=APP.models.find(function(m){return m.id===modelId;});
+  if(!m||!m.vocab.length) return null;
+  var vi={};
+  m.vocab.forEach(function(w,i){vi[w]=i;});
+  var tokens=tokenizeNB(text);
+  var best=m.labels[0]||null,bestS=-Infinity;
+  for(var li=0;li<m.labels.length;li++){
+    var lid=m.labelIds[li];
+    var s=(m.classLogPriors[lid]||0);
+    for(var ti=0;ti<tokens.length;ti++){
+      var idx=vi[tokens[ti]];
+      if(idx!==undefined&&m.wordLogProbs[lid]) s+=m.wordLogProbs[lid][idx];
+    }
+    if(s>bestS){bestS=s;best=m.labels[li];}
+  }
+  return best;
+}
 function getOut(id){
   if(!id) return false;
   var c=state.conditions.find(function(x){return x.id===id}); if(c) return c._out;
@@ -314,8 +389,14 @@ function getOut(id){
 function evaluate(){
   for(var i=0;i<state.conditions.length;i++){
     var c=state.conditions[i];
-    var sen=state.sensors.find(function(s){return s.id===c.linkedSensorId});
-    c._out=sen?evalCond(sen.value,c.operator,c.threshold):false;
+    if(c.linkedModelId){
+      var m=APP.models.find(function(m){return m.id===c.linkedModelId;});
+      var text=m&&m.liveSensorId?((document.getElementById('sv-'+m.liveSensorId)||{}).value||''):'';
+      c._out=runNB(c.linkedModelId,text)===c.modelCondition;
+    } else {
+      var sen=state.sensors.find(function(s){return s.id===c.linkedSensorId});
+      c._out=sen?evalCond(sen.value,c.operator,c.threshold):false;
+    }
   }
   for(var pass=0;pass<5;pass++){
     for(var j=0;j<state.logic.length;j++){
@@ -570,6 +651,203 @@ for(var ci=0;ci<state.acs.length;ci++){
 }
 
 refresh();
+<\/script>
+</body>
+</html>`
+}
+
+// ── Standalone AI Model Export ──────────────────────────────────────────────
+
+export function exportAIModel(
+  appName = 'My AI Model',
+  selectedIds?: Set<string>,
+  theme: Theme = 'space',
+): void {
+  const keep = (id: string) => !selectedIds || selectedIds.has(id)
+  const modelState = useModelStore.getState()
+
+  const models = modelState.modelBlocks
+    .filter(b => keep(b.id) && b.modelType === 'text-supervised' && b.trainedModelId)
+    .map(mb => {
+      const tm = modelState.trainedModels.find(m => m.id === mb.trainedModelId)
+      return {
+        id: mb.id,
+        name: mb.name,
+        vocab: tm?.textVocab ?? [],
+        wordLogProbs: tm?.nbWordLogProbs ?? {},
+        classLogPriors: tm?.nbClassLogPriors ?? {},
+        labels: tm?.labels ?? [],
+        labelIds: tm?.labelIds ?? [],
+      }
+    })
+
+  const html = buildAIModelHTML(appName, models, THEMES[theme])
+  const blob = new Blob([html], { type: 'text/html' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${appName.replace(/\s+/g, '-').toLowerCase()}.html`
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function buildAIModelHTML(
+  appName: string,
+  models: Array<{
+    id: string; name: string;
+    vocab: string[]; wordLogProbs: Record<string, number[]>;
+    classLogPriors: Record<string, number>;
+    labels: string[]; labelIds: string[];
+  }>,
+  t: typeof THEMES[Theme],
+): string {
+  const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const modelsJson = JSON.stringify(models)
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle} — Made with ABITA</title>
+<style>
+:root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,var(--orb1),transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;width:420px;height:420px;bottom:-100px;right:-100px;background:radial-gradient(circle,var(--orb2),transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
+.pt{position:fixed;pointer-events:none;animation:star-twinkle var(--dur) ease-in-out infinite;animation-delay:var(--dly);opacity:0.1;z-index:0}
+header{background:rgba(18,14,42,0.9);border-bottom:1px solid rgba(255,255,255,0.07);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);position:relative;z-index:10}
+.h-left{display:flex;align-items:center;gap:1rem}
+.h-icon{font-size:2rem;line-height:1}
+.h-title{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
+.h-sub{font-size:0.7rem;color:rgba(255,255,255,0.28);margin-top:0.125rem}
+.abita-badge{font-size:0.62rem;font-weight:800;color:rgba(167,139,250,0.75);border:1px solid rgba(167,139,250,0.2);padding:0.3rem 0.75rem;border-radius:9999px;letter-spacing:0.07em;background:rgba(139,92,246,0.07)}
+main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem;max-width:640px;margin:0 auto;width:100%;position:relative;z-index:1}
+.model-card{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1.25rem;padding:1.5rem;display:flex;flex-direction:column;gap:1.125rem}
+.model-name{font-size:1rem;font-weight:800;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.model-hint{font-size:0.73rem;color:rgba(255,255,255,0.32)}
+.input-area{display:flex;flex-direction:column;gap:0.625rem}
+.ai-textarea{width:100%;min-height:72px;padding:0.75rem 1rem;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:0.75rem;color:#fff;font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;transition:border-color 0.2s,box-shadow 0.2s}
+.ai-textarea:focus{border-color:rgba(255,255,255,0.3);box-shadow:0 0 0 3px rgba(255,255,255,0.07)}
+.ai-textarea::placeholder{color:rgba(255,255,255,0.2)}
+.predict-btn{align-self:flex-start;padding:0.55rem 1.25rem;border-radius:0.625rem;border:none;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:0.85rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity 0.15s,transform 0.1s}
+.predict-btn:hover{opacity:0.9}
+.predict-btn:active{transform:scale(0.97)}
+.results{display:flex;flex-direction:column;gap:0.5rem;min-height:0}
+.result-row{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border-radius:0.5rem;transition:background 0.2s}
+.result-row.best{background:rgba(255,255,255,0.06)}
+.result-lbl{font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.55);width:90px;flex-shrink:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;text-transform:capitalize}
+.result-row.best .result-lbl{color:#fff}
+.bar-wrap{flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 0.45s cubic-bezier(0.4,0,0.2,1)}
+.result-pct{font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.4);width:36px;text-align:right;flex-shrink:0}
+.result-row.best .result-pct{color:var(--acc2)}
+.result-tag{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:9999px;font-size:0.72rem;font-weight:800;background:linear-gradient(90deg,var(--acc)22,var(--acc2)22);border:1px solid rgba(255,255,255,0.12);color:#fff}
+.waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+@keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="h-left">
+    <span class="h-icon">🧠</span>
+    <div>
+      <div class="h-title">${safeTitle}</div>
+      <div class="h-sub">AI Model — Made with ABITA</div>
+    </div>
+  </div>
+  <span class="abita-badge">⚡ ABITA</span>
+</header>
+<main id="cards"></main>
+<footer>Built with ABITA · AI Sandbox for Kids</footer>
+<script>
+var MODELS = ${modelsJson};
+
+function tokenizeNB(t){
+  return t.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(function(w){return w.length>1;});
+}
+function runNBFull(modelId,text){
+  var m=MODELS.find(function(m){return m.id===modelId;});
+  if(!m||!m.vocab.length) return null;
+  var vi={};
+  m.vocab.forEach(function(w,i){vi[w]=i;});
+  var tokens=tokenizeNB(text);
+  var scores=[];
+  for(var li=0;li<m.labels.length;li++){
+    var lid=m.labelIds[li];
+    var s=(m.classLogPriors[lid]||0);
+    for(var ti=0;ti<tokens.length;ti++){
+      var idx=vi[tokens[ti]];
+      if(idx!==undefined&&m.wordLogProbs[lid]) s+=m.wordLogProbs[lid][idx];
+    }
+    scores.push(s);
+  }
+  var maxS=Math.max.apply(null,scores);
+  var exps=scores.map(function(s){return Math.exp(s-maxS);});
+  var sum=exps.reduce(function(a,b){return a+b;},0);
+  var probs=exps.map(function(e){return e/sum;});
+  var bestI=probs.indexOf(Math.max.apply(null,probs));
+  return {labels:m.labels,probs:probs,bestLabel:m.labels[bestI]};
+}
+function predict(modelId,inputId,resultsId){
+  var text=document.getElementById(inputId).value||'';
+  var res=runNBFull(modelId,text);
+  var el=document.getElementById(resultsId);
+  if(!res||!text.trim()){
+    el.innerHTML='<span class="waiting">Type something above and click Predict ✨</span>';
+    return;
+  }
+  var sorted=res.labels.map(function(l,i){return{l:l,p:res.probs[i]};}).sort(function(a,b){return b.p-a.p;});
+  var html='<div class="result-tag">🎯 Predicted: '+res.bestLabel+'</div>';
+  for(var i=0;i<sorted.length;i++){
+    var isBest=sorted[i].l===res.bestLabel;
+    var pct=Math.round(sorted[i].p*100);
+    html+='<div class="result-row'+(isBest?' best':'')+'">'+
+      '<span class="result-lbl">'+sorted[i].l+'</span>'+
+      '<div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
+      '<span class="result-pct">'+pct+'%</span>'+
+    '</div>';
+  }
+  el.innerHTML=html;
+}
+
+var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
+(function initParticles(){
+  for(var i=0;i<22;i++){
+    var s=document.createElement('div');s.className='pt';
+    s.style.cssText='background:'+PT_BG+';width:'+PT_W+'px;height:'+PT_H+'px;border-radius:'+PT_RAD
+      +';top:'+(Math.random()*100).toFixed(1)+'%;left:'+(Math.random()*100).toFixed(1)+'%'
+      +';--dur:'+(Math.random()*4+3).toFixed(1)+'s;--dly:'+(Math.random()*7).toFixed(1)+'s'
+      +';--bright:'+(Math.random()*0.45+0.3).toFixed(2);
+    document.body.appendChild(s);
+  }
+})();
+
+var cards=document.getElementById('cards');
+for(var mi=0;mi<MODELS.length;mi++){
+  (function(m){
+    var inputId='ai-input-'+m.id;
+    var resultsId='ai-results-'+m.id;
+    var mId=m.id;
+    var div=document.createElement('div');
+    div.className='model-card';
+    div.innerHTML=
+      '<div>'+
+        '<div class="model-name">🤖 '+m.name+'</div>'+
+        '<div class="model-hint">This model was trained to recognise '+m.labels.length+' categories: '+m.labels.join(', ')+'</div>'+
+      '</div>'+
+      '<div class="input-area">'+
+        '<textarea class="ai-textarea" id="'+inputId+'" placeholder="Type some text and see what this AI thinks…"></textarea>'+
+        '<button class="predict-btn" onclick="predict(\\''+mId+'\\',\\''+inputId+'\\',\\''+resultsId+'\\')">Predict ✨</button>'+
+      '</div>'+
+      '<div class="results" id="'+resultsId+'"><span class="waiting">Type something above and click Predict ✨</span></div>';
+    cards.appendChild(div);
+  })(MODELS[mi]);
+}
 <\/script>
 </body>
 </html>`
