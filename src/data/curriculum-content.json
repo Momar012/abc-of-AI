@@ -114,7 +114,7 @@
         "id": "learn-1781880834273",
         "title": "A Quick History of AI",
         "icon": "📖",
-        "body": "In 1956, scientists started exploring how computers could become intelligent.\n\nOne of their first ideas was simple: teach computers to follow rules.\n\n\n\nFor example:\n\n- If a **Switch** is ON → Turn the **Bulb** ON.\n- If **Motion** is detected → Turn the **Fan** ON.\n- If the **Temperature** is above **35°C** → Turn the **AC** ON.\n\n\nThis approach became known as **Rule-Based AI**.\n\n\n\nIn this chapter, you will build your own Rule-Based AI systems using ABITA.",
+        "body": "In 1956, scientists started exploring how computers could become intelligent.\n\nOne of their first ideas was simple: teach computers to follow rules.\n\n\n\nFor example:\n\n- If a **Switch** is ON → Turn the **Bulb** ON.\n- If **Motion** is detected → Turn the **Fan** ON.\n- If the **Temperature** is above **35°C** → Turn the **AC** ON.\n\n\nThis approach became known as **Rule-Based AI**.\n\n## How a Rule Works\n\n```\n  Switch (Input)\n       |\n  IF Switch = ON\n       |\n    Bulb ON\n```\n\nIn this chapter, you will build your own Rule-Based AI systems using ABITA.",
         "tip": ""
       },
       {

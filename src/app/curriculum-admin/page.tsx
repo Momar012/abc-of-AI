@@ -250,13 +250,20 @@ function StepEditor({
             className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-teal-300/70 hover:bg-teal-500/15 hover:text-teal-200 hover:border-teal-500/30 transition-colors"
             title="Insert blank table (or just paste from Excel/Sheets)"
           >Table</button>
+          <button
+            type="button"
+            onClick={() => insertAtCursor('\n```diagram\nYour diagram here\n      |\n   Next step\n```\n')}
+            className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-200 hover:border-violet-500/30 transition-colors"
+            title="Insert ASCII diagram block"
+          >Diagram</button>
         </div>
 
         <p className="text-[10px] text-white/30 font-body mb-2">
           Use <code className="text-violet-300">**word**</code> for bold,{' '}
           <code className="text-teal-300">- item</code> for bullets,{' '}
           <code className="text-violet-300"># Heading</code> / <code className="text-violet-300">## Heading</code> for headings,{' '}
-          blank line for paragraph break. Paste from Excel/Sheets to auto-insert a table.
+          blank line for paragraph break. Paste from Excel/Sheets to auto-insert a table.{' '}
+          Use <code className="text-violet-300">```diagram</code> … <code className="text-violet-300">```</code> for ASCII flow diagrams.
         </p>
         <textarea
           ref={textareaRef}
