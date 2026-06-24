@@ -356,7 +356,6 @@ function SelectionBar() {
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
 
   const [showNaming, setShowNaming] = useState(false)
-  const [exportMode, setExportMode] = useState<'app' | 'ai-model'>('app')
   const [appName, setAppName] = useState('My AI App')
   const [theme, setTheme] = useState('space')
   const [layout, setLayout] = useState('classic')
@@ -383,14 +382,23 @@ function SelectionBar() {
   const count = canvasSelection.length
 
   useEffect(() => {
-    if (count <= 1) { setShowNaming(false); setExportMode('app'); setTheme('space'); setLayout('classic') }
+    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic') }
   }, [count])
 
   if (count <= 1) return null
 
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
-  const exportCheck = validateExportSelection(selectedIds)
-  const aiModelCheck = validateAIModelExport(selectedIds)
+
+  const OUTPUT_DEVICE_TYPES = new Set(['fan', 'alarm', 'ac', 'door', 'bulb'])
+  const hasOutputDevices = canvasSelection.some(n => OUTPUT_DEVICE_TYPES.has(n.type))
+  const hasModelBlocks   = canvasSelection.some(n => n.type === 'model')
+  const derivedMode: 'app' | 'ai-model' =
+    hasOutputDevices ? 'app' : (hasModelBlocks ? 'ai-model' : 'app')
+
+  const activeCheck    = derivedMode === 'app'
+    ? validateExportSelection(selectedIds)
+    : validateAIModelExport(selectedIds)
+  const activeTooltips = derivedMode === 'app' ? EXPORT_TOOLTIPS : AI_EXPORT_TOOLTIPS
 
   const SWATCHES = [
     { id: 'space',  emoji: '🚀', label: 'Space',     from: '#8b5cf6', to: '#2dd4bf' },
@@ -406,8 +414,8 @@ function SelectionBar() {
   ]
 
   function handleConfirm() {
-    const name = appName.trim() || (exportMode === 'ai-model' ? 'My AI Model' : 'My AI App')
-    if (exportMode === 'ai-model') {
+    const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
+    if (derivedMode === 'ai-model') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       exportAIModel(name, selectedIds, theme as any)
     } else {
@@ -415,7 +423,6 @@ function SelectionBar() {
       exportRuleApp(name, selectedIds, theme as any, layout as any)
     }
     setShowNaming(false)
-    setExportMode('app')
     setAppName('My AI App')
     setTheme('space')
     setLayout('classic')
@@ -445,7 +452,7 @@ function SelectionBar() {
   }
 
   if (showNaming) {
-    const isAI = exportMode === 'ai-model'
+    const isAI = derivedMode === 'ai-model'
     return (
       <div className="flex flex-col gap-2 px-3 py-2.5 glass-panel rounded-xl">
         {/* row 1: name + download + close */}
@@ -531,28 +538,16 @@ function SelectionBar() {
       </span>
       <div className="w-px h-4 bg-white/10 self-center" />
       <button
-        onClick={() => { setExportMode('app'); setShowNaming(true) }}
-        disabled={!exportCheck.valid}
-        title={EXPORT_TOOLTIPS[exportCheck.reason]}
+        onClick={() => setShowNaming(true)}
+        disabled={!activeCheck.valid}
+        title={activeTooltips[activeCheck.reason]}
         className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
-          exportCheck.valid
+          activeCheck.valid
             ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
             : 'border border-white/10 text-white/25 cursor-not-allowed'
         }`}
       >
-        📱 Export App
-      </button>
-      <button
-        onClick={() => { setExportMode('ai-model'); setShowNaming(true) }}
-        disabled={!aiModelCheck.valid}
-        title={AI_EXPORT_TOOLTIPS[aiModelCheck.reason]}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
-          aiModelCheck.valid
-            ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 border border-teal-500/40 text-white hover:from-teal-500/30 hover:to-emerald-500/30'
-            : 'border border-white/10 text-white/25 cursor-not-allowed'
-        }`}
-      >
-        🧠 Export AI
+        {derivedMode === 'app' ? '📱 Export App' : '🧠 Export AI Model'}
       </button>
       <button
         onClick={handleDelete}
