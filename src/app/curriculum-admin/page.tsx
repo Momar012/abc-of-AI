@@ -101,10 +101,16 @@ function StepEditor({
   step,
   onUpdate,
   onChangeType,
+  allModules,
+  currentModuleId,
+  onMoveToModule,
 }: {
   step: CurriculumStep
   onUpdate: (patch: Partial<CurriculumStep>) => void
   onChangeType: (t: 'learn' | 'lab' | 'challenge') => void
+  allModules: { id: string; title: string; subtitle: string; emoji: string }[]
+  currentModuleId: string
+  onMoveToModule: (toModuleId: string) => void
 }) {
   const [showOptional, setShowOptional] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -296,6 +302,30 @@ function StepEditor({
         )}
       </div>
 
+      {/* Move to chapter */}
+      {allModules.length > 1 && (
+        <div className="border-t border-white/8 pt-4">
+          <p className="text-[10px] font-heading font-bold text-white/25 uppercase tracking-widest mb-2">
+            Move to Chapter
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {allModules
+              .filter((m) => m.id !== currentModuleId)
+              .map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => onMoveToModule(m.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-semibold border border-white/10 text-white/50 hover:text-white hover:bg-white/8 hover:border-white/25 transition-colors"
+                >
+                  <span>{m.emoji}</span>
+                  <span className="truncate max-w-[120px]">{m.subtitle || m.title}</span>
+                  <span className="text-white/25">→</span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Live preview */}
       <div className="border-t border-white/8 pt-5">
         <p className="text-[10px] font-heading font-bold text-white/25 uppercase tracking-widest mb-3">Live Preview</p>
@@ -454,6 +484,19 @@ export default function CurriculumAdminPage() {
       m.id !== moduleId ? m : { ...m, steps: m.steps.filter((s) => s.id !== stepId) }
     ))
     setSelection({ kind: 'module', moduleId })
+  }
+
+  function moveStepToModule(fromModuleId: string, stepId: string, toModuleId: string) {
+    setModules((prev) => {
+      const step = prev.find((m) => m.id === fromModuleId)?.steps.find((s) => s.id === stepId)
+      if (!step) return prev
+      return prev.map((m) => {
+        if (m.id === fromModuleId) return { ...m, steps: m.steps.filter((s) => s.id !== stepId) }
+        if (m.id === toModuleId)   return { ...m, steps: [...m.steps, step] }
+        return m
+      })
+    })
+    setSelection({ kind: 'step', moduleId: toModuleId, stepId })
   }
 
   function moveStep(moduleId: string, stepId: string, dir: 'up' | 'down') {
@@ -708,6 +751,9 @@ export default function CurriculumAdminPage() {
                   step={selStep}
                   onUpdate={(patch) => updateStep(selModule.id, selStep.id, patch)}
                   onChangeType={(t) => changeStepType(selModule.id, selStep.id, t)}
+                  allModules={modules.map(({ id, title, subtitle, emoji }) => ({ id, title, subtitle, emoji }))}
+                  currentModuleId={selModule.id}
+                  onMoveToModule={(toModuleId) => moveStepToModule(selModule.id, selStep.id, toModuleId)}
                 />
               ) : (
                 <div className="text-white/25 text-sm font-body">Step not found</div>
