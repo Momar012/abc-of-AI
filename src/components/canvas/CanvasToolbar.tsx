@@ -344,6 +344,8 @@ function SelectionBar() {
 
   const [showNaming, setShowNaming] = useState(false)
   const [appName, setAppName] = useState('My AI App')
+  const [theme, setTheme] = useState('space')
+  const [layout, setLayout] = useState('classic')
 
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
@@ -367,7 +369,7 @@ function SelectionBar() {
   const count = canvasSelection.length
 
   useEffect(() => {
-    if (count <= 1) setShowNaming(false)
+    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic') }
   }, [count])
 
   if (count <= 1) return null
@@ -375,10 +377,26 @@ function SelectionBar() {
   const hasRuleNodes = canvasSelection.some((n) => RULE_OUTPUT_TYPES.has(n.type))
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
 
+  const SWATCHES = [
+    { id: 'space',  emoji: '🚀', label: 'Space',     from: '#8b5cf6', to: '#2dd4bf' },
+    { id: 'ocean',  emoji: '🌊', label: 'Ocean',     from: '#06b6d4', to: '#0ea5e9' },
+    { id: 'jungle', emoji: '🌴', label: 'Jungle',    from: '#22c55e', to: '#10b981' },
+    { id: 'neon',   emoji: '🏙️', label: 'Neon',      from: '#ec4899', to: '#f97316' },
+    { id: 'candy',  emoji: '🍬', label: 'Candy',     from: '#e879f9', to: '#fbbf24' },
+  ]
+  const LAYOUTS = [
+    { id: 'classic',   label: '🖥️ Classic'   },
+    { id: 'dashboard', label: '🏠 Dashboard' },
+    { id: 'mobile',    label: '📱 Mobile'    },
+  ]
+
   function handleConfirm() {
-    exportRuleApp(appName.trim() || 'My AI App', selectedIds)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    exportRuleApp(appName.trim() || 'My AI App', selectedIds, theme as any, layout as any)
     setShowNaming(false)
     setAppName('My AI App')
+    setTheme('space')
+    setLayout('classic')
   }
 
   function handleDelete() {
@@ -406,34 +424,75 @@ function SelectionBar() {
 
   if (showNaming) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 glass-panel rounded-xl">
-        <span className="text-base leading-none">🚀</span>
-        <span className="text-xs font-heading text-white/55 whitespace-nowrap">App name:</span>
-        <input
-          type="text"
-          value={appName}
-          onChange={(e) => setAppName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleConfirm()
-            if (e.key === 'Escape') setShowNaming(false)
-          }}
-          autoFocus
-          maxLength={40}
-          placeholder="My AI App"
-          className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-36 transition-all"
-        />
-        <button
-          onClick={handleConfirm}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30 transition-all whitespace-nowrap"
-        >
-          📥 Download
-        </button>
-        <button
-          onClick={() => setShowNaming(false)}
-          className="text-white/35 hover:text-white/70 text-xs font-heading transition-colors px-0.5"
-        >
-          ✕
-        </button>
+      <div className="flex flex-col gap-2 px-3 py-2.5 glass-panel rounded-xl">
+        {/* row 1: name + download + close */}
+        <div className="flex items-center gap-2">
+          <span className="text-base leading-none">🚀</span>
+          <span className="text-xs font-heading text-white/55 whitespace-nowrap">App name:</span>
+          <input
+            type="text"
+            value={appName}
+            onChange={(e) => setAppName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleConfirm()
+              if (e.key === 'Escape') setShowNaming(false)
+            }}
+            autoFocus
+            maxLength={40}
+            placeholder="My AI App"
+            className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-36 transition-all"
+          />
+          <button
+            onClick={handleConfirm}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30 transition-all whitespace-nowrap"
+          >
+            📥 Download
+          </button>
+          <button
+            onClick={() => setShowNaming(false)}
+            className="text-white/35 hover:text-white/70 text-xs font-heading transition-colors px-0.5"
+          >
+            ✕
+          </button>
+        </div>
+        {/* row 2: theme + layout pickers */}
+        <div className="flex items-center gap-3 pl-7">
+          <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Theme</span>
+          <div className="flex items-center gap-1.5">
+            {SWATCHES.map((s) => (
+              <button
+                key={s.id}
+                title={s.label}
+                onClick={() => setTheme(s.id)}
+                style={{ background: `linear-gradient(135deg,${s.from},${s.to})` }}
+                className={`w-5 h-5 rounded-full transition-all flex items-center justify-center text-[0.55rem] ${
+                  theme === s.id
+                    ? 'ring-2 ring-white ring-offset-1 ring-offset-transparent scale-110'
+                    : 'opacity-55 hover:opacity-85'
+                }`}
+              >
+                {s.emoji}
+              </button>
+            ))}
+          </div>
+          <span className="text-white/15 text-xs">·</span>
+          <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Layout</span>
+          <div className="flex items-center gap-1">
+            {LAYOUTS.map((l) => (
+              <button
+                key={l.id}
+                onClick={() => setLayout(l.id)}
+                className={`px-2 py-0.5 rounded-md text-[0.65rem] font-heading font-semibold transition-all whitespace-nowrap ${
+                  layout === l.id
+                    ? 'bg-white/15 text-white border border-white/30'
+                    : 'text-white/35 border border-white/10 hover:text-white/60 hover:border-white/20'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }

@@ -1,7 +1,33 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 
-export function exportRuleApp(appName = 'My AI App', selectedIds?: Set<string>): void {
+const THEMES = {
+  space:  { bg1:'#0c0a1e', bg2:'#130926', acc:'#8b5cf6', acc2:'#2dd4bf',
+            orb1:'rgba(139,92,246,0.12)', orb2:'rgba(45,212,191,0.10)',
+            ptBg:'#ffffff', ptW:2, ptH:2, ptRad:'50%' },
+  ocean:  { bg1:'#031628', bg2:'#061020', acc:'#06b6d4', acc2:'#0ea5e9',
+            orb1:'rgba(6,182,212,0.13)',  orb2:'rgba(14,165,233,0.10)',
+            ptBg:'#7dd3fc', ptW:5, ptH:5, ptRad:'50%' },
+  jungle: { bg1:'#061a0a', bg2:'#031208', acc:'#22c55e', acc2:'#10b981',
+            orb1:'rgba(34,197,94,0.11)',  orb2:'rgba(16,185,129,0.09)',
+            ptBg:'#86efac', ptW:3, ptH:3, ptRad:'50%' },
+  neon:   { bg1:'#0a0814', bg2:'#0d0520', acc:'#ec4899', acc2:'#f97316',
+            orb1:'rgba(236,72,153,0.13)', orb2:'rgba(249,115,22,0.10)',
+            ptBg:'#f9a8d4', ptW:2, ptH:12, ptRad:'2px' },
+  candy:  { bg1:'#1a0828', bg2:'#200a30', acc:'#e879f9', acc2:'#fbbf24',
+            orb1:'rgba(232,121,249,0.13)',orb2:'rgba(251,191,36,0.10)',
+            ptBg:'#f0abfc', ptW:6, ptH:6, ptRad:'2px' },
+} as const
+
+type Theme = keyof typeof THEMES
+type Layout = 'classic' | 'dashboard' | 'mobile'
+
+export function exportRuleApp(
+  appName = 'My AI App',
+  selectedIds?: Set<string>,
+  theme: Theme = 'space',
+  layout: Layout = 'classic',
+): void {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
@@ -29,7 +55,7 @@ export function exportRuleApp(appName = 'My AI App', selectedIds?: Set<string>):
     doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
   }
 
-  const html = buildHTML(appName, data)
+  const html = buildHTML(appName, data, THEMES[theme], layout)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -39,7 +65,7 @@ export function exportRuleApp(appName = 'My AI App', selectedIds?: Set<string>):
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function buildHTML(appName: string, data: object): string {
+function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const dataJson = JSON.stringify(data)
 
@@ -50,15 +76,16 @@ function buildHTML(appName: string, data: object): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${safeTitle} — Made with ABITA</title>
 <style>
+:root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0c0a1e 0%,#130926 100%);color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;position:relative}
-body::before{content:'';position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,rgba(139,92,246,0.12),transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite;pointer-events:none;z-index:0}
-body::after{content:'';position:fixed;width:420px;height:420px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(45,212,191,0.1),transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
-.star{position:fixed;border-radius:50%;background:#fff;pointer-events:none;animation:star-twinkle var(--dur) ease-in-out infinite;animation-delay:var(--dly);opacity:0.1;z-index:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,var(--orb1),transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;width:420px;height:420px;bottom:-100px;right:-100px;background:radial-gradient(circle,var(--orb2),transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
+.pt{position:fixed;pointer-events:none;animation:star-twinkle var(--dur) ease-in-out infinite;animation-delay:var(--dly);opacity:0.1;z-index:0}
 header{background:rgba(18,14,42,0.9);border-bottom:1px solid rgba(255,255,255,0.07);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);position:relative;z-index:10}
 .h-left{display:flex;align-items:center;gap:1rem}
 .h-icon{font-size:2rem;line-height:1}
-.h-title{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,#a78bfa,#2dd4bf,#a78bfa);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
+.h-title{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
 .h-sub{font-size:0.7rem;color:rgba(255,255,255,0.28);margin-top:0.125rem}
 .abita-badge{font-size:0.62rem;font-weight:800;color:rgba(167,139,250,0.75);border:1px solid rgba(167,139,250,0.2);padding:0.3rem 0.75rem;border-radius:9999px;letter-spacing:0.07em;background:rgba(139,92,246,0.07)}
 main{flex:1;display:grid;grid-template-columns:1fr 1px 1fr;padding:2rem;max-width:1040px;margin:0 auto;width:100%;position:relative;z-index:1}
@@ -66,30 +93,42 @@ main{flex:1;display:grid;grid-template-columns:1fr 1px 1fr;padding:2rem;max-widt
 .in-panel{padding-right:2rem;display:flex;flex-direction:column;gap:1rem}
 .out-panel{padding-left:2rem;display:flex;flex-direction:column;gap:0.875rem}
 .panel-lbl{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:rgba(255,255,255,0.2);margin-bottom:0.375rem}
-.div-line{background:linear-gradient(to bottom,transparent,rgba(139,92,246,0.2),rgba(45,212,191,0.18),transparent);width:1px;margin:1.5rem 0}
+.div-line{background:linear-gradient(to bottom,transparent,var(--orb1),var(--orb2),transparent);width:1px;margin:1.5rem 0}
 #output-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:0.875rem}
+main.layout-dashboard{display:flex;flex-direction:column;gap:1.25rem;max-width:1040px}
+main.layout-dashboard .in-panel{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding-right:0;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.06);gap:0.875rem;align-items:flex-start}
+main.layout-dashboard .in-panel .in-card{flex:0 0 210px}
+main.layout-dashboard .div-line{display:none}
+main.layout-dashboard .out-panel{padding-left:0}
+main.layout-dashboard #output-cards{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+main.layout-dashboard .out-card{min-height:220px}
+main.layout-mobile{display:flex;flex-direction:column;max-width:480px;gap:1.25rem}
+main.layout-mobile .div-line{display:none}
+main.layout-mobile .in-panel,main.layout-mobile .out-panel{padding:0}
+main.layout-mobile #output-cards{grid-template-columns:repeat(2,1fr)}
+main.layout-mobile .out-card{min-height:190px}
 .in-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:1rem;padding:1.125rem;display:flex;flex-direction:column;gap:0.75rem;transition:border-color 0.3s}
-.in-card:hover{border-color:rgba(139,92,246,0.22)}
+.in-card:hover{border-color:rgba(255,255,255,0.18)}
 .in-lbl{font-size:0.77rem;font-weight:700;color:rgba(255,255,255,0.48);display:flex;align-items:center;gap:0.4rem}
 .slider-wrap{display:flex;flex-direction:column;gap:0.5rem}
 .slider-num-row{display:flex;align-items:baseline;gap:0.3rem}
 .slider-num{font-size:1.8rem;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums;transition:color 0.2s}
 .slider-unit{font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.32)}
-input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:9999px;background:linear-gradient(to right,#8b5cf6 var(--pct,0%),rgba(255,255,255,0.1) var(--pct,0%));outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#2dd4bf);cursor:pointer;box-shadow:0 0 10px rgba(139,92,246,0.55);transition:transform 0.1s}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:9999px;background:linear-gradient(to right,var(--acc) var(--pct,0%),rgba(255,255,255,0.1) var(--pct,0%));outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));cursor:pointer;box-shadow:0 0 10px rgba(255,255,255,0.2);transition:transform 0.1s}
 input[type=range]:active::-webkit-slider-thumb{transform:scale(1.2)}
 .slider-range{display:flex;justify-content:space-between;font-size:0.63rem;color:rgba(255,255,255,0.16)}
 .ios-sw{display:flex;align-items:center;gap:0.875rem;cursor:pointer;-webkit-user-select:none;user-select:none}
 .sw-track{width:52px;height:28px;border-radius:14px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);position:relative;transition:background 0.3s,border-color 0.3s;flex-shrink:0}
 .sw-track .sw-thumb{position:absolute;left:3px;top:3px;width:22px;height:22px;background:#e2e8f0;border-radius:50%;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
-.sw-track.active{background:linear-gradient(90deg,#8b5cf6,#2dd4bf);border-color:transparent}
+.sw-track.active{background:linear-gradient(90deg,var(--acc),var(--acc2));border-color:transparent}
 .sw-track.active .sw-thumb{transform:translateX(24px)}
 .sw-lbl{font-size:0.88rem;font-weight:700;transition:color 0.2s}
 .txt-inp{width:100%;padding:0.6rem 0.875rem;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:0.6rem;color:#fff;font-size:0.9rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
-.txt-inp:focus{border-color:rgba(139,92,246,0.5);box-shadow:0 0 0 3px rgba(139,92,246,0.12)}
+.txt-inp:focus{border-color:rgba(255,255,255,0.3);box-shadow:0 0 0 3px rgba(255,255,255,0.07)}
 .txt-inp::placeholder{color:rgba(255,255,255,0.17)}
 .out-card{background:rgba(255,255,255,0.025);border:1.5px solid rgba(255,255,255,0.06);border-radius:1.25rem;padding:1.25rem 1rem 1rem;display:flex;flex-direction:column;align-items:center;gap:0.875rem;min-height:185px;transition:background 0.4s,border-color 0.4s,box-shadow 0.4s;position:relative;overflow:hidden}
-.out-card.on{background:rgba(255,255,255,0.05);box-shadow:0 4px 28px rgba(139,92,246,0.07)}
+.out-card.on{background:rgba(255,255,255,0.05);box-shadow:0 4px 28px rgba(255,255,255,0.04)}
 .out-visual{flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative;overflow:hidden}
 .out-footer{display:flex;align-items:center;justify-content:space-between;width:100%}
 .out-name{font-size:0.73rem;font-weight:700;color:rgba(255,255,255,0.38);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:58%}
@@ -169,7 +208,7 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
   </div>
   <span class="abita-badge">⚡ ABITA</span>
 </header>
-<main>
+<main class="layout-${layout}">
   <div class="in-panel">
     <div class="panel-lbl">⬇ Inputs</div>
     <div id="input-cards"></div>
@@ -266,11 +305,14 @@ function updateOutputs(){
 }
 function refresh(){ evaluate(); updateOutputs(); }
 
-(function initStars(){
+var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
+(function initParticles(){
   for(var i=0;i<22;i++){
-    var s=document.createElement('div'); s.className='star';
-    var sz=(Math.random()*1.5+1).toFixed(1);
-    s.style.cssText='width:'+sz+'px;height:'+sz+'px;top:'+(Math.random()*100).toFixed(1)+'%;left:'+(Math.random()*100).toFixed(1)+'%;--dur:'+(Math.random()*4+3).toFixed(1)+'s;--dly:'+(Math.random()*7).toFixed(1)+'s;--bright:'+(Math.random()*0.45+0.3).toFixed(2);
+    var s=document.createElement('div');s.className='pt';
+    s.style.cssText='background:'+PT_BG+';width:'+PT_W+'px;height:'+PT_H+'px;border-radius:'+PT_RAD
+      +';top:'+(Math.random()*100).toFixed(1)+'%;left:'+(Math.random()*100).toFixed(1)+'%'
+      +';--dur:'+(Math.random()*4+3).toFixed(1)+'s;--dly:'+(Math.random()*7).toFixed(1)+'s'
+      +';--bright:'+(Math.random()*0.45+0.3).toFixed(2);
     document.body.appendChild(s);
   }
 })();
