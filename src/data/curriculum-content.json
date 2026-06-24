@@ -216,9 +216,9 @@
       {
         "type": "challenge",
         "id": "challenge-1781878476326",
-        "title": "Challenge Lab 4: Secure Door",
+        "title": "🏆 Challenge Lab 4: VIP Event Access",
         "icon": "🏆",
-        "prompt": "**Problem**\n\nOpen the **Door** only when the password is **Pakistan**.\n\n\n\n**Requirements**\n\n- Use **Text Input**.\n- Use an **IF Condition**.\n- Use a **Door**.\n\n\n\n**Success Criteria**\n\n✅ The **Door** opens when the text is **Pakistan**.\n\n✅ The **Door** remains closed for any other text.",
+        "prompt": "## Problem\n\nA VIP event is taking place.\n\nOnly guests who enter the VIP Code **78601** should be allowed to enter.\n\nBuild a system that grants access only when the correct code is entered.\n\n\n\n## Requirements\n\n- Use **Text Input**\n- Use an **IF Condition**\n- Use a **Door**\n\n\n\n## Success Criteria\n\n- ✅ The Door opens when the text is **78601**\n- ✅ The Door remains closed for any other text\n\n\n\n## Expected Result\n\n🤔 Many security systems use access codes to control entry and protect restricted areas.",
         "successHint": ""
       },
       {
@@ -312,25 +312,25 @@
       {
         "type": "challenge",
         "id": "challenge-1781878649709",
-        "title": "Challenge Lab 9: Comfort Zone Fan",
+        "title": "🏆 Challenge Lab 9: Perfect Comfort Room",
         "icon": "🏆",
-        "prompt": "**Problem**\n\nTurn the **Fan** ON only when the temperature is between **30°C** and **35°C**.\n\n\n\n**Requirements**\n\n- Use a **Temperature Sensor**.\n- Use **2 IF Conditions**.\n- Use an **AND Condition**.\n- Use a **Fan**.\n\n\n\n**Success Criteria**\n\n✅ The **Fan** turns **ON** when the temperature is between **30°C** and **35°C**.\n\n✅ The **Fan** remains **OFF** outside this range.",
+        "prompt": "## Problem\n\nA room is considered comfortable only when:\n\n- Temperature is between **30°C and 35°C**\n- Humidity is above **70%**\n\nTurn the **Fan** ON only when both conditions are true.\n\n\n\n## Requirements\n\n- Use a **Temperature Sensor**\n- Use a **Humidity Sensor**\n- Use **3 IF Conditions**\n- Use **AND Conditions**\n- Use a **Fan**\n\n\n\n## Success Criteria\n\n- ✅ The Fan turns ON when the temperature is between **30°C and 35°C** and humidity is above **70%**\n- ✅ The Fan remains OFF when the temperature is below **30°C**\n- ✅ The Fan remains OFF when the temperature is above **35°C**\n- ✅ The Fan remains OFF when humidity is **70% or below**\n\n\n\n## Expected Result\n\n🤔 Real-world smart systems often combine multiple sensor readings before taking action.\n\n🤔 A single condition is usually not enough.",
         "successHint": ""
       },
       {
         "type": "lab",
         "id": "lab-1781877713559",
-        "title": "17. 🏡Smart Room Assistant",
+        "title": "17. 🏡Smart Energy-Saving Room",
         "icon": "🧪",
-        "instruction": "## Goal\n\nLearn how to build a smart system using multiple rules.\n\n\n\n\n\n## Problem\n\n- If **motion** is detected, turn the **Bulb** ON.\n- If the **temperature** is greater than **35°C**, turn the **AC** ON.\n\n\n\n\n\n## Instructions\n\n\n**Step 1:**\nDrag **Motion Sensor** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag **Temperature Sensor** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 5:**\nDrag **Bulb** from the **Actions** menu.\n\n**Step 6:**\nDrag **AC** from the **Actions** menu.\n\n**Step 7:**\nConnect the **Motion Sensor** to the first **IF Condition**.\n\n**Step 8:**\nConnect the first **IF Condition** to the **Bulb**.\n\n**Step 9:**\nConnect the **Temperature Sensor** to the second **IF Condition**.\n\n**Step 10:**\nConnect the second **IF Condition** to the **AC**.\n\n**Step 11:**\nDouble-click the first **IF Condition**.\n\n**Step 12:**\nSet the condition to **Motion Detected**.\n\n**Step 13:**\nDouble-click the second **IF Condition**.\n\n**Step 14:**\nSet the condition to **Temperature > 35°C**.\n\n**Step 15:**\nDouble-click the **Motion Sensor** and set it to **Motion Detected**.\n\n**Step 16:**\nDouble-click the **Temperature Sensor** and move the slider to **40°C**.\n\n**Step 17:**\nObserve the result.\n\n\n\n\n\n## Expected Result\n\n✅ When **Motion** is detected, the **Bulb** turns **ON**.\n\n✅ When the **temperature** is above **35°C**, the **AC** turns **ON**.\n\n✅ Both rules work independently at the same time.\n\n\n\n\n\n## What You Learned\n\n1. A smart system can contain multiple rules.\n\n2. Different sensors can control different devices.\n\n3. Complex systems are built by combining simple rules.",
+        "instruction": "## Goal\n\nLearn how multiple rules can work together in one smart system.\n\n\n\n## Problem\n\nBuild a smart room that follows these rules:\n\n- If Motion is detected, turn the **Bulb** ON.\n- If the Temperature is between **30°C and 35°C**, turn the **Fan** ON.\n- If the Temperature is greater than **35°C**, turn the **AC** ON.\n\n\n\n## Requirements\n\n- Use **1 Motion Sensor**\n- Use **1 Temperature Sensor**\n- Use **4 IF Conditions**\n- Use **1 AND Condition**\n- Use **1 Bulb**\n- Use **1 Fan**\n- Use **1 AC**\n\n\n\n## Instructions\n\n**Step 1:**\nAdd the required sensors and devices.\n\n**Step 2:**\nCreate the rule for the **Bulb**.\n\n**Step 3:**\nCreate the temperature range for the **Fan**.\n\n**Step 4:**\nCreate the rule for the **AC**.\n\n**Step 5:**\nTest the system using different temperature values.\n\n\n\n## Expected Result\n\n- ✅ The Bulb turns ON when Motion is detected\n- ✅ The Fan turns ON when the Temperature is between **30°C and 35°C**\n- ✅ The AC turns ON when the Temperature is greater than **35°C**\n- ✅ All rules work together in the same system\n\n\n\n## What You Learned\n\n1. A smart system can contain multiple rules.\n\n2. Different sensors can control different devices.\n\n3. Temperature ranges can be used to make smarter decisions.\n\n4. Complex systems are built by combining simple rules.",
         "canvasHint": ""
       },
       {
         "type": "challenge",
         "id": "challenge-1781878706825",
-        "title": "Challenge Lab 10: Smart Classroom",
+        "title": "🌱 Challenge Lab 10: Smart Greenhouse",
         "icon": "🏆",
-        "prompt": "**Problem**\n\nCreate a **Smart Classroom** that automatically controls lights and cooling.\n\n\n\n**Requirements**\n\n- If **Motion** is detected → Turn **Bulb** ON.\n- If **Temperature > 35°C** → Turn **Fan** ON.\n- If **Temperature > 40°C** → Turn **AC** ON.\n\n\n\n**Allowed Components**\n\n- **1 Motion Sensor**\n- **1 Temperature Sensor**\n- **1 Bulb**\n- **1 Fan**\n- **1 AC**\n- Any number of **IF Conditions**\n- Any number of **AND**, **OR**, and **NOT Conditions**\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** responds to **Motion**.\n\n✅ The **Fan** responds to **Temperature**.\n\n✅ The **AC** responds to higher **Temperature**.\n\n✅ Only the allowed components are used.\n\n✅ All rules work together correctly.",
+        "prompt": "## Problem\n\nPlants need the right temperature and humidity to grow.\n\nCreate a **Smart Greenhouse** that automatically controls the environment.\n\n\n\n## Requirements\n\n- If the Temperature is between **30°C and 35°C** → Turn the **Fan** ON\n- If the Humidity is below **40%** → Turn the **Alarm** ON\n- If the Temperature is greater than **40°C** **AND** the Humidity is below **40%** → Turn the **AC** ON\n\n\n\n## Allowed Components\n\n- **1 Temperature Sensor**\n- **1 Humidity Sensor**\n- **1 Fan**\n- **1 AC**\n- **1 Alarm**\n- Any number of **IF Conditions**\n- Any number of **AND, OR, and NOT Conditions**\n\n\n\n## Success Criteria\n\n- ✅ The Fan turns ON when the Temperature is between **30°C and 35°C**\n- ✅ The Alarm turns ON when the Humidity is below **40%**\n- ✅ The AC turns ON only when the Temperature is greater than **40°C** and the Humidity is below **40%**\n- ✅ Only the allowed components are used\n- ✅ All rules work together correctly\n\n\n\n## Expected Result\n\n🤔 Real greenhouses use multiple sensors to monitor environmental conditions and automatically control equipment to keep plants healthy.\n\n🤔 This challenge combines temperature ranges, humidity checks, and multiple rules into a single smart system.",
         "successHint": ""
       },
       {
