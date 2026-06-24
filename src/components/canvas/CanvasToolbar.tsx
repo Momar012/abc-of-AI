@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useDraggable, useDndMonitor } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -342,6 +342,9 @@ function SelectionBar() {
   const canvasSelection = useUIStore((s) => s.canvasSelection)
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
 
+  const [showNaming, setShowNaming] = useState(false)
+  const [appName, setAppName] = useState('My AI App')
+
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
   const removeConditionBlock = useRuleStore((s) => s.removeConditionBlock)
@@ -362,13 +365,20 @@ function SelectionBar() {
   const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
 
   const count = canvasSelection.length
+
+  useEffect(() => {
+    if (count <= 1) setShowNaming(false)
+  }, [count])
+
   if (count <= 1) return null
 
   const hasRuleNodes = canvasSelection.some((n) => RULE_OUTPUT_TYPES.has(n.type))
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
 
-  function handleExport() {
-    exportRuleApp('My AI App', selectedIds)
+  function handleConfirm() {
+    exportRuleApp(appName.trim() || 'My AI App', selectedIds)
+    setShowNaming(false)
+    setAppName('My AI App')
   }
 
   function handleDelete() {
@@ -394,6 +404,40 @@ function SelectionBar() {
     setCanvasSelection([])
   }
 
+  if (showNaming) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 glass-panel rounded-xl">
+        <span className="text-base leading-none">🚀</span>
+        <span className="text-xs font-heading text-white/55 whitespace-nowrap">App name:</span>
+        <input
+          type="text"
+          value={appName}
+          onChange={(e) => setAppName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleConfirm()
+            if (e.key === 'Escape') setShowNaming(false)
+          }}
+          autoFocus
+          maxLength={40}
+          placeholder="My AI App"
+          className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-36 transition-all"
+        />
+        <button
+          onClick={handleConfirm}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30 transition-all whitespace-nowrap"
+        >
+          📥 Download
+        </button>
+        <button
+          onClick={() => setShowNaming(false)}
+          className="text-white/35 hover:text-white/70 text-xs font-heading transition-colors px-0.5"
+        >
+          ✕
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2 px-2.5 py-1.5 glass-panel rounded-xl">
       <span className="text-xs text-white/40 font-heading whitespace-nowrap">
@@ -401,7 +445,7 @@ function SelectionBar() {
       </span>
       <div className="w-px h-4 bg-white/10 self-center" />
       <button
-        onClick={handleExport}
+        onClick={() => setShowNaming(true)}
         disabled={!hasRuleNodes}
         title={hasRuleNodes ? 'Export selection as interactive app' : 'Selection needs sensors/switches and actuators'}
         className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
