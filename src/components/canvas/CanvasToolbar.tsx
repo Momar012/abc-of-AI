@@ -13,7 +13,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
-import { exportRuleApp } from '@/lib/exportRuleApp'
+import { exportRuleApp, validateExportSelection } from '@/lib/exportRuleApp'
 
 type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
@@ -336,7 +336,12 @@ function RuleBasedMenu() {
   )
 }
 
-const RULE_OUTPUT_TYPES = new Set(['sensor', 'switch', 'fan', 'bulb', 'door', 'alarm', 'ac'])
+const EXPORT_TOOLTIPS: Record<string, string> = {
+  ok:                   'Export selection as interactive app',
+  'no-outputs':         'Select at least one output device (fan, bulb, door, alarm, AC)',
+  'unconnected-output': 'An output has nothing connected — wire it up first',
+  'incomplete-chain':   'Select the full connected flow — some nodes in the chain are missing',
+}
 
 function SelectionBar() {
   const canvasSelection = useUIStore((s) => s.canvasSelection)
@@ -374,8 +379,8 @@ function SelectionBar() {
 
   if (count <= 1) return null
 
-  const hasRuleNodes = canvasSelection.some((n) => RULE_OUTPUT_TYPES.has(n.type))
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
+  const exportCheck = validateExportSelection(selectedIds)
 
   const SWATCHES = [
     { id: 'space',  emoji: '🚀', label: 'Space',     from: '#8b5cf6', to: '#2dd4bf' },
@@ -505,10 +510,10 @@ function SelectionBar() {
       <div className="w-px h-4 bg-white/10 self-center" />
       <button
         onClick={() => setShowNaming(true)}
-        disabled={!hasRuleNodes}
-        title={hasRuleNodes ? 'Export selection as interactive app' : 'Selection needs sensors/switches and actuators'}
+        disabled={!exportCheck.valid}
+        title={EXPORT_TOOLTIPS[exportCheck.reason]}
         className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
-          hasRuleNodes
+          exportCheck.valid
             ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
             : 'border border-white/10 text-white/25 cursor-not-allowed'
         }`}

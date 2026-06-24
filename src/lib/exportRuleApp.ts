@@ -1,6 +1,62 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 
+export function validateExportSelection(selectedIds: Set<string>): {
+  valid: boolean
+  reason: 'ok' | 'no-outputs' | 'unconnected-output' | 'incomplete-chain'
+} {
+  const rule = useRuleStore.getState()
+  const workflow = useWorkflowStore.getState()
+
+  const outputDevices = [
+    ...rule.fanBlocks,
+    ...rule.alarmBlocks,
+    ...rule.acBlocks,
+    ...workflow.doorBlocks,
+    ...workflow.bulbBlocks,
+  ].filter(d => selectedIds.has(d.id))
+
+  if (outputDevices.length === 0) return { valid: false, reason: 'no-outputs' }
+
+  for (const d of outputDevices) {
+    if (!d.linkedRuleBlockId || !selectedIds.has(d.linkedRuleBlockId)) {
+      return { valid: false, reason: 'unconnected-output' }
+    }
+  }
+
+  const visited = new Set<string>()
+
+  function check(id: string): boolean {
+    if (!id || !selectedIds.has(id)) return false
+    if (visited.has(id)) return true
+    visited.add(id)
+
+    const logic = rule.logicBlocks.find(b => b.id === id)
+    if (logic) {
+      const nonNull = logic.linkedInputIds.filter(Boolean) as string[]
+      return nonNull.length > 0 && nonNull.every(check)
+    }
+
+    const cond = rule.conditionBlocks.find(b => b.id === id)
+    if (cond) {
+      return !!cond.linkedSensorId && selectedIds.has(cond.linkedSensorId)
+    }
+
+    if (rule.switchBlocks.some(b => b.id === id)) return true
+    if (rule.sensorBlocks.some(b => b.id === id)) return true
+
+    return false
+  }
+
+  for (const d of outputDevices) {
+    if (!check(d.linkedRuleBlockId!)) {
+      return { valid: false, reason: 'incomplete-chain' }
+    }
+  }
+
+  return { valid: true, reason: 'ok' }
+}
+
 const THEMES = {
   space:  { bg1:'#0c0a1e', bg2:'#130926', acc:'#8b5cf6', acc2:'#2dd4bf',
             orb1:'rgba(139,92,246,0.12)', orb2:'rgba(45,212,191,0.10)',
