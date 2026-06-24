@@ -12,6 +12,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
+import { exportRuleApp } from '@/lib/exportRuleApp'
 
 type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
@@ -334,6 +335,36 @@ function RuleBasedMenu() {
   )
 }
 
+function ExportAppButton() {
+  const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
+  const switchBlocks = useRuleStore((s) => s.switchBlocks)
+  const fanBlocks    = useRuleStore((s) => s.fanBlocks)
+  const alarmBlocks  = useRuleStore((s) => s.alarmBlocks)
+  const acBlocks     = useRuleStore((s) => s.acBlocks)
+  const bulbBlocks   = useWorkflowStore((s) => s.bulbBlocks)
+  const doorBlocks   = useWorkflowStore((s) => s.doorBlocks)
+
+  const hasNodes =
+    sensorBlocks.length + switchBlocks.length +
+    fanBlocks.length + bulbBlocks.length +
+    doorBlocks.length + alarmBlocks.length + acBlocks.length > 0
+
+  return (
+    <button
+      onClick={() => exportRuleApp('My AI App')}
+      disabled={!hasNodes}
+      title={hasNodes ? 'Export as interactive HTML app' : 'Add rule-based blocks first'}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition-all ${
+        hasNodes
+          ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
+          : 'border border-white/10 text-white/25 cursor-not-allowed'
+      }`}
+    >
+      📱 Export App
+    </button>
+  )
+}
+
 export default function CanvasToolbar() {
   return (
     <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
@@ -345,6 +376,8 @@ export default function CanvasToolbar() {
       <ActionsMenu />
       <div className="w-px h-5 bg-white/10 self-center" />
       <RuleBasedMenu />
+      <div className="w-px h-5 bg-white/10 self-center" />
+      <ExportAppButton />
     </div>
   )
 }
