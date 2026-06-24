@@ -16,6 +16,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  OnSelectionChangeParams,
 } from 'reactflow'
 import { useDndMonitor, useDroppable } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -226,6 +227,7 @@ export default function DatasetCanvas() {
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
   const canvasInteractive = useUIStore((s) => s.canvasInteractive)
   const setCanvasInteractive = useUIStore((s) => s.setCanvasInteractive)
+  const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -722,6 +724,9 @@ export default function DatasetCanvas() {
         onConnect={onConnect}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
+        onSelectionChange={({ nodes }: OnSelectionChangeParams) =>
+          setCanvasSelection(nodes.map((n) => ({ id: n.id, type: n.type ?? '' })))
+        }
         onInit={(instance) => { rfInstanceRef.current = instance }}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}

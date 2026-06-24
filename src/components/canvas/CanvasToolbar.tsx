@@ -8,6 +8,7 @@ import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
+import { useCanvasStore } from '@/store/useCanvasStore'
 import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
@@ -335,49 +336,106 @@ function RuleBasedMenu() {
   )
 }
 
-function ExportAppButton() {
-  const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
-  const switchBlocks = useRuleStore((s) => s.switchBlocks)
-  const fanBlocks    = useRuleStore((s) => s.fanBlocks)
-  const alarmBlocks  = useRuleStore((s) => s.alarmBlocks)
-  const acBlocks     = useRuleStore((s) => s.acBlocks)
-  const bulbBlocks   = useWorkflowStore((s) => s.bulbBlocks)
-  const doorBlocks   = useWorkflowStore((s) => s.doorBlocks)
+const RULE_OUTPUT_TYPES = new Set(['sensor', 'switch', 'fan', 'bulb', 'door', 'alarm', 'ac'])
 
-  const hasNodes =
-    sensorBlocks.length + switchBlocks.length +
-    fanBlocks.length + bulbBlocks.length +
-    doorBlocks.length + alarmBlocks.length + acBlocks.length > 0
+function SelectionBar() {
+  const canvasSelection = useUIStore((s) => s.canvasSelection)
+  const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
+
+  // Rule store removers
+  const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
+  const removeConditionBlock = useRuleStore((s) => s.removeConditionBlock)
+  const removeSwitchBlock    = useRuleStore((s) => s.removeSwitchBlock)
+  const removeLogicBlock     = useRuleStore((s) => s.removeLogicBlock)
+  const removeFanBlock       = useRuleStore((s) => s.removeFanBlock)
+  const removeAlarmBlock     = useRuleStore((s) => s.removeAlarmBlock)
+  const removeACBlock        = useRuleStore((s) => s.removeACBlock)
+  const removeTimerBlock     = useRuleStore((s) => s.removeTimerBlock)
+  // Workflow store removers
+  const removeDoorBlock      = useWorkflowStore((s) => s.removeDoorBlock)
+  const removeBulbBlock      = useWorkflowStore((s) => s.removeBulbBlock)
+  // Other store removers
+  const removeLabelledBlock   = useDatasetStore((s) => s.removeLabelledBlock)
+  const removeUnlabelledBlock = useDatasetStore((s) => s.removeUnlabelledBlock)
+  const removeModelBlock      = useModelStore((s) => s.removeModelBlock)
+  const removeRLBlock         = useRLStore((s) => s.removeRLBlock)
+  const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
+
+  const count = canvasSelection.length
+  if (count === 0) return null
+
+  const hasRuleNodes = canvasSelection.some((n) => RULE_OUTPUT_TYPES.has(n.type))
+  const selectedIds = new Set(canvasSelection.map((n) => n.id))
+
+  function handleExport() {
+    exportRuleApp('My AI App', selectedIds)
+  }
+
+  function handleDelete() {
+    for (const { id, type } of canvasSelection) {
+      switch (type) {
+        case 'sensor':      removeSensorBlock(id);    break
+        case 'condition':   removeConditionBlock(id); break
+        case 'switch':      removeSwitchBlock(id);    break
+        case 'logic':       removeLogicBlock(id);     break
+        case 'fan':         removeFanBlock(id);       break
+        case 'alarm':       removeAlarmBlock(id);     break
+        case 'ac':          removeACBlock(id);        break
+        case 'timer':       removeTimerBlock(id);     break
+        case 'door':        removeDoorBlock(id);      break
+        case 'bulb':        removeBulbBlock(id);      break
+        case 'labelled':    removeLabelledBlock(id);  break
+        case 'unlabelled':  removeUnlabelledBlock(id);break
+        case 'model':       removeModelBlock(id);     break
+        case 'rl-gridworld':removeRLBlock(id);        break
+        case 'text':        removeTextBlock(id);      break
+      }
+    }
+    setCanvasSelection([])
+  }
 
   return (
-    <button
-      onClick={() => exportRuleApp('My AI App')}
-      disabled={!hasNodes}
-      title={hasNodes ? 'Export as interactive HTML app' : 'Add rule-based blocks first'}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition-all ${
-        hasNodes
-          ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
-          : 'border border-white/10 text-white/25 cursor-not-allowed'
-      }`}
-    >
-      📱 Export App
-    </button>
+    <div className="flex items-center gap-2 px-2.5 py-1.5 glass-panel rounded-xl">
+      <span className="text-xs text-white/40 font-heading whitespace-nowrap">
+        {count} node{count !== 1 ? 's' : ''} selected
+      </span>
+      <div className="w-px h-4 bg-white/10 self-center" />
+      <button
+        onClick={handleExport}
+        disabled={!hasRuleNodes}
+        title={hasRuleNodes ? 'Export selection as interactive app' : 'Selection needs sensors/switches and actuators'}
+        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
+          hasRuleNodes
+            ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
+            : 'border border-white/10 text-white/25 cursor-not-allowed'
+        }`}
+      >
+        📱 Export App
+      </button>
+      <button
+        onClick={handleDelete}
+        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold border border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-300 transition-all"
+      >
+        🗑️ Delete
+      </button>
+    </div>
   )
 }
 
 export default function CanvasToolbar() {
   return (
-    <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
-      <CanvasToolGroup />
-      <div className="w-px h-5 bg-white/10 self-center" />
-      <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>
-      <DataMenu />
-      <ModelMenu />
-      <ActionsMenu />
-      <div className="w-px h-5 bg-white/10 self-center" />
-      <RuleBasedMenu />
-      <div className="w-px h-5 bg-white/10 self-center" />
-      <ExportAppButton />
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
+        <CanvasToolGroup />
+        <div className="w-px h-5 bg-white/10 self-center" />
+        <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>
+        <DataMenu />
+        <ModelMenu />
+        <ActionsMenu />
+        <div className="w-px h-5 bg-white/10 self-center" />
+        <RuleBasedMenu />
+      </div>
+      <SelectionBar />
     </div>
   )
 }

@@ -24,6 +24,7 @@ interface UIState {
   curriculumCollapsed: boolean
   canvasTool: 'select' | 'pan' | 'text'
   canvasInteractive: boolean
+  canvasSelection: Array<{ id: string; type: string }>
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
@@ -45,6 +46,7 @@ interface UIState {
   toggleCurriculumPanel: () => void
   setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
   setCanvasInteractive: (v: boolean) => void
+  setCanvasSelection: (nodes: Array<{ id: string; type: string }>) => void
 }
 
 export const useUIStore = create<UIState>()(persist((set) => ({
@@ -63,6 +65,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   curriculumCollapsed: false,
   canvasTool: 'select',
   canvasInteractive: true,
+  canvasSelection: [],
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -110,6 +113,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
 
   setCanvasTool: (tool) => set({ canvasTool: tool }),
   setCanvasInteractive: (v) => set({ canvasInteractive: v }),
+  setCanvasSelection: (nodes) => set({ canvasSelection: nodes }),
 }), {
   name: 'abcai_ui_panels_v2',
   partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed }),

@@ -1,31 +1,32 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 
-export function exportRuleApp(appName = 'My AI App'): void {
+export function exportRuleApp(appName = 'My AI App', selectedIds?: Set<string>): void {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
+  const keep = (id: string) => !selectedIds || selectedIds.has(id)
 
   const data = {
-    sensors: rule.sensorBlocks.map(s => ({
+    sensors: rule.sensorBlocks.filter(s => keep(s.id)).map(s => ({
       id: s.id, name: s.name, sensorType: s.sensorType,
       value: s.value, min: s.min ?? 0, max: s.max ?? 100, unit: s.unit ?? '',
     })),
-    switches: rule.switchBlocks.map(s => ({
+    switches: rule.switchBlocks.filter(s => keep(s.id)).map(s => ({
       id: s.id, name: s.name, isOn: s.isOn,
     })),
-    conditions: rule.conditionBlocks.map(c => ({
+    conditions: rule.conditionBlocks.filter(c => keep(c.id)).map(c => ({
       id: c.id, name: c.name, linkedSensorId: c.linkedSensorId,
       operator: c.operator, threshold: c.threshold,
     })),
-    logic: rule.logicBlocks.map(l => ({
+    logic: rule.logicBlocks.filter(l => keep(l.id)).map(l => ({
       id: l.id, logicType: l.logicType,
       inputs: [l.linkedInputIds[0] ?? null, l.linkedInputIds[1] ?? null],
     })),
-    fans:   rule.fanBlocks.map(f => ({ id: f.id, name: f.name, linkedRuleBlockId: f.linkedRuleBlockId })),
-    alarms: rule.alarmBlocks.map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
-    acs:    rule.acBlocks.map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
-    bulbs:  workflow.bulbBlocks.map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
-    doors:  workflow.doorBlocks.map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
+    fans:   rule.fanBlocks.filter(f => keep(f.id)).map(f => ({ id: f.id, name: f.name, linkedRuleBlockId: f.linkedRuleBlockId })),
+    alarms: rule.alarmBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
+    acs:    rule.acBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
+    bulbs:  workflow.bulbBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
+    doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
   }
 
   const html = buildHTML(appName, data)
