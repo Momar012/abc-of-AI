@@ -168,9 +168,9 @@
       {
         "type": "challenge",
         "id": "challenge-1781878181806",
-        "title": "Challenge Lab 2: Smart Study Lamp",
+        "title": "Challenge Lab 2: Smart Entrance Door",
         "icon": "🏆",
-        "prompt": "**Problem**\n\nTurn the **Bulb** ON when **Motion** is detected.\n\n\n\n**Requirements**\n\n- Use a **Motion Sensor**.\n- Use an **IF Condition**.\n- Use a **Bulb**.\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** turns **ON** when **Motion** is detected.\n\n✅ The **Bulb** remains **OFF** when there is **No Motion**.",
+        "prompt": "## Problem\n\nA building has an automatic entrance door.\n\nOpen the **Door** when **Motion** is detected near the entrance.\n\n\n\n## Requirements\n\n- Use a **Motion Sensor**\n- Use an **IF Condition**\n- Use a **Door**\n\n\n\n## Success Criteria\n\n- ✅ The Door opens when Motion is detected\n- ✅ The Door remains closed when there is No Motion",
         "successHint": ""
       },
       {
@@ -230,12 +230,28 @@
         "canvasHint": ""
       },
       {
+        "type": "challenge",
+        "id": "challenge-1782285691161",
+        "title": "🏆 Challenge Lab 5: Smart Security Door",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nBuild a security system that unlocks the **Door** only when:\n\n- Switch A is ON\n- Switch B is ON\n\nBoth switches represent two security approvals.\n\nThe door should only open when both approvals have been given.\n\n\n\n## Requirements\n\n- Use **2 Switches**\n- Use **1 AND Condition**\n- Use **1 Door**\n\n\n\n## Success Criteria\n\n- ✅ The Door remains CLOSED when only one Switch is ON\n- ✅ The Door opens when both Switches are ON\n- ✅ The Door closes again if either Switch is turned OFF",
+        "successHint": ""
+      },
+      {
         "type": "lab",
         "id": "lab-1781876810309",
         "title": "11. 💡Backup Light System",
         "icon": "🧪",
         "instruction": "## Goal\n  \nLearn how to use an **OR Condition**.\n\n\n\n## Problem\n  \nA room has **two switches**.\n\nThe **Light** should turn ON if **either Switch A OR Switch B** is ON.\n\nThis way, if one switch fails, the other switch can still turn the Light ON.\n\n\n\n\n\n## Instructions\n\n**Step 1:**  \nDrag **Switch** from the **Rule-Based menu**.\n\n**Step 2:**  \nDrag another **Switch** from the **Rule-Based menu**.\n\n**Step 3:**  \nDrag **OR Condition** from the **Rule-Based menu**.\n\n**Step 4:**  \nDrag **Bulb** from the **Actions menu**.\n\n**Step 5:**  \nConnect the first **Switch** to the **OR Condition**.\n\n**Step 6:**  \nConnect the second **Switch** to the **OR Condition**.\n\n**Step 7:**  \nConnect the **OR Condition** to the **Bulb**.\n\n**Step 8:**  \nTurn ON only the first **Switch** and observe the result.\n\n**Step 9:**  \nTurn ON only the second **Switch** and observe the result.\n\n**Step 10:**  \nTurn OFF both **Switches** and observe the result.\n\n\n\n\n\n## Expected Result\n\n✅ When the first **Switch** is ON, the **Bulb** turns **ON**.\n\n✅ When the second **Switch** is ON, the **Bulb** turns **ON**.\n\n✅ When both **Switches** are ON, the **Bulb** turns **ON**.\n\n❌ When both **Switches** are OFF, the **Bulb** remains **OFF**.\n\n\n\n\n\n## What You Learned\n\n1. An **OR Condition** requires at least one condition to be true.\n\n2. The output turns **ON** when either input is **ON**.\n\n3. **OR Conditions** are useful for creating backup systems.",
         "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782285832729",
+        "title": "🏆 Challenge Lab 6: Emergency Cooling System",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nAn emergency cooling system has two emergency switches.\n\nIf either switch is activated, the cooling fan should start immediately.\n\nBuild a system that turns ON the **Fan** if either of these conditions is true:\n\n- Switch A is ON\n- Switch B is ON\n\n\n\n## Requirements\n\n- Use **2 Switches**\n- Use **1 OR Condition**\n- Use **1 Fan**\n\n\n\n## Success Criteria\n\n- ✅ The Fan turns ON when Switch A is ON\n- ✅ The Fan turns ON when Switch B is ON\n- ✅ The Fan turns ON when both Switches are ON\n- ✅ The Fan remains OFF when both Switches are OFF",
+        "successHint": ""
       },
       {
         "type": "lab",
@@ -247,8 +263,32 @@
       },
       {
         "type": "challenge",
+        "id": "challenge-1782285948796",
+        "title": "🏆 Challenge Lab 7: Night Light",
+        "icon": "🏆",
+        "prompt": "## Problem\n\nA night light should automatically turn ON when the room switch is OFF.\n\nBuild a system that turns ON the **Bulb** when the **Switch** is OFF.\n\n\n\n## Requirements\n\n- Use **1 Switch**\n- Use **1 NOT Condition**\n- Use **1 Bulb**\n\n\n\n## Success Criteria\n\n- ✅ The Bulb turns ON when the Switch is OFF\n- ✅ The Bulb turns OFF when the Switch is ON",
+        "successHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782286201266",
+        "title": "13. 🚨Motion + Switch Security Light",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to combine multiple conditions using an **AND Condition**.\n\n\n\n\n\n## Problem\n\n\nBuild a security light that turns ON only when:\n\n- Motion is detected\n- Switch A is ON\n\nThe Bulb should remain OFF if either condition is not true.\n\n\n\n\n\n## Instructions\n\n\n**Step 1:**\nDrag a **Motion Sensor** from the **Rule-Based** menu.\n\n**Step 2:**\nDrag an **IF Condition** from the **Rule-Based** menu.\n\n**Step 3:**\nConnect the **Motion Sensor** to the **IF Condition**.\n\n**Step 4:**\nConfigure the **IF Condition** to detect:\n\n**Motion Detected**\n\n**Step 5:**\nDrag a **Switch** from the **Rule-Based** menu.\n\n**Step 6:**\nDrag an **AND Condition** from the **Rule-Based** menu.\n\n**Step 7:**\nDrag a **Bulb** from the **Actions** menu.\n\n**Step 8:**\nConnect the **IF Condition** to the **AND Condition**.\n\n**Step 9:**\nConnect the **Switch** to the **AND Condition**.\n\n**Step 10:**\nConnect the **AND Condition** to the **Bulb**.\n\n**Step 11:**\nTurn ON the Switch only and observe the result.\n\n**Step 12:**\nTrigger Motion only and observe the result.\n\n**Step 13:**\nTurn ON the Switch and trigger Motion at the same time.\n\n**Step 14:**\nObserve the result.\n\n\n\n\n\n## Success Criteria\n\n\n- ✅ The Bulb remains OFF when only Motion is detected\n- ✅ The Bulb remains OFF when only the Switch is ON\n- ✅ The Bulb turns ON when both conditions are TRUE\n\n\n\n\n\n## What You Learned\n\n\n1. An **AND Condition** can combine different types of conditions.\n2. All connected conditions must be TRUE for the output to activate.\n3. Sensors and switches can work together to create smarter systems.",
+        "canvasHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782286436738",
+        "title": "14.🚪Secure Server Room",
+        "icon": "🔬",
+        "instruction": "## Goal\n\nLearn how to combine more than two conditions using multiple **AND Conditions**.\n\n\n\n## Problem\n\nA secure server room can only be opened when:\n\n- Switch A is ON\n- Switch B is ON\n- Switch C is ON\n\nIf any switch is OFF, the Door must remain closed.\n\n\n\n## Instructions\n\n**Step 1:**\n\nDrag **Switch** from the **Rule-Based** menu.\n\n**Step 2:**\n\nDrag another **Switch** from the **Rule-Based** menu.\n\n**Step 3:**\n\nDrag a third **Switch** from the **Rule-Based** menu.\n\n**Step 4:**\n\nDrag **AND Condition** from the **Rule-Based** menu.\n\n**Step 5:**\n\nDrag another **AND Condition** from the **Rule-Based** menu.\n\n**Step 6:**\n\nDrag **Door** from the **Actions** menu.\n\n**Step 7:**\n\nConnect **Switch A** and **Switch B** to the first **AND Condition**.\n\n**Step 8:**\n\nConnect the output of the first **AND Condition** to the second **AND Condition**.\n\n**Step 9:**\n\nConnect **Switch C** to the second **AND Condition**.\n\n**Step 10:**\n\nConnect the second **AND Condition** to the **Door**.\n\n**Step 11:**\n\nTurn ON all three **Switches** and observe the result.\n\n**Step 12:**\n\nTurn OFF any one **Switch** and observe the result.\n\n\n\n## Expected Result\n\n- ✅ The Door opens when all three Switches are ON\n- ❌ The Door remains closed if any Switch is OFF\n\n\n\n## What You Learned\n\n1. Some systems require more than two conditions to be true.\n\n2. Multiple **AND Conditions** can be connected together.\n\n3. The output of one logic block can be used as an input to another logic block.\n\n4. Complex rule-based systems are created by combining simpler rules.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
         "id": "challenge-1781878571513",
-        "title": "Challenge Lab 5: Security Approval System",
+        "title": "Challenge Lab 8: Security Approval System",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn the **AC** ON only when:\n\n- **Switch A** is ON.\n- **Switch B** is ON.\n- **Motion** is detected.\n\n\n\n**Requirements**\n\n- Use **2 Switches**.\n- Use a **Motion Sensor**.\n- Use **IF Conditions**.\n- Use **2** **AND Conditions**.\n- Use an **AC**.\n\n\n\n**Success Criteria**\n\n✅ The **AC** turns **ON** only when all three conditions are TRUE.\n\n✅ The **AC** remains **OFF** if any condition is FALSE.",
         "successHint": ""
@@ -256,7 +296,7 @@
       {
         "type": "lab",
         "id": "lab-1781877022216",
-        "title": "13. 🌡️Comfort Zone Temperature Control",
+        "title": "15. 🌡️Comfort Zone Temperature Control",
         "icon": "🧪",
         "instruction": "## Goal\nLearn how to combine two **IF Conditions** using an **AND Condition**.\n\n\n\n\n## Problem\n\nTurn the **Fan** ON only when the **temperature** is between **30°C** and **35°C**.\n\n\n\n\n\n## Instructions\n\n**Step 1:**\nDrag **Temperature Sensor** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag **IF Condition** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nDrag **AND Condition** from the **Rule-Based menu**.\n\n**Step 5:**\nDrag **Fan** from the **Actions** menu.\n\n**Step 6:**\nConnect the **Temperature Sensor** to both **IF Conditions**.\n\n**Step 7:**\nConnect both **IF Conditions** to the **AND Condition**.\n\n**Step 8:**\nConnect the **AND Condition** to the **Fan**.\n\n**Step 9:**\nDouble-click the first **IF Condition**.\n\n**Step 10:**\nSet the condition to **Temperature > 30°C**.\n\n**Step 11:**\nDouble-click the second **IF Condition**.\n\n**Step 12:**\nSet the condition to **Temperature < 35°C**.\n\n**Step 13:**\nDouble-click the **Temperature Sensor**.\n\n**Step 14:**\nMove the slider to **25°C** and observe the result.\n\n**Step 15:**\nMove the slider to **32°C** and observe the result.\n\n**Step 16:**\nMove the slider to **40°C** and observe the result.\n\n\n\n\n\n\n## Expected Result\n\n✅ When the **temperature** is **25°C**, the **Fan** remains **OFF**.\n\n✅ When the **temperature** is **32°C**, the **Fan** turns **ON**.\n\n✅ When the **temperature** is **40°C**, the **Fan** remains **OFF**.\n\n\n\n\n\n\n## What You Learned\n\n- Two **IF Conditions** can be combined using an **AND Condition**.\n\n- The **AND Condition** becomes TRUE only when both conditions are TRUE.\n\n- Computers can use ranges to make smarter decisions.",
         "canvasHint": ""
@@ -264,7 +304,7 @@
       {
         "type": "lab",
         "id": "lab-1781877172372",
-        "title": "14. 🏠Occupied Room Cooling System",
+        "title": "16. 🏠Occupied Room Cooling System",
         "icon": "🔬",
         "instruction": "## Goal\n\nLearn how to combine multiple **IF Conditions** using an **AND Condition**.\n\n\n\n## Problem\n\nTurn the **AC** ON only when **motion is detected** and the **temperature** is greater than **35°C**.\n\n\n\n## Instructions\n\n\n**Step 1:**\nDrag **Motion Sensor** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag **Temperature Sensor** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 5:**\nDrag **AND Condition** from the **Rule-Based menu**.\n\n**Step 6:**\nDrag **AC** from the **Actions** menu.\n\n**Step 7:**\nConnect the **Motion Sensor** to the first **IF Condition**.\n\n**Step 8:**\nConnect the **Temperature Sensor** to the second **IF Condition**.\n\n**Step 9:**\nConnect both **IF Conditions** to the **AND Condition**.\n\n**Step 10:**\nConnect the **AND Condition** to the **AC**.\n\n**Step 11:**\nDouble-click the first **IF Condition**.\n\n**Step 12:**\nSet the condition to **Motion Detected**.\n\n**Step 13:**\nDouble-click the second **IF Condition**.\n\n**Step 14:**\nSet the condition to **Temperature > 35°C**.\n\n**Step 15:**\nDouble-click the **Motion Sensor** and set it to **No Motion**.\n\n**Step 16:**\nDouble-click the **Temperature Sensor** and move the slider to **40°C**.\n\n**Step 17:**\nObserve the result.\n\n**Step 18:**\nChange the **Motion Sensor** to **Motion Detected**.\n\n**Step 19:**\nObserve the result.\n\n\n\n\n\n\n## Expected Result\n\n\n✅ When the **temperature** is **40°C** but there is **No Motion**, the **AC** remains **OFF**.\n\n✅ When **Motion** is detected and the **temperature** is **40°C**, the **AC** turns **ON**.\n\n\n\n\n## What You Learned\n\nMultiple **IF Conditions** can be combined using an **AND Condition**.\n\nThe **AND Condition** becomes TRUE only when all connected conditions are TRUE.\n\nSmart systems often use multiple sensors before taking action.",
         "canvasHint": ""
@@ -272,7 +312,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878649709",
-        "title": "Challenge Lab 6: Comfort Zone Fan",
+        "title": "Challenge Lab 9: Comfort Zone Fan",
         "icon": "🏆",
         "prompt": "**Problem**\n\nTurn the **Fan** ON only when the temperature is between **30°C** and **35°C**.\n\n\n\n**Requirements**\n\n- Use a **Temperature Sensor**.\n- Use **2 IF Conditions**.\n- Use an **AND Condition**.\n- Use a **Fan**.\n\n\n\n**Success Criteria**\n\n✅ The **Fan** turns **ON** when the temperature is between **30°C** and **35°C**.\n\n✅ The **Fan** remains **OFF** outside this range.",
         "successHint": ""
@@ -280,7 +320,7 @@
       {
         "type": "lab",
         "id": "lab-1781877713559",
-        "title": "15. 🏡Smart Room Assistant",
+        "title": "17. 🏡Smart Room Assistant",
         "icon": "🧪",
         "instruction": "## Goal\n\nLearn how to build a smart system using multiple rules.\n\n\n\n\n\n## Problem\n\n- If **motion** is detected, turn the **Bulb** ON.\n- If the **temperature** is greater than **35°C**, turn the **AC** ON.\n\n\n\n\n\n## Instructions\n\n\n**Step 1:**\nDrag **Motion Sensor** from the **Rule-Based menu**.\n\n**Step 2:**\nDrag **Temperature Sensor** from the **Rule-Based menu**.\n\n**Step 3:**\nDrag **IF Condition** from the **Rule-Based menu**.\n\n**Step 4:**\nDrag another **IF Condition** from the **Rule-Based menu**.\n\n**Step 5:**\nDrag **Bulb** from the **Actions** menu.\n\n**Step 6:**\nDrag **AC** from the **Actions** menu.\n\n**Step 7:**\nConnect the **Motion Sensor** to the first **IF Condition**.\n\n**Step 8:**\nConnect the first **IF Condition** to the **Bulb**.\n\n**Step 9:**\nConnect the **Temperature Sensor** to the second **IF Condition**.\n\n**Step 10:**\nConnect the second **IF Condition** to the **AC**.\n\n**Step 11:**\nDouble-click the first **IF Condition**.\n\n**Step 12:**\nSet the condition to **Motion Detected**.\n\n**Step 13:**\nDouble-click the second **IF Condition**.\n\n**Step 14:**\nSet the condition to **Temperature > 35°C**.\n\n**Step 15:**\nDouble-click the **Motion Sensor** and set it to **Motion Detected**.\n\n**Step 16:**\nDouble-click the **Temperature Sensor** and move the slider to **40°C**.\n\n**Step 17:**\nObserve the result.\n\n\n\n\n\n## Expected Result\n\n✅ When **Motion** is detected, the **Bulb** turns **ON**.\n\n✅ When the **temperature** is above **35°C**, the **AC** turns **ON**.\n\n✅ Both rules work independently at the same time.\n\n\n\n\n\n## What You Learned\n\n1. A smart system can contain multiple rules.\n\n2. Different sensors can control different devices.\n\n3. Complex systems are built by combining simple rules.",
         "canvasHint": ""
@@ -288,7 +328,7 @@
       {
         "type": "challenge",
         "id": "challenge-1781878706825",
-        "title": "Challenge Lab 7: Smart Classroom",
+        "title": "Challenge Lab 10: Smart Classroom",
         "icon": "🏆",
         "prompt": "**Problem**\n\nCreate a **Smart Classroom** that automatically controls lights and cooling.\n\n\n\n**Requirements**\n\n- If **Motion** is detected → Turn **Bulb** ON.\n- If **Temperature > 35°C** → Turn **Fan** ON.\n- If **Temperature > 40°C** → Turn **AC** ON.\n\n\n\n**Allowed Components**\n\n- **1 Motion Sensor**\n- **1 Temperature Sensor**\n- **1 Bulb**\n- **1 Fan**\n- **1 AC**\n- Any number of **IF Conditions**\n- Any number of **AND**, **OR**, and **NOT Conditions**\n\n\n\n**Success Criteria**\n\n✅ The **Bulb** responds to **Motion**.\n\n✅ The **Fan** responds to **Temperature**.\n\n✅ The **AC** responds to higher **Temperature**.\n\n✅ Only the allowed components are used.\n\n✅ All rules work together correctly.",
         "successHint": ""
@@ -296,7 +336,7 @@
       {
         "type": "learn",
         "id": "learn-1781965857291",
-        "title": "16. 📌Summary",
+        "title": "18. 📌Summary",
         "icon": "📖",
         "body": "Great job!\n\nIn this chapter, you learned that:\n\n\n\n📋 **AI follows instructions.**\n\n🔀 **Rules use IF–THEN logic.**\n\n🤖 **AI follows rules exactly as they are written.**\n\n✅ **The same input produces the same output.**\n\n✅ **Rules work well in simple and predictable situations.**\n\n\n\n\nUsing ABITA, you built your own **rule-based AI systems** and taught AI how to respond to different situations.\n\n\n\n🌟 **You are now ready to explore a bigger question: Can rules solve every problem?**",
         "tip": ""
@@ -336,7 +376,7 @@
       {
         "type": "lab",
         "id": "lab-1781966924064",
-        "title": "4. Guided Lab 1: Detect a Spam Word",
+        "title": "4. 🚨Detect a Spam Word",
         "icon": "🔬",
         "instruction": "## Goal\n\nLearn how a rule can be used to detect a spam message.\n\n\n\n\n## Problem\n\nYou work for an email company.\n\nYour security team has discovered that many spam emails contain the word:\n\n\n\n**MONEY**\n\nCreate a spam detector that triggers the Alarm whenever this word appears.\n\n\n\n\n## Instructions\n\n\n**Step 1:**\n\nDrag a **Text Input** from the **Rule-Based** menu.\n\n**Step 2:**\n\nDrag an **IF Condition** from the **Rule-Based** menu.\n\n**Step 3:**\n\nDrag an **Alarm** from the **Actions** menu.\n\n**Step 4:**\n\nConnect:\n\n**Text Input → IF Condition**\n\n**IF Condition → Alarm**\n\n**Step 5:**\n\nDouble-click the **IF Condition**.\n\nConfigure it as:\n\n**Contains: MONEY**\n\n**Step 6:**\n\nGo to the **Text Input** and type:\n\n**MONEY**\n\nObserve the result.\n\n**Step 7:**\n\nNow type:\n\n**mOneY**\n\nObserve the result.\n\nThe Alarm should remain silent.\n\n\n\n## Success Criteria\n\n✅ Alarm turns ON when the message contains **MONEY**.\n\n✅ Alarm remains OFF for messages that do not contain **MONEY**.",
         "canvasHint": ""
@@ -344,7 +384,7 @@
       {
         "type": "lab",
         "id": "lab-1781967631455",
-        "title": "5. Guided Lab 2: Spammers Found a New Variation",
+        "title": "5. 📖 Spammers Found a New Variation",
         "icon": "🔬",
         "instruction": "## Goal\n\nLearn how rule-based systems need additional rules when new variations appear.\n\n\n\n\n## Problem\n\nYour spam detector successfully detects: **MONEY**\n\nHowever, spammers have discovered a way to bypass your system.\n\nInstead of writing: **MONEY**\n\nthey now write: **MonEy**\n\nUpdate your spam detector so it can detect both versions.\n\n\n\n\n## Instructions\n\n**Step 1:**\n\nOpen your existing spam detector.\n\n**Step 2:**\n\nDrag a new **IF Condition** from the **Rule-Based** menu.\n\n**Step 3:**\n\nDrag an **OR Condition** from the **Rule-Based** menu.\n\n**Step 4:**\n\nConnect both **IF Conditions** to the **OR Condition**.\n\n**Step 5:**\n\nConnect the **OR Condition** to the **Alarm**.\n\n**Step 6:**\n\nDouble-click the new **IF Condition**.\n\nConfigure it as:\n\n**Contains: MonEy**\n\n**Step 7:**\n\nGo to the **Text Input** and type:\n\n**MONEY**\n\nObserve the result.\n\nThe Alarm should turn ON.\n\n**Step 8:**\n\nNow type:\n\n**MonEy**\n\nObserve the result.\n\nThe Alarm should turn ON.\n\n\n\n## Success Criteria\n\n✅ Alarm turns ON when the message contains **MONEY**.\n\n✅ Alarm turns ON when the message contains **MonEy**.\n\n✅ Alarm remains OFF for other messages.\n\n\n\n\n## Expected Result\n\n🤔 Your detector can now catch two variations of the same spam word, but it requires additional rules to do so.\n",
         "canvasHint": ""
@@ -417,7 +457,7 @@
   },
   {
     "id": "ch-1782122250554",
-    "title": "How Machines Learn",
+    "title": "4. How Machines Learn",
     "subtitle": "From Data to AI Models",
     "emoji": "📚",
     "steps": [
