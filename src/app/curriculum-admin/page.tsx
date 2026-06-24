@@ -5,6 +5,24 @@ import Link from 'next/link'
 import { CurriculumModule, CurriculumStep, CURRICULUM } from '@/data/curriculum'
 import { useCurriculumContentStore } from '@/store/useCurriculumContentStore'
 import { LearnStepView, LabStepView, ChallengeStepView, TYPE_DOT } from '@/components/learn/StepViews'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +44,77 @@ const EMOJI_QUICK: Record<'learn' | 'lab' | 'challenge', string[]> = {
   learn:     ['📖', '🧠', '💡', '🔭', '🎓', '🌟', '📚', '🔑'],
   lab:       ['🔬', '🧪', '🚀', '🛠️', '📸', '🔧', '⚙️', '🧩'],
   challenge: ['🏆', '🎯', '🎮', '🏅', '⭐', '💪', '🔥', '🚀'],
+}
+
+// ── Drag-and-drop sub-components ─────────────────────────────────────────────
+
+function SortableStepRow({
+  step, moduleId, stepIdx, stepsTotal, isSelected, onSelect, onMoveUp, onMoveDown, onDelete,
+}: {
+  step: CurriculumStep
+  moduleId: string
+  stepIdx: number
+  stepsTotal: number
+  isSelected: boolean
+  onSelect: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onDelete: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: step.id,
+    data: { moduleId },
+  })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.3 : 1 }}
+      onClick={onSelect}
+      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg cursor-pointer transition-colors group ${
+        isSelected ? 'bg-white/12' : 'hover:bg-white/5'
+      }`}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-white/15 hover:text-white/50 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Drag to reorder or move to another chapter"
+      >
+        <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor">
+          <circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/>
+          <circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/>
+          <circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/>
+        </svg>
+      </button>
+      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${TYPE_DOT[step.type]}`} />
+      <span className="flex-1 text-xs text-white/65 truncate">
+        {step.title || <span className="italic text-white/25">Untitled</span>}
+      </span>
+      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={(e) => { e.stopPropagation(); onMoveUp() }}   disabled={stepIdx === 0}             className="w-4 h-4 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 text-[10px]">↑</button>
+        <button onClick={(e) => { e.stopPropagation(); onMoveDown() }} disabled={stepIdx === stepsTotal - 1} className="w-4 h-4 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 text-[10px]">↓</button>
+        <button onClick={(e) => { e.stopPropagation(); onDelete() }}   className="w-4 h-4 flex items-center justify-center text-red-400/40 hover:text-red-400 text-[10px] ml-0.5">✕</button>
+      </div>
+    </div>
+  )
+}
+
+function DroppableEmptyZone({ moduleId }: { moduleId: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `chapter-${moduleId}`, data: { moduleId } })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`px-2 py-2.5 rounded-lg border border-dashed text-[10px] font-body italic text-center transition-colors ${
+        isOver
+          ? 'border-violet-500/60 text-violet-300/60 bg-violet-500/8'
+          : 'border-white/10 text-white/20'
+      }`}
+    >
+      {isOver ? 'Drop here' : 'No steps yet — drag or add below'}
+    </div>
+  )
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -101,16 +190,10 @@ function StepEditor({
   step,
   onUpdate,
   onChangeType,
-  allModules,
-  currentModuleId,
-  onMoveToModule,
 }: {
   step: CurriculumStep
   onUpdate: (patch: Partial<CurriculumStep>) => void
   onChangeType: (t: 'learn' | 'lab' | 'challenge') => void
-  allModules: { id: string; title: string; subtitle: string; emoji: string }[]
-  currentModuleId: string
-  onMoveToModule: (toModuleId: string) => void
 }) {
   const [showOptional, setShowOptional] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -302,30 +385,6 @@ function StepEditor({
         )}
       </div>
 
-      {/* Move to chapter */}
-      {allModules.length > 1 && (
-        <div className="border-t border-white/8 pt-4">
-          <p className="text-[10px] font-heading font-bold text-white/25 uppercase tracking-widest mb-2">
-            Move to Chapter
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            {allModules
-              .filter((m) => m.id !== currentModuleId)
-              .map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => onMoveToModule(m.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-semibold border border-white/10 text-white/50 hover:text-white hover:bg-white/8 hover:border-white/25 transition-colors"
-                >
-                  <span>{m.emoji}</span>
-                  <span className="truncate max-w-[120px]">{m.subtitle || m.title}</span>
-                  <span className="text-white/25">→</span>
-                </button>
-              ))}
-          </div>
-        </div>
-      )}
-
       {/* Live preview */}
       <div className="border-t border-white/8 pt-5">
         <p className="text-[10px] font-heading font-bold text-white/25 uppercase tracking-widest mb-3">Live Preview</p>
@@ -353,10 +412,13 @@ export default function CurriculumAdminPage() {
 
   const importRef = useRef<HTMLInputElement>(null)
 
-  const [modules,      setModules]      = useState<CurriculumModule[]>(CURRICULUM)
-  const [selection,    setSelection]    = useState<Sel>(null)
-  const [status,       setStatus]       = useState<'idle' | 'saved' | 'dirty'>('idle')
-  const [openModules,  setOpenModules]  = useState<Set<string>>(new Set())
+  const [modules,        setModules]        = useState<CurriculumModule[]>(CURRICULUM)
+  const [selection,      setSelection]      = useState<Sel>(null)
+  const [status,         setStatus]         = useState<'idle' | 'saved' | 'dirty'>('idle')
+  const [openModules,    setOpenModules]    = useState<Set<string>>(new Set())
+  const [activeDragStep, setActiveDragStep] = useState<CurriculumStep | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   function toggleOpen(id: string) {
     setOpenModules((prev) => {
@@ -529,6 +591,61 @@ export default function CurriculumAdminPage() {
     ))
   }
 
+  // ── Drag-and-drop handlers
+  function handleDragStart(event: DragStartEvent) {
+    const fromModuleId = event.active.data.current?.moduleId as string
+    const step = modules.find((m) => m.id === fromModuleId)?.steps.find((s) => s.id === event.active.id)
+    setActiveDragStep(step ?? null)
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    setActiveDragStep(null)
+    if (!over) return
+
+    const fromModuleId = active.data.current?.moduleId as string
+    const stepId = active.id as string
+
+    // Dropped on an empty chapter zone
+    if (String(over.id).startsWith('chapter-')) {
+      const toModuleId = String(over.id).replace('chapter-', '')
+      if (toModuleId !== fromModuleId) moveStepToModule(fromModuleId, stepId, toModuleId)
+      return
+    }
+
+    // Dropped on a step
+    const toModuleId = over.data.current?.moduleId as string
+    if (!toModuleId) return
+
+    if (fromModuleId === toModuleId) {
+      // Reorder within same chapter
+      setModules((prev) => prev.map((m) => {
+        if (m.id !== fromModuleId) return m
+        const oldIdx = m.steps.findIndex((s) => s.id === stepId)
+        const newIdx = m.steps.findIndex((s) => s.id === over.id)
+        if (oldIdx === newIdx) return m
+        return { ...m, steps: arrayMove(m.steps, oldIdx, newIdx) }
+      }))
+    } else {
+      // Move to a different chapter, inserting at the target step's position
+      setModules((prev) => {
+        const step = prev.find((m) => m.id === fromModuleId)?.steps.find((s) => s.id === stepId)
+        if (!step) return prev
+        return prev.map((m) => {
+          if (m.id === fromModuleId) return { ...m, steps: m.steps.filter((s) => s.id !== stepId) }
+          if (m.id === toModuleId) {
+            const targetIdx = m.steps.findIndex((s) => s.id === over.id)
+            const newSteps = [...m.steps]
+            newSteps.splice(targetIdx >= 0 ? targetIdx : newSteps.length, 0, step)
+            return { ...m, steps: newSteps }
+          }
+          return m
+        })
+      })
+      setSelection({ kind: 'step', moduleId: toModuleId, stepId })
+    }
+  }
+
   // ── Derived selection
   const selModule = selection ? modules.find((m) => m.id === selection.moduleId) ?? null : null
   const selStep   = selection?.kind === 'step' && selModule
@@ -633,17 +750,21 @@ export default function CurriculumAdminPage() {
 
         {/* ── Left: chapter/step tree ── */}
         <div className="w-72 flex-shrink-0 border-r border-white/10 overflow-y-auto p-3 flex flex-col gap-2">
-
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
           {modules.map((mod, modIdx) => {
             const isOpen = openModules.has(mod.id)
             return (
               <div key={mod.id} className="rounded-xl border border-white/10" style={{ background: 'rgba(255,255,255,0.06)' }}>
 
-                {/* Chapter header row — all controls inline, no overflow-hidden */}
+                {/* Chapter header row */}
                 <div className={`flex items-center gap-1.5 px-2 py-2 rounded-t-xl ${!isOpen ? 'rounded-b-xl' : ''} ${
                   selection?.moduleId === mod.id && selection.kind === 'module' ? 'bg-violet-500/12' : ''
                 }`}>
-                  {/* Expand/collapse chevron */}
                   <button
                     onClick={() => toggleOpen(mod.id)}
                     className="w-5 h-5 flex items-center justify-center text-white/30 hover:text-white/70 transition-colors flex-shrink-0 text-xs"
@@ -651,8 +772,6 @@ export default function CurriculumAdminPage() {
                   >
                     {isOpen ? '▾' : '▸'}
                   </button>
-
-                  {/* Chapter info — click to edit metadata */}
                   <button
                     onClick={() => { setSelection({ kind: 'module', moduleId: mod.id }); if (!isOpen) toggleOpen(mod.id) }}
                     className="flex-1 flex items-center gap-2 text-left min-w-0"
@@ -663,8 +782,6 @@ export default function CurriculumAdminPage() {
                       <p className="text-xs font-heading font-bold text-white truncate">{mod.subtitle || 'Untitled'}</p>
                     </div>
                   </button>
-
-                  {/* Reorder + delete */}
                   <div className="flex items-center gap-0.5 flex-shrink-0">
                     <button onClick={() => moveModule(mod.id, 'up')}   disabled={modIdx === 0}                  title="Move up"   className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 disabled:opacity-20 text-xs rounded transition-colors">↑</button>
                     <button onClick={() => moveModule(mod.id, 'down')} disabled={modIdx === modules.length - 1} title="Move down" className="w-5 h-5 flex items-center justify-center text-white/25 hover:text-white/70 disabled:opacity-20 text-xs rounded transition-colors">↓</button>
@@ -675,32 +792,27 @@ export default function CurriculumAdminPage() {
                 {/* Expandable step list + add buttons */}
                 {isOpen && (
                   <div className="border-t border-white/8 px-2 pt-2 pb-3 flex flex-col gap-0.5">
-                    {mod.steps.length === 0 && (
-                      <p className="text-[10px] text-white/20 font-body px-1 py-1 italic">No steps yet — add one below</p>
-                    )}
-                    {mod.steps.map((step, stepIdx) => (
-                      <div
-                        key={step.id}
-                        onClick={() => setSelection({ kind: 'step', moduleId: mod.id, stepId: step.id })}
-                        className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors group ${
-                          selection?.kind === 'step' && selection.stepId === step.id
-                            ? 'bg-white/12'
-                            : 'hover:bg-white/5'
-                        }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${TYPE_DOT[step.type]}`} />
-                        <span className="flex-1 text-xs text-white/65 truncate">
-                          {step.title || <span className="italic text-white/25">Untitled</span>}
-                        </span>
-                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => { e.stopPropagation(); moveStep(mod.id, step.id, 'up') }}   disabled={stepIdx === 0}                  className="w-4 h-4 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 text-[10px]">↑</button>
-                          <button onClick={(e) => { e.stopPropagation(); moveStep(mod.id, step.id, 'down') }} disabled={stepIdx === mod.steps.length - 1} className="w-4 h-4 flex items-center justify-center text-white/40 hover:text-white disabled:opacity-20 text-[10px]">↓</button>
-                          <button onClick={(e) => { e.stopPropagation(); deleteStep(mod.id, step.id) }}       className="w-4 h-4 flex items-center justify-center text-red-400/40 hover:text-red-400 text-[10px] ml-0.5">✕</button>
-                        </div>
-                      </div>
-                    ))}
+                    <SortableContext items={mod.steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                      {mod.steps.length === 0
+                        ? <DroppableEmptyZone moduleId={mod.id} />
+                        : mod.steps.map((step, stepIdx) => (
+                            <SortableStepRow
+                              key={step.id}
+                              step={step}
+                              moduleId={mod.id}
+                              stepIdx={stepIdx}
+                              stepsTotal={mod.steps.length}
+                              isSelected={selection?.kind === 'step' && selection.stepId === step.id}
+                              onSelect={() => setSelection({ kind: 'step', moduleId: mod.id, stepId: step.id })}
+                              onMoveUp={() => moveStep(mod.id, step.id, 'up')}
+                              onMoveDown={() => moveStep(mod.id, step.id, 'down')}
+                              onDelete={() => deleteStep(mod.id, step.id)}
+                            />
+                          ))
+                      }
+                    </SortableContext>
 
-                    {/* Add step buttons — clearly separated, always reachable */}
+                    {/* Add step buttons */}
                     <div className="flex gap-1.5 mt-3 pt-2 border-t border-white/6">
                       {(['learn', 'lab', 'challenge'] as const).map((t) => (
                         <button
@@ -730,6 +842,18 @@ export default function CurriculumAdminPage() {
           >
             + Add Chapter
           </button>
+
+          <DragOverlay>
+            {activeDragStep && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-violet-500/40 bg-[rgba(30,27,75,0.95)] shadow-xl shadow-black/40">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${TYPE_DOT[activeDragStep.type]}`} />
+                <span className="text-xs text-white/80 font-body truncate max-w-[180px]">
+                  {activeDragStep.title || 'Untitled'}
+                </span>
+              </div>
+            )}
+          </DragOverlay>
+          </DndContext>
         </div>
 
         {/* ── Right: editor ── */}
@@ -751,9 +875,6 @@ export default function CurriculumAdminPage() {
                   step={selStep}
                   onUpdate={(patch) => updateStep(selModule.id, selStep.id, patch)}
                   onChangeType={(t) => changeStepType(selModule.id, selStep.id, t)}
-                  allModules={modules.map(({ id, title, subtitle, emoji }) => ({ id, title, subtitle, emoji }))}
-                  currentModuleId={selModule.id}
-                  onMoveToModule={(toModuleId) => moveStepToModule(selModule.id, selStep.id, toModuleId)}
                 />
               ) : (
                 <div className="text-white/25 text-sm font-body">Step not found</div>
