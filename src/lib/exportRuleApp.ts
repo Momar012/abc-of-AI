@@ -328,7 +328,7 @@ for(var si=0;si<state.sensors.length;si++){
           '</div>'+
           '<input type="range" min="'+min+'" max="'+max+'" value="'+val+'" style="--pct:'+pct+'%" '+
             'oninput="'+
-              'var pct=Math.round(((this.value-'+min+')/('+max+'-'+min+'))*100);'+
+              'var pct=Math.round(((this.value-('+min+'))/'+( max - min )+')*100);'+
               'this.style.setProperty(\\'--pct\\',pct+\\'%\\');'+
               'document.getElementById(\\'lbl-'+sensor.id+'\\').textContent=this.value;'+
               'setVal(\\''+sensor.id+'\\',Number(this.value))'+

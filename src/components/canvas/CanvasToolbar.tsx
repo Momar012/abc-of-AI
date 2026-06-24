@@ -362,7 +362,7 @@ function SelectionBar() {
   const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
 
   const count = canvasSelection.length
-  if (count === 0) return null
+  if (count <= 1) return null
 
   const hasRuleNodes = canvasSelection.some((n) => RULE_OUTPUT_TYPES.has(n.type))
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
