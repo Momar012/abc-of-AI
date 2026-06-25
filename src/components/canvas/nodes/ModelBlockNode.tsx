@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { ModelBlock } from '@/types/model'
 import type { DataItem } from '@/types/dataset'
@@ -8,6 +8,18 @@ import { useModelStore } from '@/store/useModelStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
 import { runTextInference } from '@/lib/textLearner'
+
+function HandleTooltip({ color, label, detail }: { color: string; label: string; detail: string }) {
+  return (
+    <div
+      className="bg-gray-950/95 border-l-2 rounded-lg px-2.5 py-1.5 shadow-xl whitespace-nowrap"
+      style={{ borderColor: color }}
+    >
+      <p className="text-[10px] font-heading font-bold" style={{ color }}>{label}</p>
+      <p className="text-[9px] font-body text-white/55 mt-0.5">{detail}</p>
+    </div>
+  )
+}
 
 const MODEL_TYPE_LABELS: Record<string, string> = {
   'image-supervised': 'Image Supervised',
@@ -66,40 +78,76 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
   const statusStyle = STATUS_STYLES[block.status] ?? STATUS_STYLES.idle
   const isActive = block.status === 'loading' || block.status === 'training'
   const isTesting = block.testStatus === 'running'
+  const [hoveredHandle, setHoveredHandle] = useState<string | null>(null)
 
   return (
-    <div className="flex flex-col">
-      {/* Target handle — top-left, receives training data from Labelled block */}
+    <div className="flex flex-col relative">
+      {/* Training data port */}
       <Handle
         type="target"
         position={Position.Left}
         id="in"
+        onMouseEnter={() => setHoveredHandle('in')}
+        onMouseLeave={() => setHoveredHandle(null)}
         style={{ background: '#2DD4BF', border: '2px solid #134E4A', width: 12, height: 12, left: -6, top: '38%' }}
       />
-      {/* Target handle — middle-left, receives test data from Unlabelled block */}
+      {hoveredHandle === 'in' && (
+        <div className="absolute left-4 z-50 pointer-events-none" style={{ top: '38%', transform: 'translateY(-50%)' }}>
+          {block.modelType?.includes('unsupervised')
+            ? <HandleTooltip color="#2DD4BF" label="🏋️ Training Data" detail="Connect your Unlabelled Dataset to find patterns" />
+            : <HandleTooltip color="#2DD4BF" label="🏋️ Training Data" detail="Connect your Labelled Dataset to teach the model" />
+          }
+        </div>
+      )}
+
+      {/* Test & validation port */}
       <Handle
         type="target"
         position={Position.Left}
         id="test-in"
+        onMouseEnter={() => setHoveredHandle('test-in')}
+        onMouseLeave={() => setHoveredHandle(null)}
         style={{ background: '#F59E0B', border: '2px solid #78350F', width: 12, height: 12, left: -6, top: '65%' }}
       />
-      {/* Target handle — bottom-left, receives live text from a Text-Input sensor (text-supervised only) */}
-      {block.modelType === 'text-supervised' && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          id="live-in"
-          title="Connect a 📝 Text-Input sensor for live prediction"
-          style={{ background: '#7C3AED', border: '2px solid #4C1D95', width: 12, height: 12, left: -6, top: '88%' }}
-        />
+      {hoveredHandle === 'test-in' && (
+        <div className="absolute left-4 z-50 pointer-events-none" style={{ top: '65%', transform: 'translateY(-50%)' }}>
+          <HandleTooltip color="#F59E0B" label="🧪 Test & Validate" detail="Connect Labelled or Unlabelled Data to check accuracy" />
+        </div>
       )}
-      {/* Source handle — right, emits prediction output to IF/Else block */}
+
+      {/* Live text input port (text-supervised only) */}
+      {block.modelType === 'text-supervised' && (
+        <>
+          <Handle
+            type="target"
+            position={Position.Left}
+            id="live-in"
+            onMouseEnter={() => setHoveredHandle('live-in')}
+            onMouseLeave={() => setHoveredHandle(null)}
+            style={{ background: '#7C3AED', border: '2px solid #4C1D95', width: 12, height: 12, left: -6, top: '88%' }}
+          />
+          {hoveredHandle === 'live-in' && (
+            <div className="absolute left-4 z-50 pointer-events-none" style={{ top: '88%', transform: 'translateY(-50%)' }}>
+              <HandleTooltip color="#7C3AED" label="💬 Live Testing" detail="Connect a Text Input field to try predictions in real time" />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Prediction output port */}
       <Handle
         type="source"
         position={Position.Right}
         id="prediction-out"
+        onMouseEnter={() => setHoveredHandle('prediction-out')}
+        onMouseLeave={() => setHoveredHandle(null)}
         style={{ background: '#10B981', border: '2px solid #064E3B', width: 10, height: 10, right: -5, top: '85%' }}
       />
+      {hoveredHandle === 'prediction-out' && (
+        <div className="absolute right-4 z-50 pointer-events-none" style={{ top: '85%', transform: 'translateY(-50%)' }}>
+          <HandleTooltip color="#10B981" label="🎯 Predictions Out" detail="Connect to an IF Condition block to use the model in a rule" />
+        </div>
+      )}
 
       <div className="drag-handle flex justify-center items-center py-1.5 px-4 rounded-t-xl cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors">
         <div className="flex gap-1">
