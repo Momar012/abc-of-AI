@@ -342,13 +342,14 @@ const EXPORT_TOOLTIPS: Record<string, string> = {
   'unconnected-output':     'An output has nothing connected — wire it up first',
   'incomplete-chain':       'Select the full connected flow — some nodes in the chain are missing',
   'untrained-model':        "A model in the flow hasn't been trained yet",
-  'unsupported-model-type': 'Only text classifier models can be exported (not image models)',
+  'unsupported-model-type': 'This model type cannot be used in exports — connect a text or image classifier model',
 }
 const AI_EXPORT_TOOLTIPS: Record<string, string> = {
   ok:               'Export your AI model as a standalone app',
   'no-model':       'Select a trained model to export',
   'untrained-model':'This model hasn\'t been trained yet',
   'unsupported-type':'Text corpus models cannot be exported yet',
+  'legacy-model':   'This model was trained with an older version — please retrain it first',
 }
 
 function SelectionBar() {

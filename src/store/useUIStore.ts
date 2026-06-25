@@ -41,6 +41,7 @@ interface UIState {
   closeLabellingModal: () => void
   toggleBankItemSelection: (id: string) => void
   clearBankSelection: () => void
+  selectAllBankItems: (ids: string[]) => void
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
   toggleCurriculumPanel: () => void
@@ -106,6 +107,8 @@ export const useUIStore = create<UIState>()(persist((set) => ({
     })),
 
   clearBankSelection: () => set({ selectedBankItemIds: [] }),
+
+  selectAllBankItems: (ids) => set({ selectedBankItemIds: ids }),
 
   toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),

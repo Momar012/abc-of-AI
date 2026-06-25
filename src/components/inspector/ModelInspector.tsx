@@ -169,22 +169,33 @@ export default function ModelInspector() {
 
   const handleTrainTextSupervised = async () => {
     if (!linkedLabelledBlock) return
-    setProgressStep(0)
-    setProgressTotal(100)
-    setProgressMessage('Starting…')
     updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null })
 
     try {
-      const result = trainTextSupervisedModel(
-        linkedLabelledBlock,
-        bankItems,
-        (message, step, total) => {
-          setProgressMessage(message)
-          setProgressStep(step)
-          setProgressTotal(total)
-          if (step > 0) updateModelBlock(block.id, { status: 'training' })
-        }
-      )
+      // Run the actual training silently (it's synchronous and near-instant)
+      const result = trainTextSupervisedModel(linkedLabelledBlock, bankItems, () => {})
+
+      // Show animated progress so kids feel the model is working hard (~10 s)
+      const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+      updateModelBlock(block.id, { status: 'training' })
+
+      const fakeSteps = [
+        { msg: 'Reading your training examples…', ms: 800 },
+        { msg: 'Building vocabulary…',            ms: 1200 },
+        { msg: 'Finding word patterns…',          ms: 1400 },
+        { msg: 'Calculating probabilities…',      ms: 1500 },
+        { msg: 'Training the classifier…',        ms: 1800 },
+        ...result.labels.map((l) => ({ msg: `Learning label "${l}"…`, ms: 900 })),
+        { msg: 'Fine-tuning…',                    ms: 1000 },
+        { msg: 'Almost there…',                   ms: 700 },
+      ]
+
+      for (let i = 0; i < fakeSteps.length; i++) {
+        setProgressMessage(fakeSteps[i].msg)
+        setProgressStep(i + 1)
+        setProgressTotal(fakeSteps.length)
+        await sleep(fakeSteps[i].ms)
+      }
 
       const trained: TrainedModel = {
         id: uuid(),

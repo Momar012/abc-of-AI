@@ -60,6 +60,7 @@ export default function CurriculumPanel() {
     useCurriculumStore()
   const toggleCurriculumPanel = useUIStore((s) => s.toggleCurriculumPanel)
   const [showModules, setShowModules] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const module = CURRICULUM.find((m) => m.id === currentModuleId) ?? CURRICULUM[0]
@@ -74,18 +75,27 @@ export default function CurriculumPanel() {
   }, [currentStep.id])
 
   function handleNext() {
+    if (isNavigating) return
+    setIsNavigating(true)
     markStepComplete(currentStep.id)
     nextStep(totalSteps)
+    setTimeout(() => setIsNavigating(false), 400)
   }
 
   function handleNextChapter() {
+    if (isNavigating) return
+    setIsNavigating(true)
     markStepComplete(currentStep.id)
     setModule(nextModule!.id)
     goToStep(0)
+    setTimeout(() => setIsNavigating(false), 400)
   }
 
   function handlePrev() {
+    if (isNavigating) return
+    setIsNavigating(true)
     prevStep()
+    setTimeout(() => setIsNavigating(false), 400)
   }
 
   function handleModuleSelect(id: string) {
@@ -199,7 +209,7 @@ export default function CurriculumPanel() {
       <div className="flex-shrink-0 p-4 border-t border-white/10 flex items-center gap-2">
         <button
           onClick={handlePrev}
-          disabled={currentStepIndex === 0}
+          disabled={currentStepIndex === 0 || isNavigating}
           className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-colors
             disabled:opacity-30 disabled:cursor-not-allowed
             bg-white/8 hover:bg-white/12 text-white/70 hover:text-white
@@ -211,7 +221,9 @@ export default function CurriculumPanel() {
         {isLastStep && nextModule ? (
           <button
             onClick={handleNextChapter}
+            disabled={isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
+              disabled:opacity-30 disabled:cursor-not-allowed
               bg-gradient-to-r from-teal-500 to-violet-500
               hover:shadow-[0_0_16px_rgba(124,58,237,0.5)]
               text-white flex flex-col items-center gap-0.5"
@@ -222,7 +234,7 @@ export default function CurriculumPanel() {
         ) : (
           <button
             onClick={handleNext}
-            disabled={isLastStep}
+            disabled={isLastStep || isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
               disabled:opacity-30 disabled:cursor-not-allowed
               bg-gradient-to-r from-violet-500 to-teal-400

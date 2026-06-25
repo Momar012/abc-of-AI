@@ -30,6 +30,7 @@ interface DatasetState {
 
   addBankItem: (item: Omit<DataItem, 'id' | 'addedAt'>) => void
   removeBankItem: (id: string) => void
+  bulkRemoveBankItems: (ids: string[]) => void
 
   addLabelledBlock: (pos?: { x: number; y: number }) => void
   removeLabelledBlock: (blockId: string) => void
@@ -85,6 +86,9 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
 
   removeBankItem: (id) =>
     set((s) => ({ bankItems: s.bankItems.filter((i) => i.id !== id) })),
+
+  bulkRemoveBankItems: (ids) =>
+    set((s) => ({ bankItems: s.bankItems.filter((i) => !ids.includes(i.id)) })),
 
   addLabelledBlock: (pos?) =>
     set((s) => ({

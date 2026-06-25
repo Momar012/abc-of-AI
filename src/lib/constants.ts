@@ -1,6 +1,6 @@
 export const MIN_ITEMS_PER_LABEL = 3
 export const MAX_LABELS = 10
-export const MAX_BANK_ITEMS = 50
+export const MAX_BANK_ITEMS = 500
 
 export const LABEL_PALETTE = [
   '#EF4444',
