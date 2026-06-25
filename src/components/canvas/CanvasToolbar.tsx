@@ -365,6 +365,7 @@ function SelectionBar() {
   const [instructions, setInstructions] = useState('')
   const [cardOrder, setCardOrder] = useState<ExportCardInfo[]>([])
   const [activeTab, setActiveTab] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
@@ -390,7 +391,7 @@ function SelectionBar() {
 
   useEffect(() => {
     if (count === 0 || (count === 1 && canvasSelection[0]?.type !== 'model')) {
-      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName(''); setInstructions(''); setCardOrder([]); setActiveTab(0)
+      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName(''); setInstructions(''); setCardOrder([]); setActiveTab(0); setIsExporting(false)
     }
   }, [count, canvasSelection])
 
@@ -432,22 +433,26 @@ function SelectionBar() {
   ]
 
   function handleConfirm() {
-    const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
-    if (derivedMode === 'ai-model') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportAIModel(name, selectedIds, theme as any, creatorName.trim(), instructions.trim())
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim(), instructions.trim(), cardOrder.map(c => c.id))
-    }
-    setShowNaming(false)
-    setAppName('My AI App')
-    setTheme('space')
-    setLayout('classic')
-    setCreatorName('')
-    setInstructions('')
-    setCardOrder([])
-    setActiveTab(0)
+    setIsExporting(true)
+    setTimeout(() => {
+      const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
+      if (derivedMode === 'ai-model') {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exportAIModel(name, selectedIds, theme as any, creatorName.trim(), instructions.trim())
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim(), instructions.trim(), cardOrder.map(c => c.id))
+      }
+      setIsExporting(false)
+      setShowNaming(false)
+      setAppName('My AI App')
+      setTheme('space')
+      setLayout('classic')
+      setCreatorName('')
+      setInstructions('')
+      setCardOrder([])
+      setActiveTab(0)
+    }, 10000)
   }
 
   function handleDelete() {
@@ -479,11 +484,12 @@ function SelectionBar() {
     const outputCards = cardOrder.filter(c => c.category === 'output')
     const inputCls = "w-full bg-white/[0.06] [color-scheme:dark] border border-white/12 rounded-lg px-2.5 py-1.5 text-xs text-white font-heading outline-none focus:border-violet-400/50 focus:bg-white/10 transition-all placeholder:text-white/25"
 
-    const tabs = isAI
-      ? [{ id: 'name', label: '🏷️ Name' }, { id: 'details', label: '📋 Details' }]
-      : [{ id: 'name', label: '🏷️ Name' }, { id: 'style', label: '🎨 Style' }, { id: 'details', label: '📋 Details' }]
+    const hasCards = !isAI && cardOrder.length > 0
+    const tabs = hasCards
+      ? [{ id: 'info', label: '📝 Info' }, { id: 'arrange', label: '📋 Arrange' }, { id: 'style', label: '🎨 Style' }]
+      : [{ id: 'info', label: '📝 Info' }, { id: 'style', label: '🎨 Style' }]
 
-    const tab = tabs[activeTab]?.id ?? 'name'
+    const tab = tabs[activeTab]?.id ?? 'info'
 
     return (
       <motion.div
@@ -508,7 +514,7 @@ function SelectionBar() {
         </div>
 
         {/* ── Tabs ───────────────────────────────────── */}
-        <div className="flex gap-1 px-4 pt-3">
+        {!isExporting && <div className="flex gap-1 px-4 pt-3">
           {tabs.map((t, i) => (
             <button
               key={t.id}
@@ -522,16 +528,58 @@ function SelectionBar() {
               {t.label}
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* ── Tab content — fixed height ──────────────── */}
         <div className="px-4 pt-3 pb-2 h-[172px] overflow-y-auto">
-          <AnimatePresence mode="wait">
-            {tab === 'name' && (
-              <motion.div key="name"
+          {isExporting ? (
+            <div className="h-full flex flex-col items-center justify-center gap-4">
+              {(isAI
+                ? [
+                    { icon: '🧠', text: 'Reading your model...' },
+                    { icon: '🎨', text: 'Applying your theme...' },
+                    { icon: '📦', text: 'Packaging your model...' },
+                  ]
+                : [
+                    { icon: '🧱', text: 'Assembling your blocks...' },
+                    { icon: '🎨', text: 'Applying your theme...' },
+                    { icon: '📦', text: 'Packaging your app...' },
+                  ]
+              ).map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 3, duration: 0.28 }}
+                  className="flex items-center gap-3 w-full"
+                >
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: i * 3 + 0.15, type: 'spring', stiffness: 300 }}
+                    className="text-base w-5 text-center flex-shrink-0"
+                  >
+                    {step.icon}
+                  </motion.span>
+                  <span className="text-xs font-heading text-white/60 flex-1">{step.text}</span>
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 3 + 0.38, type: 'spring', stiffness: 400 }}
+                    className="text-emerald-400 text-sm font-bold flex-shrink-0"
+                  >
+                    ✓
+                  </motion.span>
+                </motion.div>
+              ))}
+            </div>
+          ) : null}
+          {!isExporting && <AnimatePresence mode="wait">
+            {tab === 'info' && (
+              <motion.div key="info"
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
                 transition={{ duration: 0.14 }}
-                className="flex flex-col gap-3"
+                className="flex flex-col gap-2.5"
               >
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
@@ -561,6 +609,69 @@ function SelectionBar() {
                     placeholder="e.g. Alex"
                     className={inputCls}
                   />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                    Instructions <span className="normal-case font-normal text-white/22">· optional</span>
+                  </label>
+                  <textarea
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    maxLength={400}
+                    rows={2}
+                    placeholder="What does this app do? How should someone use it?"
+                    className={`${inputCls} resize-none leading-relaxed`}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {tab === 'arrange' && (
+              <motion.div key="arrange"
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.14 }}
+                className="flex flex-col gap-2"
+              >
+                <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                  Arrange Cards <span className="normal-case font-normal text-white/20">drag to reorder</span>
+                </label>
+                <div className="flex gap-2">
+                  {inputCards.length > 0 && (
+                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                      <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Inputs</p>
+                      <Reorder.Group axis="y" values={inputCards}
+                        onReorder={(ni) => setCardOrder([...ni, ...outputCards])}
+                        className="flex flex-col gap-0.5"
+                      >
+                        {inputCards.map(card => (
+                          <Reorder.Item key={card.id} value={card}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                          >
+                            <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
+                            <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    </div>
+                  )}
+                  {outputCards.length > 0 && (
+                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                      <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Outputs</p>
+                      <Reorder.Group axis="y" values={outputCards}
+                        onReorder={(no) => setCardOrder([...inputCards, ...no])}
+                        className="flex flex-col gap-0.5"
+                      >
+                        {outputCards.map(card => (
+                          <Reorder.Item key={card.id} value={card}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                          >
+                            <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
+                            <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -595,97 +706,37 @@ function SelectionBar() {
                     ))}
                   </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">Layout</label>
-                  <div className="flex gap-1.5">
-                    {LAYOUTS.map((l) => (
-                      <button
-                        key={l.id}
-                        onClick={() => setLayout(l.id)}
-                        className={`flex-1 py-2 rounded-lg text-[0.62rem] font-heading font-bold transition-all ${
-                          layout === l.id
-                            ? 'bg-violet-500/50 text-white border-2 border-violet-300/80 shadow-[0_0_10px_rgba(124,58,237,0.35)]'
-                            : 'text-white/40 border border-white/12 hover:text-white/65 hover:border-white/25 hover:bg-white/5'
-                        }`}
-                      >
-                        {l.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {tab === 'details' && (
-              <motion.div key="details"
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
-                transition={{ duration: 0.14 }}
-                className="flex flex-col gap-3"
-              >
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
-                    Instructions <span className="normal-case font-normal text-white/22">· optional</span>
-                  </label>
-                  <textarea
-                    value={instructions}
-                    onChange={(e) => setInstructions(e.target.value)}
-                    maxLength={400}
-                    rows={3}
-                    placeholder="What does this app do? How should someone use it?"
-                    className={`${inputCls} resize-none leading-relaxed`}
-                  />
-                </div>
-                {!isAI && cardOrder.length > 0 && (
+                {!isAI && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
-                      Arrange Cards <span className="normal-case font-normal text-white/20">drag to reorder</span>
-                    </label>
-                    <div className="flex gap-2">
-                      {inputCards.length > 0 && (
-                        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                          <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Inputs</p>
-                          <Reorder.Group axis="y" values={inputCards}
-                            onReorder={(ni) => setCardOrder([...ni, ...outputCards])}
-                            className="flex flex-col gap-0.5"
-                          >
-                            {inputCards.map(card => (
-                              <Reorder.Item key={card.id} value={card}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
-                              >
-                                <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
-                                <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
-                              </Reorder.Item>
-                            ))}
-                          </Reorder.Group>
-                        </div>
-                      )}
-                      {outputCards.length > 0 && (
-                        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                          <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Outputs</p>
-                          <Reorder.Group axis="y" values={outputCards}
-                            onReorder={(no) => setCardOrder([...inputCards, ...no])}
-                            className="flex flex-col gap-0.5"
-                          >
-                            {outputCards.map(card => (
-                              <Reorder.Item key={card.id} value={card}
-                                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
-                              >
-                                <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
-                                <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
-                              </Reorder.Item>
-                            ))}
-                          </Reorder.Group>
-                        </div>
-                      )}
+                    <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">Layout</label>
+                    <div className="flex gap-1.5">
+                      {LAYOUTS.map((l) => (
+                        <button
+                          key={l.id}
+                          onClick={() => setLayout(l.id)}
+                          className={`flex-1 py-2 rounded-lg text-[0.62rem] font-heading font-bold transition-all ${
+                            layout === l.id
+                              ? 'bg-violet-500/50 text-white border-2 border-violet-300/80 shadow-[0_0_10px_rgba(124,58,237,0.35)]'
+                              : 'text-white/40 border border-white/12 hover:text-white/65 hover:border-white/25 hover:bg-white/5'
+                          }`}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
               </motion.div>
             )}
-          </AnimatePresence>
+          </AnimatePresence>}
         </div>
 
         {/* ── Footer ─────────────────────────────────── */}
+        {isExporting ? (
+          <div className="px-4 pb-3 pt-2 border-t border-white/6 flex justify-center">
+            <span className="text-[10px] font-heading text-white/30 animate-pulse">Preparing download…</span>
+          </div>
+        ) : (
         <div className="px-4 pb-3 pt-2 flex gap-2 border-t border-white/6">
           {activeTab > 0 ? (
             <button
@@ -718,6 +769,7 @@ function SelectionBar() {
             </button>
           )}
         </div>
+        )}
       </motion.div>
     )
   }
