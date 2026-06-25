@@ -359,6 +359,7 @@ function SelectionBar() {
   const [appName, setAppName] = useState('My AI App')
   const [theme, setTheme] = useState('space')
   const [layout, setLayout] = useState('classic')
+  const [creatorName, setCreatorName] = useState('')
 
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
@@ -382,7 +383,7 @@ function SelectionBar() {
   const count = canvasSelection.length
 
   useEffect(() => {
-    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic') }
+    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName('') }
   }, [count])
 
   if (count <= 1) return null
@@ -417,15 +418,16 @@ function SelectionBar() {
     const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
     if (derivedMode === 'ai-model') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportAIModel(name, selectedIds, theme as any)
+      exportAIModel(name, selectedIds, theme as any, creatorName.trim())
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportRuleApp(name, selectedIds, theme as any, layout as any)
+      exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim())
     }
     setShowNaming(false)
     setAppName('My AI App')
     setTheme('space')
     setLayout('classic')
+    setCreatorName('')
   }
 
   function handleDelete() {
@@ -484,6 +486,23 @@ function SelectionBar() {
           >
             ✕
           </button>
+        </div>
+        {/* row 1.5: creator name */}
+        <div className="flex items-center gap-2 pl-7">
+          <span className="text-xs font-heading text-white/55 whitespace-nowrap">Your name:</span>
+          <input
+            type="text"
+            value={creatorName}
+            onChange={(e) => setCreatorName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleConfirm()
+              if (e.key === 'Escape') setShowNaming(false)
+            }}
+            maxLength={30}
+            placeholder="optional"
+            className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-28 transition-all"
+          />
+          <span className="text-[0.63rem] text-white/20 italic">appears in your app</span>
         </div>
         {/* row 2: theme + (layout only for app mode) */}
         <div className="flex items-center gap-3 pl-7">

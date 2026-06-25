@@ -119,6 +119,7 @@ export function exportRuleApp(
   selectedIds?: Set<string>,
   theme: Theme = 'space',
   layout: Layout = 'classic',
+  creatorName = '',
 ): void {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
@@ -174,7 +175,7 @@ export function exportRuleApp(
     models,
   }
 
-  const html = buildHTML(appName, data, THEMES[theme], layout)
+  const html = buildHTML(appName, data, THEMES[theme], layout, creatorName)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -184,8 +185,9 @@ export function exportRuleApp(
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout): string {
+function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout, creatorName: string): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const dataJson = JSON.stringify(data)
 
   return `<!DOCTYPE html>
@@ -194,6 +196,11 @@ function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layou
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${safeTitle} — Made with ABITA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="${safeTitle}">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="${t.acc}">
 <style>
 :root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -314,9 +321,32 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.2)}
 @keyframes flake-rise{0%{transform:translateY(0) rotate(0deg);opacity:0.85}100%{transform:translateY(-56px) rotate(180deg);opacity:0}}
 footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 .empty-hint{color:rgba(255,255,255,0.18);font-size:0.82rem;font-style:italic;padding:1.5rem 0;text-align:center}
+.splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;background:linear-gradient(135deg,var(--bg1),var(--bg2));transition:opacity 0.6s ease;pointer-events:auto}
+.splash.hide{opacity:0;pointer-events:none}
+.splash-icon{font-size:4rem;animation:spl-in 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both}
+.splash-title{font-size:2rem;font-weight:900;text-align:center;max-width:80vw;line-height:1.15;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite,spl-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both}
+.splash-by{font-size:0.85rem;color:rgba(255,255,255,0.45);animation:spl-in 0.5s ease 0.55s both}
+.splash-badge{font-size:0.65rem;font-weight:800;color:rgba(167,139,250,0.8);border:1px solid rgba(167,139,250,0.25);padding:0.3rem 0.8rem;border-radius:9999px;background:rgba(139,92,246,0.08);animation:spl-in 0.5s ease 0.75s both}
+.splash-skip{position:absolute;top:1rem;right:1rem;font-size:0.7rem;color:rgba(255,255,255,0.25);cursor:pointer;background:none;border:none;font-family:inherit;transition:color 0.2s}
+.splash-skip:hover{color:rgba(255,255,255,0.6)}
+@keyframes spl-in{from{opacity:0;transform:scale(0.7) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9998;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;max-width:240px}
+.toast{background:rgba(18,14,42,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:0.55rem 1rem;font-size:0.78rem;font-weight:600;color:#fff;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transform:translateX(110%);transition:opacity 0.3s,transform 0.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(0)}
+.snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+@keyframes card-in{from{opacity:0;transform:scale(0.85) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
 </style>
 </head>
 <body>
+<div class="splash" id="splash">
+  <button class="splash-skip" onclick="hideSplash()">Skip ›</button>
+  <span class="splash-icon">🤖</span>
+  <div class="splash-title">${safeTitle}</div>
+  ${safeCreator ? `<div class="splash-by">An app by ${safeCreator}</div>` : ''}
+  <div class="splash-badge">⚡ Made with ABITA</div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
 <header>
   <div class="h-left">
     <span class="h-icon">🤖</span>
@@ -325,7 +355,10 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
       <div class="h-sub">AI Sandbox for Kids</div>
     </div>
   </div>
-  <span class="abita-badge">⚡ ABITA</span>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <button class="snd-btn" id="snd-toggle" onclick="toggleSound()" title="Toggle sounds">🔊</button>
+    <span class="abita-badge">⚡ ABITA</span>
+  </div>
 </header>
 <main class="layout-${layout}">
   <div class="in-panel">
@@ -338,8 +371,21 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
     <div id="output-cards"></div>
   </div>
 </main>
-<footer>Built with ABITA · AI Sandbox for Kids</footer>
+<footer>${safeCreator ? `An app by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
 <script>
+function hideSplash(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},650);}
+setTimeout(hideSplash,2500);
+function showToast(msg){var w=document.getElementById('toasts');if(!w)return;var t=document.createElement('div');t.className='toast';t.textContent=msg;w.appendChild(t);requestAnimationFrame(function(){requestAnimationFrame(function(){t.classList.add('show');});});setTimeout(function(){t.classList.remove('show');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},2800);}
+var _soundOn=true,_actx=null;
+function toggleSound(){_soundOn=!_soundOn;var b=document.getElementById('snd-toggle');if(b)b.textContent=_soundOn?'🔊':'🔇';}
+function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _actx;}
+function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
+function _sweep(f1,f2,dur){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.setValueAtTime(f1,c.currentTime);o.frequency.linearRampToValueAtTime(f2,c.currentTime+dur);g.gain.setValueAtTime(0.13,c.currentTime);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
+var _fanNode=null;
+function _startFan(){var c=_getCtx();if(!c||!_soundOn||_fanNode)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.value=65;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.05,c.currentTime+0.4);o.start();_fanNode={o:o,g:g};}
+function _stopFan(){if(!_fanNode)return;var c=_getCtx();if(c){try{_fanNode.g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.5);}catch(e){}}var fn=_fanNode;_fanNode=null;setTimeout(function(){try{fn.o.stop();}catch(e){}},600);}
+function playDeviceSound(type,on){if(!_soundOn)return;if(type==='bulb'){on?_blip(900,0.12):_blip(500,0.08);}else if(type==='fan'){on?_startFan():_stopFan();}else if(type==='alarm'&&on){_blip(880,0.12,'square');setTimeout(function(){_blip(880,0.12,'square');},200);setTimeout(function(){_blip(1100,0.12,'square');},400);}else if(type==='door'){on?_sweep(200,800,0.3):_sweep(800,200,0.3);}else if(type==='ac'&&on){_blip(300,0.4,'sawtooth');}}
+var _appReady=false;
 const APP = ${dataJson};
 
 const state = {
@@ -435,31 +481,42 @@ function evaluate(){
   for(var k=0;k<state.doors.length;k++)  state.doors[k]._open=state.doors[k].linkedRuleBlockId?getOut(state.doors[k].linkedRuleBlockId):false;
 }
 function updateOutputs(){
+  var wasOn;
   for(var i=0;i<state.bulbs.length;i++){
     var b=state.bulbs[i]; var el=document.getElementById('out-'+b.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
     el.className='out-card bulb-card'+(b._on?' on':'');
     document.getElementById('st-'+b.id).textContent=b._on?'● ON':'○ OFF';
+    if(_appReady&&b._on!==wasOn){showToast((b._on?'💡 ':'🌑 ')+b.name+(b._on?' turned ON':' turned OFF'));playDeviceSound('bulb',b._on);}
   }
   for(var i=0;i<state.fans.length;i++){
     var f=state.fans[i]; var el=document.getElementById('out-'+f.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
     el.className='out-card fan-card'+(f._on?' on':'');
     document.getElementById('st-'+f.id).textContent=f._on?'● SPINNING':'○ OFF';
+    if(_appReady&&f._on!==wasOn){showToast((f._on?'🌀 ':'💤 ')+f.name+(f._on?' turned ON':' turned OFF'));playDeviceSound('fan',f._on);}
   }
   for(var i=0;i<state.doors.length;i++){
     var d=state.doors[i]; var el=document.getElementById('out-'+d.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
     el.className='out-card door-card'+(d._open?' on':'');
     var dp=document.getElementById('dp-'+d.id); if(dp) dp.classList.toggle('open',d._open);
     document.getElementById('st-'+d.id).textContent=d._open?'● OPEN':'○ CLOSED';
+    if(_appReady&&d._open!==wasOn){showToast((d._open?'🚪 ':'🔒 ')+d.name+(d._open?' opened':' closed'));playDeviceSound('door',d._open);}
   }
   for(var i=0;i<state.alarms.length;i++){
     var a=state.alarms[i]; var el=document.getElementById('out-'+a.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
     el.className='out-card alarm-card'+(a._on?' on':'');
     document.getElementById('st-'+a.id).textContent=a._on?'● ACTIVE':'○ OFF';
+    if(_appReady&&a._on!==wasOn){showToast((a._on?'🚨 ':'🔕 ')+a.name+(a._on?' is ACTIVE':' turned off'));playDeviceSound('alarm',a._on);}
   }
   for(var i=0;i<state.acs.length;i++){
     var a=state.acs[i]; var el=document.getElementById('out-'+a.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
     el.className='out-card ac-card'+(a._on?' on':'');
     document.getElementById('st-'+a.id).textContent=a._on?'● COOLING':'○ OFF';
+    if(_appReady&&a._on!==wasOn){showToast((a._on?'❄️ ':'🌫️ ')+a.name+(a._on?' is COOLING':' turned off'));playDeviceSound('ac',a._on);}
   }
 }
 function fmtTime(s){var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
@@ -611,10 +668,12 @@ for(var tmi=0;tmi<state.timers.length;tmi++){
 var outCont=document.getElementById('output-cards');
 var hasOut=state.bulbs.length||state.fans.length||state.doors.length||state.alarms.length||state.acs.length;
 if(!hasOut){ outCont.innerHTML='<p class="empty-hint">No outputs connected.</p>'; }
+var _outIdx=0;
 
 for(var bi=0;bi<state.bulbs.length;bi++){
   var b=state.bulbs[bi];
   var el=document.createElement('div'); el.id='out-'+b.id; el.className='out-card bulb-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
   el.innerHTML=
     '<div class="out-visual">'+
       '<div class="bulb-glow"></div>'+
@@ -636,6 +695,7 @@ for(var bi=0;bi<state.bulbs.length;bi++){
 for(var fi=0;fi<state.fans.length;fi++){
   var f=state.fans[fi];
   var el=document.createElement('div'); el.id='out-'+f.id; el.className='out-card fan-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
   el.innerHTML=
     '<div class="out-visual">'+
       '<div class="fan-aura"></div>'+
@@ -660,6 +720,7 @@ for(var fi=0;fi<state.fans.length;fi++){
 for(var di=0;di<state.doors.length;di++){
   var d=state.doors[di];
   var el=document.createElement('div'); el.id='out-'+d.id; el.className='out-card door-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
   el.innerHTML=
     '<div class="out-visual">'+
       '<div class="door-scene">'+
@@ -681,6 +742,7 @@ for(var di=0;di<state.doors.length;di++){
 for(var ai=0;ai<state.alarms.length;ai++){
   var a=state.alarms[ai];
   var el=document.createElement('div'); el.id='out-'+a.id; el.className='out-card alarm-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
   el.innerHTML=
     '<div class="out-visual">'+
       '<div class="alarm-ring"></div>'+
@@ -698,6 +760,7 @@ for(var ai=0;ai<state.alarms.length;ai++){
 for(var ci=0;ci<state.acs.length;ci++){
   var ac=state.acs[ci];
   var el=document.createElement('div'); el.id='out-'+ac.id; el.className='out-card ac-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
   el.innerHTML=
     '<div class="out-visual">'+
       '<span class="flake">❄</span><span class="flake">❄</span><span class="flake">❄</span>'+
@@ -719,6 +782,7 @@ for(var ci=0;ci<state.acs.length;ci++){
 }
 
 refresh();
+_appReady=true;
 <\/script>
 </body>
 </html>`
@@ -730,6 +794,7 @@ export function exportAIModel(
   appName = 'My AI Model',
   selectedIds?: Set<string>,
   theme: Theme = 'space',
+  creatorName = '',
 ): void {
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
   const modelState = useModelStore.getState()
@@ -749,7 +814,7 @@ export function exportAIModel(
       }
     })
 
-  const html = buildAIModelHTML(appName, models, THEMES[theme])
+  const html = buildAIModelHTML(appName, models, THEMES[theme], creatorName)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -768,8 +833,10 @@ function buildAIModelHTML(
     labels: string[]; labelIds: string[];
   }>,
   t: typeof THEMES[Theme],
+  creatorName: string,
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const modelsJson = JSON.stringify(models)
 
   return `<!DOCTYPE html>
@@ -778,6 +845,11 @@ function buildAIModelHTML(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${safeTitle} — Made with ABITA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="${safeTitle}">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="${t.acc}">
 <style>
 :root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -817,9 +889,31 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 @keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
+.splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;background:linear-gradient(135deg,var(--bg1),var(--bg2));transition:opacity 0.6s ease;pointer-events:auto}
+.splash.hide{opacity:0;pointer-events:none}
+.splash-icon{font-size:4rem;animation:spl-in 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both}
+.splash-title{font-size:2rem;font-weight:900;text-align:center;max-width:80vw;line-height:1.15;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite,spl-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both}
+.splash-by{font-size:0.85rem;color:rgba(255,255,255,0.45);animation:spl-in 0.5s ease 0.55s both}
+.splash-badge{font-size:0.65rem;font-weight:800;color:rgba(167,139,250,0.8);border:1px solid rgba(167,139,250,0.25);padding:0.3rem 0.8rem;border-radius:9999px;background:rgba(139,92,246,0.08);animation:spl-in 0.5s ease 0.75s both}
+.splash-skip{position:absolute;top:1rem;right:1rem;font-size:0.7rem;color:rgba(255,255,255,0.25);cursor:pointer;background:none;border:none;font-family:inherit;transition:color 0.2s}
+.splash-skip:hover{color:rgba(255,255,255,0.6)}
+@keyframes spl-in{from{opacity:0;transform:scale(0.7) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9998;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;max-width:240px}
+.toast{background:rgba(18,14,42,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:0.55rem 1rem;font-size:0.78rem;font-weight:600;color:#fff;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transform:translateX(110%);transition:opacity 0.3s,transform 0.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(0)}
+.snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
 </style>
 </head>
 <body>
+<div class="splash" id="splash">
+  <button class="splash-skip" onclick="hideSplash()">Skip ›</button>
+  <span class="splash-icon">🧠</span>
+  <div class="splash-title">${safeTitle}</div>
+  ${safeCreator ? `<div class="splash-by">Made by ${safeCreator}</div>` : ''}
+  <div class="splash-badge">⚡ Made with ABITA</div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
 <header>
   <div class="h-left">
     <span class="h-icon">🧠</span>
@@ -828,11 +922,21 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
       <div class="h-sub">AI Model — Made with ABITA</div>
     </div>
   </div>
-  <span class="abita-badge">⚡ ABITA</span>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <button class="snd-btn" id="snd-toggle" onclick="toggleSound()" title="Toggle sounds">🔊</button>
+    <span class="abita-badge">⚡ ABITA</span>
+  </div>
 </header>
 <main id="cards"></main>
-<footer>Built with ABITA · AI Sandbox for Kids</footer>
+<footer>${safeCreator ? `Made by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
 <script>
+function hideSplash(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},650);}
+setTimeout(hideSplash,2500);
+function showToast(msg){var w=document.getElementById('toasts');if(!w)return;var t=document.createElement('div');t.className='toast';t.textContent=msg;w.appendChild(t);requestAnimationFrame(function(){requestAnimationFrame(function(){t.classList.add('show');});});setTimeout(function(){t.classList.remove('show');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},2800);}
+var _soundOn=true,_actx=null;
+function toggleSound(){_soundOn=!_soundOn;var b=document.getElementById('snd-toggle');if(b)b.textContent=_soundOn?'🔊':'🔇';}
+function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _actx;}
+function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
 var MODELS = ${modelsJson};
 
 function tokenizeNB(t){
@@ -881,6 +985,8 @@ function predict(modelId,inputId,resultsId){
     '</div>';
   }
   el.innerHTML=html;
+  showToast('🎯 '+res.bestLabel+' — '+Math.round(sorted[0].p*100)+'% confident');
+  _blip(660,0.15);
 }
 
 var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
