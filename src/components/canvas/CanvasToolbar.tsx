@@ -13,7 +13,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
-import { Reorder } from 'framer-motion'
+import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport, getExportCards, ExportCardInfo } from '@/lib/exportRuleApp'
 
 type BlockType =
@@ -473,161 +473,201 @@ function SelectionBar() {
 
   if (showNaming) {
     const isAI = derivedMode === 'ai-model'
+    const inputCards  = cardOrder.filter(c => c.category === 'input')
+    const outputCards = cardOrder.filter(c => c.category === 'output')
     return (
-      <div className="flex flex-col gap-2 px-3 py-2.5 glass-panel rounded-xl">
-        {/* row 1: name + download + close */}
-        <div className="flex items-center gap-2">
-          <span className="text-base leading-none">{isAI ? '🧠' : '🚀'}</span>
-          <span className="text-xs font-heading text-white/55 whitespace-nowrap">{isAI ? 'Model name:' : 'App name:'}</span>
-          <input
-            type="text"
-            value={appName}
-            onChange={(e) => setAppName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleConfirm()
-              if (e.key === 'Escape') setShowNaming(false)
-            }}
-            autoFocus
-            maxLength={40}
-            placeholder={isAI ? 'My AI Model' : 'My AI App'}
-            className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-36 transition-all"
-          />
-          <button
-            onClick={handleConfirm}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30 transition-all whitespace-nowrap"
-          >
-            📥 Download
-          </button>
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="glass-panel rounded-2xl overflow-hidden w-[500px] shadow-2xl shadow-black/50"
+      >
+        {/* ── Header ─────────────────────────────────────────────── */}
+        <div className="relative flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-violet-600/25 via-violet-500/12 to-teal-500/10 border-b border-white/8">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-teal-400 flex items-center justify-center text-lg flex-shrink-0 shadow-[0_0_14px_rgba(124,58,237,0.45)]">
+            {isAI ? '🧠' : '🚀'}
+          </div>
+          <div>
+            <p className="text-[10px] font-heading font-bold text-violet-300/55 uppercase tracking-[0.15em]">Export</p>
+            <p className="text-sm font-heading font-extrabold text-white leading-tight">{isAI ? 'AI Model' : 'App'}</p>
+          </div>
           <button
             onClick={() => setShowNaming(false)}
-            className="text-white/35 hover:text-white/70 text-xs font-heading transition-colors px-0.5"
+            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors text-sm"
           >
             ✕
           </button>
         </div>
-        {/* row 1.5: creator name */}
-        <div className="flex items-center gap-2 pl-7">
-          <span className="text-xs font-heading text-white/55 whitespace-nowrap">Your name:</span>
-          <input
-            type="text"
-            value={creatorName}
-            onChange={(e) => setCreatorName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setShowNaming(false)
-            }}
-            maxLength={30}
-            placeholder="optional"
-            className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-28 transition-all"
-          />
-          <span className="text-[0.63rem] text-white/20 italic">appears in your app</span>
-        </div>
-        {/* row 1.75: instructions */}
-        <div className="flex items-start gap-2 pl-7">
-          <span className="text-xs font-heading text-white/55 whitespace-nowrap pt-1.5">Instructions:</span>
-          <textarea
-            value={instructions}
-            onChange={(e) => setInstructions(e.target.value)}
-            maxLength={400}
-            rows={2}
-            placeholder="Describe your app — what it does, how to use it… (optional)"
-            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 transition-all resize-none placeholder:text-white/25"
-          />
-        </div>
-        {/* row 2: theme + (layout only for app mode) */}
-        <div className="flex items-center gap-3 pl-7">
-          <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Theme</span>
-          <div className="flex items-center gap-1.5">
-            {SWATCHES.map((s) => (
-              <button
-                key={s.id}
-                title={s.label}
-                onClick={() => setTheme(s.id)}
-                style={{ background: `linear-gradient(135deg,${s.from},${s.to})` }}
-                className={`w-5 h-5 rounded-full transition-all flex items-center justify-center text-[0.55rem] ${
-                  theme === s.id
-                    ? 'ring-2 ring-white ring-offset-1 ring-offset-transparent scale-110'
-                    : 'opacity-55 hover:opacity-85'
-                }`}
-              >
-                {s.emoji}
-              </button>
-            ))}
+
+        {/* ── Body ───────────────────────────────────────────────── */}
+        <div className="p-4 flex flex-col gap-3.5">
+
+          {/* Name + Creator */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
+                {isAI ? 'Model Name' : 'App Name'}
+              </label>
+              <input
+                autoFocus
+                type="text"
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleConfirm(); if (e.key === 'Escape') setShowNaming(false) }}
+                maxLength={40}
+                placeholder={isAI ? 'My AI Model' : 'My AI App'}
+                className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all placeholder:text-white/22"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
+                Your Name <span className="normal-case font-normal text-white/22">· optional</span>
+              </label>
+              <input
+                type="text"
+                value={creatorName}
+                onChange={(e) => setCreatorName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setShowNaming(false) }}
+                maxLength={30}
+                placeholder="e.g. Alex"
+                className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all placeholder:text-white/22"
+              />
+            </div>
           </div>
+
+          {/* Instructions */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
+              Instructions <span className="normal-case font-normal text-white/22">· optional</span>
+            </label>
+            <textarea
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+              maxLength={400}
+              rows={3}
+              placeholder="Describe your app — what it does, how to use it, what it can predict…"
+              className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all resize-none placeholder:text-white/22 leading-relaxed"
+            />
+          </div>
+
+          {/* Theme */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">Theme</label>
+            <div className="flex gap-1.5">
+              {SWATCHES.map((s) => (
+                <button
+                  key={s.id}
+                  title={s.label}
+                  onClick={() => setTheme(s.id)}
+                  style={{ background: `linear-gradient(135deg,${s.from},${s.to})` }}
+                  className={`flex-1 h-9 rounded-xl flex items-center justify-center gap-1 font-heading font-bold transition-all ${
+                    theme === s.id
+                      ? 'ring-2 ring-white/55 scale-[1.04] text-white text-xs shadow-lg'
+                      : 'opacity-40 hover:opacity-70 text-white/80 text-xs'
+                  }`}
+                >
+                  {s.emoji} <span className="text-[0.6rem]">{s.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Layout (app only) */}
           {!isAI && (
-            <>
-              <span className="text-white/15 text-xs">·</span>
-              <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest whitespace-nowrap">Layout</span>
-              <div className="flex items-center gap-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">Layout</label>
+              <div className="flex gap-1.5">
                 {LAYOUTS.map((l) => (
                   <button
                     key={l.id}
                     onClick={() => setLayout(l.id)}
-                    className={`px-2 py-0.5 rounded-md text-[0.65rem] font-heading font-semibold transition-all whitespace-nowrap ${
+                    className={`flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all ${
                       layout === l.id
-                        ? 'bg-white/15 text-white border border-white/30'
-                        : 'text-white/35 border border-white/10 hover:text-white/60 hover:border-white/20'
+                        ? 'bg-violet-500/25 text-white border border-violet-400/50 shadow-[0_0_12px_rgba(124,58,237,0.2)]'
+                        : 'text-white/38 border border-white/10 hover:text-white/65 hover:border-white/22 hover:bg-white/5'
                     }`}
                   >
                     {l.label}
                   </button>
                 ))}
               </div>
-            </>
+            </div>
+          )}
+
+          {/* Card reorder (app only) */}
+          {!isAI && cardOrder.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
+                Arrange Cards <span className="normal-case font-normal text-white/22">· drag to reorder</span>
+              </label>
+              <div className="flex gap-2.5 max-h-40 overflow-y-auto">
+                <AnimatePresence>
+                  {inputCards.length > 0 && (
+                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                      <p className="text-[9px] font-heading font-bold text-white/25 uppercase tracking-wider pb-0.5">📥 Inputs</p>
+                      <Reorder.Group
+                        axis="y"
+                        values={inputCards}
+                        onReorder={(ni) => setCardOrder([...ni, ...outputCards])}
+                        className="flex flex-col gap-0.5"
+                      >
+                        {inputCards.map(card => (
+                          <Reorder.Item
+                            key={card.id}
+                            value={card}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 hover:border-white/18 transition-colors"
+                          >
+                            <span className="text-white/25 text-xs select-none">⠿</span>
+                            <span className="text-[0.7rem] font-heading text-white/70 whitespace-nowrap">{card.icon} {card.name}</span>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    </div>
+                  )}
+                  {outputCards.length > 0 && (
+                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                      <p className="text-[9px] font-heading font-bold text-white/25 uppercase tracking-wider pb-0.5">📤 Outputs</p>
+                      <Reorder.Group
+                        axis="y"
+                        values={outputCards}
+                        onReorder={(no) => setCardOrder([...inputCards, ...no])}
+                        className="flex flex-col gap-0.5"
+                      >
+                        {outputCards.map(card => (
+                          <Reorder.Item
+                            key={card.id}
+                            value={card}
+                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 hover:border-white/18 transition-colors"
+                          >
+                            <span className="text-white/25 text-xs select-none">⠿</span>
+                            <span className="text-[0.7rem] font-heading text-white/70 whitespace-nowrap">{card.icon} {card.name}</span>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
           )}
         </div>
-        {/* row 3: card reorder (rule-app only, when there are cards) */}
-        {!isAI && cardOrder.length > 0 && (
-          <div className="flex flex-col gap-1 pl-7">
-            <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest">Arrange Cards</span>
-            <div className="flex gap-3 max-h-40 overflow-y-auto">
-              {cardOrder.filter(c => c.category === 'input').length > 0 && (
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-[0.58rem] text-white/22 font-heading uppercase tracking-wider pb-0.5">Inputs</span>
-                  <Reorder.Group
-                    axis="y"
-                    values={cardOrder.filter(c => c.category === 'input')}
-                    onReorder={(ni) => setCardOrder([...ni, ...cardOrder.filter(c => c.category === 'output')])}
-                    className="flex flex-col gap-0.5"
-                  >
-                    {cardOrder.filter(c => c.category === 'input').map(card => (
-                      <Reorder.Item
-                        key={card.id}
-                        value={card}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none"
-                      >
-                        <span className="text-[0.6rem] text-white/22">⠿</span>
-                        <span className="text-[0.65rem] font-heading text-white/65 whitespace-nowrap">{card.icon} {card.name}</span>
-                      </Reorder.Item>
-                    ))}
-                  </Reorder.Group>
-                </div>
-              )}
-              {cardOrder.filter(c => c.category === 'output').length > 0 && (
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="text-[0.58rem] text-white/22 font-heading uppercase tracking-wider pb-0.5">Outputs</span>
-                  <Reorder.Group
-                    axis="y"
-                    values={cardOrder.filter(c => c.category === 'output')}
-                    onReorder={(no) => setCardOrder([...cardOrder.filter(c => c.category === 'input'), ...no])}
-                    className="flex flex-col gap-0.5"
-                  >
-                    {cardOrder.filter(c => c.category === 'output').map(card => (
-                      <Reorder.Item
-                        key={card.id}
-                        value={card}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none"
-                      >
-                        <span className="text-[0.6rem] text-white/22">⠿</span>
-                        <span className="text-[0.65rem] font-heading text-white/65 whitespace-nowrap">{card.icon} {card.name}</span>
-                      </Reorder.Item>
-                    ))}
-                  </Reorder.Group>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+
+        {/* ── Footer ─────────────────────────────────────────────── */}
+        <div className="px-4 pb-4 flex gap-2">
+          <button
+            onClick={() => setShowNaming(false)}
+            className="px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-colors bg-white/5 hover:bg-white/10 text-white/45 hover:text-white/75 border border-white/10"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="flex-1 py-2.5 rounded-xl text-sm font-heading font-bold bg-gradient-to-r from-violet-500 to-teal-400 text-white hover:shadow-[0_0_22px_rgba(124,58,237,0.5)] hover:scale-[1.01] transition-all"
+          >
+            📥 Download {isAI ? 'Model' : 'App'}
+          </button>
+        </div>
+      </motion.div>
     )
   }
 
