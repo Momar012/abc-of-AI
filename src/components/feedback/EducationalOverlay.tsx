@@ -50,6 +50,7 @@ export default function EducationalOverlay() {
                 { icon: '🏷️', text: <>Teach AI using <span className="text-pink-300 font-semibold">labels</span> and examples</> },
                 { icon: '🧪', text: <>Train models and <span className="text-emerald-300 font-semibold">test</span> their predictions</> },
                 { icon: '🚀', text: <>Explore the world of AI through <span className="text-amber-300 font-semibold">play</span></> },
+                { icon: '⭐', text: <>Build interactive <span className="text-yellow-300 font-semibold">apps</span> and share them</> },
               ].map(({ icon, text }, i) => (
                 <div key={i} className="flex items-center gap-3 text-sm text-white/70 font-body">
                   <span className="text-xl">{icon}</span>
