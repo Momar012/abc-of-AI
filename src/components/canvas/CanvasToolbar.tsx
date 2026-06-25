@@ -364,6 +364,7 @@ function SelectionBar() {
   const [creatorName, setCreatorName] = useState('')
   const [instructions, setInstructions] = useState('')
   const [cardOrder, setCardOrder] = useState<ExportCardInfo[]>([])
+  const [activeTab, setActiveTab] = useState(0)
 
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
@@ -389,7 +390,7 @@ function SelectionBar() {
 
   useEffect(() => {
     if (count === 0 || (count === 1 && canvasSelection[0]?.type !== 'model')) {
-      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName(''); setInstructions(''); setCardOrder([])
+      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName(''); setInstructions(''); setCardOrder([]); setActiveTab(0)
     }
   }, [count, canvasSelection])
 
@@ -446,6 +447,7 @@ function SelectionBar() {
     setCreatorName('')
     setInstructions('')
     setCardOrder([])
+    setActiveTab(0)
   }
 
   function handleDelete() {
@@ -475,197 +477,246 @@ function SelectionBar() {
     const isAI = derivedMode === 'ai-model'
     const inputCards  = cardOrder.filter(c => c.category === 'input')
     const outputCards = cardOrder.filter(c => c.category === 'output')
+    const inputCls = "w-full bg-white/[0.06] [color-scheme:dark] border border-white/12 rounded-lg px-2.5 py-1.5 text-xs text-white font-heading outline-none focus:border-violet-400/50 focus:bg-white/10 transition-all placeholder:text-white/25"
+
+    const tabs = isAI
+      ? [{ id: 'name', label: '🏷️ Name' }, { id: 'details', label: '📋 Details' }]
+      : [{ id: 'name', label: '🏷️ Name' }, { id: 'style', label: '🎨 Style' }, { id: 'details', label: '📋 Details' }]
+
+    const tab = tabs[activeTab]?.id ?? 'name'
+
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.97 }}
+        initial={{ opacity: 0, y: 8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.18, ease: 'easeOut' }}
-        className="glass-panel rounded-2xl overflow-hidden w-[500px] shadow-2xl shadow-black/50"
+        transition={{ duration: 0.16, ease: 'easeOut' }}
+        className="glass-panel rounded-2xl overflow-hidden shadow-2xl shadow-black/50"
+        style={{ width: 'min(400px, calc(100vw - 1.5rem))' }}
       >
-        {/* ── Header ─────────────────────────────────────────────── */}
-        <div className="relative flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-violet-600/25 via-violet-500/12 to-teal-500/10 border-b border-white/8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-teal-400 flex items-center justify-center text-lg flex-shrink-0 shadow-[0_0_14px_rgba(124,58,237,0.45)]">
-            {isAI ? '🧠' : '🚀'}
-          </div>
-          <div>
-            <p className="text-[10px] font-heading font-bold text-violet-300/55 uppercase tracking-[0.15em]">Export</p>
-            <p className="text-sm font-heading font-extrabold text-white leading-tight">{isAI ? 'AI Model' : 'App'}</p>
-          </div>
+        {/* ── Header ─────────────────────────────────── */}
+        <div className="relative flex items-center gap-2.5 px-4 py-2.5 bg-gradient-to-r from-violet-600/22 via-violet-500/10 to-teal-500/8 border-b border-white/8">
+          <span className="text-base leading-none">{isAI ? '🧠' : '🚀'}</span>
+          <span className="text-[10px] font-heading font-bold text-violet-300/55 uppercase tracking-[0.14em]">Export</span>
+          <span className="text-white/15 text-xs">·</span>
+          <span className="text-xs font-heading font-bold text-white/80">{isAI ? 'AI Model' : 'App'}</span>
           <button
             onClick={() => setShowNaming(false)}
-            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-lg text-white/30 hover:text-white hover:bg-white/10 transition-colors text-sm"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-white/28 hover:text-white/75 hover:bg-white/10 transition-colors text-xs"
           >
             ✕
           </button>
         </div>
 
-        {/* ── Body ───────────────────────────────────────────────── */}
-        <div className="p-4 flex flex-col gap-3.5">
-
-          {/* Name + Creator */}
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
-                {isAI ? 'Model Name' : 'App Name'}
-              </label>
-              <input
-                autoFocus
-                type="text"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleConfirm(); if (e.key === 'Escape') setShowNaming(false) }}
-                maxLength={40}
-                placeholder={isAI ? 'My AI Model' : 'My AI App'}
-                className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all placeholder:text-white/22"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
-                Your Name <span className="normal-case font-normal text-white/22">· optional</span>
-              </label>
-              <input
-                type="text"
-                value={creatorName}
-                onChange={(e) => setCreatorName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Escape') setShowNaming(false) }}
-                maxLength={30}
-                placeholder="e.g. Alex"
-                className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all placeholder:text-white/22"
-              />
-            </div>
-          </div>
-
-          {/* Instructions */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
-              Instructions <span className="normal-case font-normal text-white/22">· optional</span>
-            </label>
-            <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              maxLength={400}
-              rows={3}
-              placeholder="Describe your app — what it does, how to use it, what it can predict…"
-              className="bg-white/7 border border-white/14 rounded-xl px-3 py-2 text-sm text-white font-heading outline-none focus:border-violet-400/55 focus:bg-white/10 transition-all resize-none placeholder:text-white/22 leading-relaxed"
-            />
-          </div>
-
-          {/* Theme */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">Theme</label>
-            <div className="flex gap-1.5">
-              {SWATCHES.map((s) => (
-                <button
-                  key={s.id}
-                  title={s.label}
-                  onClick={() => setTheme(s.id)}
-                  style={{ background: `linear-gradient(135deg,${s.from},${s.to})` }}
-                  className={`flex-1 h-9 rounded-xl flex items-center justify-center gap-1 font-heading font-bold transition-all ${
-                    theme === s.id
-                      ? 'ring-2 ring-white/55 scale-[1.04] text-white text-xs shadow-lg'
-                      : 'opacity-40 hover:opacity-70 text-white/80 text-xs'
-                  }`}
-                >
-                  {s.emoji} <span className="text-[0.6rem]">{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Layout (app only) */}
-          {!isAI && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">Layout</label>
-              <div className="flex gap-1.5">
-                {LAYOUTS.map((l) => (
-                  <button
-                    key={l.id}
-                    onClick={() => setLayout(l.id)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all ${
-                      layout === l.id
-                        ? 'bg-violet-500/25 text-white border border-violet-400/50 shadow-[0_0_12px_rgba(124,58,237,0.2)]'
-                        : 'text-white/38 border border-white/10 hover:text-white/65 hover:border-white/22 hover:bg-white/5'
-                    }`}
-                  >
-                    {l.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Card reorder (app only) */}
-          {!isAI && cardOrder.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-heading font-bold text-white/38 uppercase tracking-wider">
-                Arrange Cards <span className="normal-case font-normal text-white/22">· drag to reorder</span>
-              </label>
-              <div className="flex gap-2.5 max-h-40 overflow-y-auto">
-                <AnimatePresence>
-                  {inputCards.length > 0 && (
-                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                      <p className="text-[9px] font-heading font-bold text-white/25 uppercase tracking-wider pb-0.5">📥 Inputs</p>
-                      <Reorder.Group
-                        axis="y"
-                        values={inputCards}
-                        onReorder={(ni) => setCardOrder([...ni, ...outputCards])}
-                        className="flex flex-col gap-0.5"
-                      >
-                        {inputCards.map(card => (
-                          <Reorder.Item
-                            key={card.id}
-                            value={card}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 hover:border-white/18 transition-colors"
-                          >
-                            <span className="text-white/25 text-xs select-none">⠿</span>
-                            <span className="text-[0.7rem] font-heading text-white/70 whitespace-nowrap">{card.icon} {card.name}</span>
-                          </Reorder.Item>
-                        ))}
-                      </Reorder.Group>
-                    </div>
-                  )}
-                  {outputCards.length > 0 && (
-                    <div className="flex-1 flex flex-col gap-0.5 min-w-0">
-                      <p className="text-[9px] font-heading font-bold text-white/25 uppercase tracking-wider pb-0.5">📤 Outputs</p>
-                      <Reorder.Group
-                        axis="y"
-                        values={outputCards}
-                        onReorder={(no) => setCardOrder([...inputCards, ...no])}
-                        className="flex flex-col gap-0.5"
-                      >
-                        {outputCards.map(card => (
-                          <Reorder.Item
-                            key={card.id}
-                            value={card}
-                            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 hover:border-white/18 transition-colors"
-                          >
-                            <span className="text-white/25 text-xs select-none">⠿</span>
-                            <span className="text-[0.7rem] font-heading text-white/70 whitespace-nowrap">{card.icon} {card.name}</span>
-                          </Reorder.Item>
-                        ))}
-                      </Reorder.Group>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
+        {/* ── Tabs ───────────────────────────────────── */}
+        <div className="flex gap-1 px-4 pt-3">
+          {tabs.map((t, i) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(i)}
+              className={`flex-1 py-1.5 rounded-lg text-[0.65rem] font-heading font-bold transition-all ${
+                activeTab === i
+                  ? 'bg-violet-500/20 text-white border border-violet-400/40'
+                  : 'text-white/30 border border-white/8 hover:text-white/55 hover:border-white/18 hover:bg-white/5'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
-        {/* ── Footer ─────────────────────────────────────────────── */}
-        <div className="px-4 pb-4 flex gap-2">
-          <button
-            onClick={() => setShowNaming(false)}
-            className="px-4 py-2.5 rounded-xl text-xs font-heading font-bold transition-colors bg-white/5 hover:bg-white/10 text-white/45 hover:text-white/75 border border-white/10"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-heading font-bold bg-gradient-to-r from-violet-500 to-teal-400 text-white hover:shadow-[0_0_22px_rgba(124,58,237,0.5)] hover:scale-[1.01] transition-all"
-          >
-            📥 Download {isAI ? 'Model' : 'App'}
-          </button>
+        {/* ── Tab content — fixed height ──────────────── */}
+        <div className="px-4 pt-3 pb-2 h-[172px] overflow-y-auto">
+          <AnimatePresence mode="wait">
+            {tab === 'name' && (
+              <motion.div key="name"
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.14 }}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                    {isAI ? 'Model Name' : 'App Name'}
+                  </label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleConfirm(); if (e.key === 'Escape') setShowNaming(false) }}
+                    maxLength={40}
+                    placeholder={isAI ? 'My AI Model' : 'My AI App'}
+                    className={inputCls}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                    Your Name <span className="normal-case font-normal text-white/22">· optional</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={creatorName}
+                    onChange={(e) => setCreatorName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Escape') setShowNaming(false) }}
+                    maxLength={30}
+                    placeholder="e.g. Alex"
+                    className={inputCls}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {tab === 'style' && (
+              <motion.div key="style"
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.14 }}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">Theme</label>
+                  <div className="flex gap-1.5">
+                    {SWATCHES.map((s) => (
+                      <button
+                        key={s.id}
+                        title={s.label}
+                        onClick={() => setTheme(s.id)}
+                        style={{ background: `linear-gradient(135deg,${s.from},${s.to})` }}
+                        className={`relative flex-1 h-12 rounded-lg flex flex-col items-center justify-center gap-0.5 transition-all ${
+                          theme === s.id
+                            ? 'ring-[2.5px] ring-white scale-[1.08] shadow-lg'
+                            : 'opacity-35 hover:opacity-75 hover:scale-[1.03]'
+                        }`}
+                      >
+                        {theme === s.id && (
+                          <span className="absolute top-0.5 right-1 text-[0.55rem] text-white font-bold leading-none drop-shadow">✓</span>
+                        )}
+                        <span className="text-lg leading-none">{s.emoji}</span>
+                        <span className="text-[0.48rem] text-white font-heading font-bold leading-none tracking-wide">{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">Layout</label>
+                  <div className="flex gap-1.5">
+                    {LAYOUTS.map((l) => (
+                      <button
+                        key={l.id}
+                        onClick={() => setLayout(l.id)}
+                        className={`flex-1 py-2 rounded-lg text-[0.62rem] font-heading font-bold transition-all ${
+                          layout === l.id
+                            ? 'bg-violet-500/50 text-white border-2 border-violet-300/80 shadow-[0_0_10px_rgba(124,58,237,0.35)]'
+                            : 'text-white/40 border border-white/12 hover:text-white/65 hover:border-white/25 hover:bg-white/5'
+                        }`}
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {tab === 'details' && (
+              <motion.div key="details"
+                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.14 }}
+                className="flex flex-col gap-3"
+              >
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                    Instructions <span className="normal-case font-normal text-white/22">· optional</span>
+                  </label>
+                  <textarea
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    maxLength={400}
+                    rows={3}
+                    placeholder="What does this app do? How should someone use it?"
+                    className={`${inputCls} resize-none leading-relaxed`}
+                  />
+                </div>
+                {!isAI && cardOrder.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-heading font-bold text-white/35 uppercase tracking-wider">
+                      Arrange Cards <span className="normal-case font-normal text-white/20">drag to reorder</span>
+                    </label>
+                    <div className="flex gap-2">
+                      {inputCards.length > 0 && (
+                        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                          <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Inputs</p>
+                          <Reorder.Group axis="y" values={inputCards}
+                            onReorder={(ni) => setCardOrder([...ni, ...outputCards])}
+                            className="flex flex-col gap-0.5"
+                          >
+                            {inputCards.map(card => (
+                              <Reorder.Item key={card.id} value={card}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                              >
+                                <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
+                                <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
+                        </div>
+                      )}
+                      {outputCards.length > 0 && (
+                        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                          <p className="text-[8px] font-heading font-bold text-white/22 uppercase tracking-wider mb-0.5">Outputs</p>
+                          <Reorder.Group axis="y" values={outputCards}
+                            onReorder={(no) => setCardOrder([...inputCards, ...no])}
+                            className="flex flex-col gap-0.5"
+                          >
+                            {outputCards.map(card => (
+                              <Reorder.Item key={card.id} value={card}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                              >
+                                <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
+                                <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                              </Reorder.Item>
+                            ))}
+                          </Reorder.Group>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ── Footer ─────────────────────────────────── */}
+        <div className="px-4 pb-3 pt-2 flex gap-2 border-t border-white/6">
+          {activeTab > 0 ? (
+            <button
+              onClick={() => setActiveTab(t => t - 1)}
+              className="px-4 py-2 rounded-xl text-xs font-heading font-bold bg-white/5 hover:bg-white/8 text-white/38 hover:text-white/65 border border-white/8 transition-all"
+            >
+              ← Back
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowNaming(false)}
+              className="px-4 py-2 rounded-xl text-xs font-heading font-bold bg-white/5 hover:bg-white/8 text-white/38 hover:text-white/65 border border-white/8 transition-all"
+            >
+              Cancel
+            </button>
+          )}
+          {activeTab < tabs.length - 1 ? (
+            <button
+              onClick={() => setActiveTab(t => t + 1)}
+              className="flex-1 py-2 rounded-xl text-xs font-heading font-bold bg-white/10 hover:bg-white/15 text-white/80 border border-white/15 transition-all"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              onClick={handleConfirm}
+              className="flex-1 py-2 rounded-xl text-xs font-heading font-bold bg-gradient-to-r from-violet-500 to-teal-400 text-white hover:shadow-[0_0_18px_rgba(124,58,237,0.45)] hover:brightness-105 active:scale-[0.99] transition-all"
+            >
+              📥 Download {isAI ? 'Model' : 'App'}
+            </button>
+          )}
         </div>
       </motion.div>
     )
