@@ -52,6 +52,9 @@ export interface TrainedModel {
   textAllVectors?: Array<{ labelId: string; itemId?: string; vec: number[] }>
   nbWordLogProbs?: Record<string, number[]>
   nbClassLogPriors?: Record<string, number>
+  clusterCentroids?: number[][]
+  clusterVocab?: string[]
+  clusterIdfWeights?: number[]
 }
 
 export interface TestResult {

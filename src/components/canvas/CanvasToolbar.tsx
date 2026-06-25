@@ -345,10 +345,10 @@ const EXPORT_TOOLTIPS: Record<string, string> = {
   'unsupported-model-type': 'Only text classifier models can be exported (not image models)',
 }
 const AI_EXPORT_TOOLTIPS: Record<string, string> = {
-  ok:               'Export your AI classifier as a standalone demo',
-  'no-model':       'Select a trained text model to export',
+  ok:               'Export your AI model as a standalone app',
+  'no-model':       'Select a trained model to export',
   'untrained-model':'This model hasn\'t been trained yet',
-  'unsupported-type':'Only text classifier models can be exported (not image models)',
+  'unsupported-type':'Text corpus models cannot be exported yet',
 }
 
 function SelectionBar() {

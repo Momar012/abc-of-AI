@@ -5,8 +5,8 @@ import { v4 as uuid } from 'uuid'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { trainImageSupervisedModel, runInference, clusterImages } from '@/lib/trainModel'
-import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts } from '@/lib/textLearner'
+import { trainImageSupervisedModel, runInference, clusterImages, ClusterImagesResult } from '@/lib/trainModel'
+import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts, ClusterTextsResult } from '@/lib/textLearner'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import { TrainedModel, TestResult, ChatMessage } from '@/types/model'
 
@@ -137,14 +137,29 @@ export default function ModelInspector() {
     updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
 
     try {
-      const result = await clusterImages(imageItems, k, (message, step, total) => {
+      const { results, centroids }: ClusterImagesResult = await clusterImages(imageItems, k, (message, step, total) => {
         setProgressMessage(message)
         setProgressStep(step)
         setProgressTotal(total)
         if (step > 2) updateModelBlock(block.id, { status: 'training' })
       })
-      updateModelBlock(block.id, { status: 'trained', clusterResults: result, trainedLinkedBlockId: block.linkedBlockId })
-      addToast(`🧩 Grouped ${imageItems.length} images into ${k} clusters!`, 'success')
+      const actualK = centroids.length
+      const labels = Array.from({ length: actualK }, (_, i) => `Group ${i + 1}`)
+      const labelIds = Array.from({ length: actualK }, (_, i) => String(i))
+      const trained: TrainedModel = {
+        id: uuid(),
+        name: saveName.trim() || block.name,
+        trainedAt: Date.now(),
+        modelType: 'image-unsupervised',
+        labels,
+        labelIds,
+        itemCount: imageItems.length,
+        knnData: {},
+        clusterCentroids: centroids,
+      }
+      saveTrainedModel(trained)
+      updateModelBlock(block.id, { status: 'trained', clusterResults: results, trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
+      addToast(`🧩 Grouped ${imageItems.length} images into ${actualK} clusters!`, 'success')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Clustering failed'
       updateModelBlock(block.id, { status: 'error', errorMessage: msg })
@@ -212,14 +227,31 @@ export default function ModelInspector() {
     updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
 
     try {
-      const result = clusterTexts(textItems, k, (message, step, total) => {
+      const { results, centroids, vocab, idfWeights }: ClusterTextsResult = clusterTexts(textItems, k, (message, step, total) => {
         setProgressMessage(message)
         setProgressStep(step)
         setProgressTotal(total)
         if (step > 1) updateModelBlock(block.id, { status: 'training' })
       })
-      updateModelBlock(block.id, { status: 'trained', clusterResults: result, trainedLinkedBlockId: block.linkedBlockId })
-      addToast(`📝 Grouped ${textItems.length} texts into ${k} clusters!`, 'success')
+      const actualK = centroids.length
+      const labels = Array.from({ length: actualK }, (_, i) => `Group ${i + 1}`)
+      const labelIds = Array.from({ length: actualK }, (_, i) => String(i))
+      const trained: TrainedModel = {
+        id: uuid(),
+        name: saveName.trim() || block.name,
+        trainedAt: Date.now(),
+        modelType: 'text-unsupervised',
+        labels,
+        labelIds,
+        itemCount: textItems.length,
+        knnData: {},
+        clusterCentroids: centroids,
+        clusterVocab: vocab,
+        clusterIdfWeights: idfWeights,
+      }
+      saveTrainedModel(trained)
+      updateModelBlock(block.id, { status: 'trained', clusterResults: results, trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
+      addToast(`📝 Grouped ${textItems.length} texts into ${actualK} clusters!`, 'success')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Clustering failed'
       updateModelBlock(block.id, { status: 'error', errorMessage: msg })

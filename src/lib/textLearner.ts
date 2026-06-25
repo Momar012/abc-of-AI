@@ -271,10 +271,15 @@ function sqDist(a: number[], b: number[]): number {
   return s
 }
 
-function runKMeansText(features: number[][], k: number): number[] {
+interface KMeansTextResult {
+  assignments: number[]
+  centroids: number[][]
+}
+
+function runKMeansText(features: number[][], k: number): KMeansTextResult {
   const n = features.length
   const dim = features[0]?.length ?? 0
-  if (n === 0 || k <= 0) return []
+  if (n === 0 || k <= 0) return { assignments: [], centroids: [] }
   const clampedK = Math.min(k, n)
 
   // K-means++ init
@@ -304,14 +309,21 @@ function runKMeansText(features: number[][], k: number): number[] {
       if (counts[c] > 0) for (let d = 0; d < dim; d++) centroids[c][d] = sums[c][d] / counts[c]
     }
   }
-  return assignments
+  return { assignments, centroids }
+}
+
+export interface ClusterTextsResult {
+  results: ClusterResult[]
+  centroids: number[][]
+  vocab: string[]
+  idfWeights: number[]
 }
 
 export function clusterTexts(
   items: Array<{ itemId: string; content: string }>,
   k: number,
   onProgress: (message: string, step: number, total: number) => void
-): ClusterResult[] {
+): ClusterTextsResult {
   const n = items.length
   if (n === 0) throw new Error('No text items found.')
 
@@ -331,8 +343,13 @@ export function clusterTexts(
   })
 
   onProgress('Clustering…', n + 1, total)
-  const assignments = runKMeansText(features, Math.min(k, n))
+  const { assignments, centroids } = runKMeansText(features, Math.min(k, n))
   onProgress('Done', total, total)
 
-  return items.map((item, i) => ({ itemId: item.itemId, clusterId: assignments[i] }))
+  return {
+    results: items.map((item, i) => ({ itemId: item.itemId, clusterId: assignments[i] })),
+    centroids,
+    vocab,
+    idfWeights,
+  }
 }

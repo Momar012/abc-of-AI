@@ -86,9 +86,10 @@ export function validateAIModelExport(selectedIds: Set<string>): {
   const modelState = useModelStore.getState()
   const selected = modelState.modelBlocks.filter(b => selectedIds.has(b.id))
   if (selected.length === 0) return { valid: false, reason: 'no-model' }
+  const EXPORTABLE = new Set(['text-supervised', 'image-supervised', 'image-classifier', 'text-unsupervised', 'image-unsupervised'])
   for (const mb of selected) {
     if (mb.status !== 'trained' || !mb.trainedModelId) return { valid: false, reason: 'untrained-model' }
-    if (mb.modelType !== 'text-supervised') return { valid: false, reason: 'unsupported-type' }
+    if (!EXPORTABLE.has(mb.modelType ?? '')) return { valid: false, reason: 'unsupported-type' }
   }
   return { valid: true, reason: 'ok' }
 }
@@ -799,22 +800,51 @@ export function exportAIModel(
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
   const modelState = useModelStore.getState()
 
-  const models = modelState.modelBlocks
-    .filter(b => keep(b.id) && b.modelType === 'text-supervised' && b.trainedModelId)
-    .map(mb => {
+  const allSelected = modelState.modelBlocks.filter(b => keep(b.id) && b.trainedModelId)
+  const primaryType = allSelected[0]?.modelType ?? 'text-supervised'
+
+  let html: string
+  if (primaryType === 'image-supervised' || primaryType === 'image-classifier') {
+    const models = allSelected.map(mb => {
       const tm = modelState.trainedModels.find(m => m.id === mb.trainedModelId)
       return {
         id: mb.id,
         name: mb.name,
-        vocab: tm?.textVocab ?? [],
-        wordLogProbs: tm?.nbWordLogProbs ?? {},
-        classLogPriors: tm?.nbClassLogPriors ?? {},
         labels: tm?.labels ?? [],
         labelIds: tm?.labelIds ?? [],
+        knnData: tm?.knnData ?? {},
       }
     })
-
-  const html = buildAIModelHTML(appName, models, THEMES[theme], creatorName)
+    html = buildImageModelHTML(appName, models, THEMES[theme], creatorName)
+  } else if (primaryType === 'text-unsupervised' || primaryType === 'image-unsupervised') {
+    const mb = allSelected[0]
+    const tm = modelState.trainedModels.find(m => m.id === mb?.trainedModelId)
+    html = buildClusterHTML(appName, {
+      id: mb?.id ?? '',
+      name: mb?.name ?? appName,
+      modelType: primaryType,
+      labels: tm?.labels ?? [],
+      centroids: tm?.clusterCentroids ?? [],
+      vocab: tm?.clusterVocab,
+      idfWeights: tm?.clusterIdfWeights,
+    }, THEMES[theme], creatorName)
+  } else {
+    const models = allSelected
+      .filter(mb => mb.modelType === 'text-supervised')
+      .map(mb => {
+        const tm = modelState.trainedModels.find(m => m.id === mb.trainedModelId)
+        return {
+          id: mb.id,
+          name: mb.name,
+          vocab: tm?.textVocab ?? [],
+          wordLogProbs: tm?.nbWordLogProbs ?? {},
+          classLogPriors: tm?.nbClassLogPriors ?? {},
+          labels: tm?.labels ?? [],
+          labelIds: tm?.labelIds ?? [],
+        }
+      })
+    html = buildAIModelHTML(appName, models, THEMES[theme], creatorName)
+  }
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -1022,6 +1052,628 @@ for(var mi=0;mi<MODELS.length;mi++){
     cards.appendChild(div);
   })(MODELS[mi]);
 }
+<\/script>
+</body>
+</html>`
+}
+
+// ── Image Model Export (CDN TF.js + MobileNet + KNN) ────────────────────────
+
+function buildImageModelHTML(
+  appName: string,
+  models: Array<{
+    id: string; name: string;
+    labels: string[]; labelIds: string[];
+    knnData: Record<string, { values: number[]; shape: number[] }>;
+  }>,
+  t: typeof THEMES[Theme],
+  creatorName: string,
+): string {
+  const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const modelsJson = JSON.stringify(models)
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle} — Made with ABITA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📷</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="${safeTitle}">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="${t.acc}">
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"><\/script>
+<style>
+:root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,var(--orb1),transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;width:420px;height:420px;bottom:-100px;right:-100px;background:radial-gradient(circle,var(--orb2),transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
+.pt{position:fixed;pointer-events:none;animation:star-twinkle var(--dur) ease-in-out infinite;animation-delay:var(--dly);opacity:0.1;z-index:0}
+header{background:rgba(18,14,42,0.9);border-bottom:1px solid rgba(255,255,255,0.07);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);position:relative;z-index:10}
+.h-left{display:flex;align-items:center;gap:1rem}
+.h-icon{font-size:2rem;line-height:1}
+.h-title{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
+.h-sub{font-size:0.7rem;color:rgba(255,255,255,0.28);margin-top:0.125rem}
+.abita-badge{font-size:0.62rem;font-weight:800;color:rgba(167,139,250,0.75);border:1px solid rgba(167,139,250,0.2);padding:0.3rem 0.75rem;border-radius:9999px;letter-spacing:0.07em;background:rgba(139,92,246,0.07)}
+main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem;max-width:660px;margin:0 auto;width:100%;position:relative;z-index:1}
+.model-card{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1.25rem;padding:1.5rem;display:flex;flex-direction:column;gap:1.125rem}
+.model-name{font-size:1rem;font-weight:800;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.model-hint{font-size:0.73rem;color:rgba(255,255,255,0.32)}
+.cam-wrap{position:relative;width:100%;max-width:400px;margin:0 auto;border-radius:1rem;overflow:hidden;background:#000;aspect-ratio:4/3}
+.cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.cam-wrap canvas{display:none}
+.cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;padding:1rem}
+.cam-actions{display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center}
+.predict-btn{padding:0.55rem 1.25rem;border-radius:0.625rem;border:none;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:0.85rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity 0.15s,transform 0.1s}
+.predict-btn:hover{opacity:0.9}
+.predict-btn:active{transform:scale(0.97)}
+.upload-btn{padding:0.55rem 1.25rem;border-radius:0.625rem;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.75);font-size:0.82rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s}
+.upload-btn:hover{border-color:rgba(255,255,255,0.35);color:#fff}
+.results{display:flex;flex-direction:column;gap:0.5rem;min-height:0}
+.result-row{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border-radius:0.5rem;transition:background 0.2s}
+.result-row.best{background:rgba(255,255,255,0.06)}
+.result-lbl{font-size:0.8rem;font-weight:700;color:rgba(255,255,255,0.55);width:90px;flex-shrink:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;text-transform:capitalize}
+.result-row.best .result-lbl{color:#fff}
+.bar-wrap{flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 0.45s cubic-bezier(0.4,0,0.2,1)}
+.result-pct{font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.4);width:36px;text-align:right;flex-shrink:0}
+.result-row.best .result-pct{color:var(--acc2)}
+.result-tag{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:9999px;font-size:0.72rem;font-weight:800;background:linear-gradient(90deg,var(--acc)22,var(--acc2)22);border:1px solid rgba(255,255,255,0.12);color:#fff}
+.waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
+.loading-bar{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0%;transition:width 0.5s}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+@keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
+.splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;background:linear-gradient(135deg,var(--bg1),var(--bg2));transition:opacity 0.6s ease;pointer-events:auto}
+.splash.hide{opacity:0;pointer-events:none}
+.splash-icon{font-size:4rem;animation:spl-in 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both}
+.splash-title{font-size:2rem;font-weight:900;text-align:center;max-width:80vw;line-height:1.15;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite,spl-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both}
+.splash-by{font-size:0.85rem;color:rgba(255,255,255,0.45);animation:spl-in 0.5s ease 0.55s both}
+.splash-badge{font-size:0.65rem;font-weight:800;color:rgba(167,139,250,0.8);border:1px solid rgba(167,139,250,0.25);padding:0.3rem 0.8rem;border-radius:9999px;background:rgba(139,92,246,0.08);animation:spl-in 0.5s ease 0.75s both}
+.splash-skip{position:absolute;top:1rem;right:1rem;font-size:0.7rem;color:rgba(255,255,255,0.25);cursor:pointer;background:none;border:none;font-family:inherit;transition:color 0.2s}
+.splash-skip:hover{color:rgba(255,255,255,0.6)}
+@keyframes spl-in{from{opacity:0;transform:scale(0.7) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9998;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;max-width:240px}
+.toast{background:rgba(18,14,42,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:0.55rem 1rem;font-size:0.78rem;font-weight:600;color:#fff;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transform:translateX(110%);transition:opacity 0.3s,transform 0.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(0)}
+.snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+</style>
+</head>
+<body>
+<div class="splash" id="splash">
+  <button class="splash-skip" onclick="hideSplash()">Skip ›</button>
+  <span class="splash-icon">📷</span>
+  <div class="splash-title">${safeTitle}</div>
+  ${safeCreator ? `<div class="splash-by">Made by ${safeCreator}</div>` : ''}
+  <div class="splash-badge">⚡ Made with ABITA</div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+<header>
+  <div class="h-left">
+    <span class="h-icon">📷</span>
+    <div>
+      <div class="h-title">${safeTitle}</div>
+      <div class="h-sub">Image Classifier — Made with ABITA</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <button class="snd-btn" id="snd-toggle" onclick="toggleSound()" title="Toggle sounds">🔊</button>
+    <span class="abita-badge">⚡ ABITA</span>
+  </div>
+</header>
+<main id="cards">
+  <div id="init-status" style="font-size:0.8rem;color:rgba(255,255,255,0.35);text-align:center;padding-top:1rem">
+    <div style="margin-bottom:0.5rem">Loading AI vision engine… (requires internet)</div>
+    <div class="loading-bar" id="init-bar"></div>
+  </div>
+</main>
+<footer>${safeCreator ? `Made by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
+<script>
+function hideSplash(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},650);}
+setTimeout(hideSplash,2500);
+function showToast(msg){var w=document.getElementById('toasts');if(!w)return;var t=document.createElement('div');t.className='toast';t.textContent=msg;w.appendChild(t);requestAnimationFrame(function(){requestAnimationFrame(function(){t.classList.add('show');});});setTimeout(function(){t.classList.remove('show');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},2800);}
+var _soundOn=true,_actx=null;
+function toggleSound(){_soundOn=!_soundOn;var b=document.getElementById('snd-toggle');if(b)b.textContent=_soundOn?'🔊':'🔇';}
+function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _actx;}
+function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
+
+var MODELS = ${modelsJson};
+var _mobileNet = null;
+
+// KNN inference — pure JS, no extra deps
+function knnPredict(queryVec, knnData, labels, labelIds, k) {
+  k = k || 5;
+  var dists = [];
+  for (var lid in knnData) {
+    var values = knnData[lid].values;
+    var shape = knnData[lid].shape; // [n, 1024]
+    var n = shape[0], dim = shape[1];
+    for (var row = 0; row < n; row++) {
+      var d = 0;
+      for (var j = 0; j < dim; j++) { var diff = queryVec[j] - values[row * dim + j]; d += diff * diff; }
+      dists.push({ lid: lid, d: d });
+    }
+  }
+  dists.sort(function(a, b) { return a.d - b.d; });
+  var votes = {};
+  for (var i = 0; i < Math.min(k, dists.length); i++) {
+    var l = dists[i].lid;
+    votes[l] = (votes[l] || 0) + 1;
+  }
+  var total = Math.min(k, dists.length);
+  var result = labelIds.map(function(lid, i) {
+    return { label: labels[i], labelId: lid, p: (votes[lid] || 0) / total };
+  });
+  result.sort(function(a, b) { return b.p - a.p; });
+  return result;
+}
+
+function showResults(resultsId, sorted) {
+  var el = document.getElementById(resultsId);
+  if (!el) return;
+  var bestLabel = sorted[0].label;
+  var html = '<div class="result-tag">🎯 ' + bestLabel + '</div>';
+  for (var i = 0; i < sorted.length; i++) {
+    var isBest = sorted[i].label === bestLabel;
+    var pct = Math.round(sorted[i].p * 100);
+    html += '<div class="result-row' + (isBest ? ' best' : '') + '">' +
+      '<span class="result-lbl">' + sorted[i].label + '</span>' +
+      '<div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<span class="result-pct">' + pct + '%</span>' +
+      '</div>';
+  }
+  el.innerHTML = html;
+  showToast('🎯 ' + bestLabel + ' — ' + Math.round(sorted[0].p * 100) + '% confident');
+  _blip(660, 0.15);
+}
+
+async function predictFrame(modelIdx) {
+  var m = MODELS[modelIdx];
+  var videoEl = document.getElementById('cam-' + modelIdx);
+  var canvasEl = document.getElementById('cap-' + modelIdx);
+  var resultsId = 'res-' + modelIdx;
+  var overlayEl = document.getElementById('ov-' + modelIdx);
+  if (!_mobileNet) { if (overlayEl) overlayEl.textContent = 'AI engine still loading…'; return; }
+  if (overlayEl) overlayEl.style.display = 'none';
+  var ctx2d = canvasEl.getContext('2d');
+  canvasEl.width = 224; canvasEl.height = 224;
+  ctx2d.drawImage(videoEl, 0, 0, 224, 224);
+  try {
+    var imgTensor = tf.browser.fromPixels(canvasEl);
+    var features = _mobileNet.infer(imgTensor, true);
+    var featureValues = Array.from(await features.data());
+    imgTensor.dispose(); features.dispose();
+    var sorted = knnPredict(featureValues, m.knnData, m.labels, m.labelIds, 5);
+    showResults(resultsId, sorted);
+  } catch(e) {
+    document.getElementById(resultsId).innerHTML = '<span class="waiting">Prediction failed — try again</span>';
+  }
+}
+
+async function predictUpload(modelIdx, file) {
+  var m = MODELS[modelIdx];
+  var canvasEl = document.getElementById('cap-' + modelIdx);
+  var resultsId = 'res-' + modelIdx;
+  if (!_mobileNet) { showToast('AI engine still loading — please wait'); return; }
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = async function() {
+    var ctx2d = canvasEl.getContext('2d');
+    canvasEl.width = 224; canvasEl.height = 224;
+    ctx2d.drawImage(img, 0, 0, 224, 224);
+    URL.revokeObjectURL(url);
+    try {
+      var imgTensor = tf.browser.fromPixels(canvasEl);
+      var features = _mobileNet.infer(imgTensor, true);
+      var featureValues = Array.from(await features.data());
+      imgTensor.dispose(); features.dispose();
+      var sorted = knnPredict(featureValues, m.knnData, m.labels, m.labelIds, 5);
+      showResults(resultsId, sorted);
+    } catch(e) {
+      document.getElementById(resultsId).innerHTML = '<span class="waiting">Prediction failed — try again</span>';
+    }
+  };
+  img.src = url;
+}
+
+var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
+(function initParticles(){
+  for(var i=0;i<22;i++){
+    var s=document.createElement('div');s.className='pt';
+    s.style.cssText='background:'+PT_BG+';width:'+PT_W+'px;height:'+PT_H+'px;border-radius:'+PT_RAD
+      +';top:'+(Math.random()*100).toFixed(1)+'%;left:'+(Math.random()*100).toFixed(1)+'%'
+      +';--dur:'+(Math.random()*4+3).toFixed(1)+'s;--dly:'+(Math.random()*7).toFixed(1)+'s'
+      +';--bright:'+(Math.random()*0.45+0.3).toFixed(2);
+    document.body.appendChild(s);
+  }
+})();
+
+// Load MobileNet then build cards
+var bar = document.getElementById('init-bar');
+if (bar) bar.style.width = '20%';
+mobilenet.load({ version: 2, alpha: 0.5 }).then(function(net) {
+  _mobileNet = net;
+  var status = document.getElementById('init-status');
+  if (status) status.style.display = 'none';
+  var cards = document.getElementById('cards');
+  MODELS.forEach(function(m, mi) {
+    var div = document.createElement('div');
+    div.className = 'model-card';
+    div.innerHTML =
+      '<div>' +
+        '<div class="model-name">📷 ' + m.name + '</div>' +
+        '<div class="model-hint">Trained to recognise ' + m.labels.length + ' things: ' + m.labels.join(', ') + '</div>' +
+      '</div>' +
+      '<div class="cam-wrap">' +
+        '<video id="cam-' + mi + '" autoplay playsinline muted></video>' +
+        '<canvas id="cap-' + mi + '" style="display:none"></canvas>' +
+        '<div class="cam-overlay" id="ov-' + mi + '">📷 Click "Start Camera" to begin</div>' +
+      '</div>' +
+      '<div class="cam-actions">' +
+        '<button class="predict-btn" onclick="startCam(' + mi + ')">📷 Start Camera</button>' +
+        '<button class="predict-btn" onclick="predictFrame(' + mi + ')">Predict ✨</button>' +
+        '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="predictUpload(' + mi + ',this.files[0])"></label>' +
+      '</div>' +
+      '<div class="results" id="res-' + mi + '"><span class="waiting">Start camera or upload a photo, then click Predict ✨</span></div>';
+    cards.appendChild(div);
+  });
+}).catch(function(e) {
+  var status = document.getElementById('init-status');
+  if (status) status.innerHTML = '<span style="color:rgba(255,80,80,0.8)">⚠ Could not load AI engine — check your internet connection and reload</span>';
+});
+
+function startCam(mi) {
+  var videoEl = document.getElementById('cam-' + mi);
+  var ovEl = document.getElementById('ov-' + mi);
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
+    .catch(function() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
+        .catch(function() { if (ovEl) ovEl.textContent = '⚠ Camera access denied — use "Upload Photo" instead'; });
+    });
+}
+<\/script>
+</body>
+</html>`
+}
+
+// ── Cluster Explorer Export (text: pure JS; image: CDN TF.js) ───────────────
+
+function buildClusterHTML(
+  appName: string,
+  model: {
+    id: string; name: string;
+    modelType: string;
+    labels: string[];
+    centroids: number[][];
+    vocab?: string[];
+    idfWeights?: number[];
+  },
+  t: typeof THEMES[Theme],
+  creatorName: string,
+): string {
+  const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const isImage = model.modelType === 'image-unsupervised'
+  const icon = isImage ? '🔍' : '🔍'
+  const centroidsJson = JSON.stringify(model.centroids)
+  const labelsJson = JSON.stringify(model.labels)
+  const vocabJson = JSON.stringify(model.vocab ?? [])
+  const idfJson = JSON.stringify(model.idfWeights ?? [])
+
+  const cdnScripts = isImage ? `
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"><\/script>` : ''
+
+  const inputSection = isImage ? `
+      '<div class="cam-wrap">' +
+        '<video id="cluster-cam" autoplay playsinline muted></video>' +
+        '<canvas id="cluster-cap" style="display:none"></canvas>' +
+        '<div class="cam-overlay" id="cluster-ov">📷 Click Start Camera to begin</div>' +
+      '</div>' +
+      '<div class="cam-actions">' +
+        '<button class="predict-btn" onclick="startClusterCam()">📷 Start Camera</button>' +
+        '<button class="predict-btn" onclick="clusterFrame()">Find My Group ✨</button>' +
+        '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="clusterUpload(this.files[0])"></label>' +
+      '</div>' +` : `
+      '<div class="input-area">' +
+        '<textarea class="ai-textarea" id="cluster-input" placeholder="Type something here to find which group it belongs to…"></textarea>' +
+        '<button class="predict-btn" onclick="clusterText()">Find My Group ✨</button>' +
+      '</div>' +`
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${safeTitle} — Made with ABITA</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>${icon}</text></svg>">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="${safeTitle}">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="${t.acc}">${cdnScripts}
+<style>
+:root{--bg1:${t.bg1};--bg2:${t.bg2};--acc:${t.acc};--acc2:${t.acc2};--orb1:${t.orb1};--orb2:${t.orb2}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,var(--orb1),transparent 70%);border-radius:50%;animation:float 8s ease-in-out infinite;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;width:420px;height:420px;bottom:-100px;right:-100px;background:radial-gradient(circle,var(--orb2),transparent 70%);border-radius:50%;animation:float 10s ease-in-out infinite reverse;pointer-events:none;z-index:0}
+.pt{position:fixed;pointer-events:none;animation:star-twinkle var(--dur) ease-in-out infinite;animation-delay:var(--dly);opacity:0.1;z-index:0}
+header{background:rgba(18,14,42,0.9);border-bottom:1px solid rgba(255,255,255,0.07);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);position:relative;z-index:10}
+.h-left{display:flex;align-items:center;gap:1rem}
+.h-icon{font-size:2rem;line-height:1}
+.h-title{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite}
+.h-sub{font-size:0.7rem;color:rgba(255,255,255,0.28);margin-top:0.125rem}
+.abita-badge{font-size:0.62rem;font-weight:800;color:rgba(167,139,250,0.75);border:1px solid rgba(167,139,250,0.2);padding:0.3rem 0.75rem;border-radius:9999px;letter-spacing:0.07em;background:rgba(139,92,246,0.07)}
+main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2rem;max-width:660px;margin:0 auto;width:100%;position:relative;z-index:1}
+.cluster-card{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:1.25rem;padding:1.5rem;display:flex;flex-direction:column;gap:1.125rem}
+.card-title{font-size:1rem;font-weight:800;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.card-hint{font-size:0.73rem;color:rgba(255,255,255,0.32)}
+.input-area{display:flex;flex-direction:column;gap:0.625rem}
+.ai-textarea{width:100%;min-height:80px;padding:0.75rem 1rem;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:0.75rem;color:#fff;font-size:0.88rem;font-family:inherit;outline:none;resize:vertical;transition:border-color 0.2s}
+.ai-textarea:focus{border-color:rgba(255,255,255,0.3)}
+.ai-textarea::placeholder{color:rgba(255,255,255,0.2)}
+.predict-btn{padding:0.55rem 1.25rem;border-radius:0.625rem;border:none;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:0.85rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity 0.15s,transform 0.1s;align-self:flex-start}
+.predict-btn:hover{opacity:0.9}
+.predict-btn:active{transform:scale(0.97)}
+.cam-wrap{position:relative;width:100%;max-width:400px;margin:0 auto;border-radius:1rem;overflow:hidden;background:#000;aspect-ratio:4/3}
+.cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;padding:1rem}
+.cam-actions{display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center}
+.upload-btn{padding:0.55rem 1.25rem;border-radius:0.625rem;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.75);font-size:0.82rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s}
+.upload-btn:hover{border-color:rgba(255,255,255,0.35);color:#fff}
+.result-box{padding:1rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:0.875rem;display:flex;flex-direction:column;gap:0.75rem}
+.result-group{font-size:1.4rem;font-weight:900;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.result-conf{font-size:0.75rem;color:rgba(255,255,255,0.38)}
+.cluster-pills{display:flex;flex-wrap:wrap;gap:0.5rem}
+.cluster-pill{font-size:0.72rem;font-weight:700;padding:0.25rem 0.65rem;border-radius:9999px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.55)}
+.cluster-pill.active{background:linear-gradient(90deg,var(--acc)33,var(--acc2)33);border-color:rgba(255,255,255,0.25);color:#fff}
+.waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
+.loading-bar{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0%;transition:width 0.5s}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+@keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
+.splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;background:linear-gradient(135deg,var(--bg1),var(--bg2));transition:opacity 0.6s ease;pointer-events:auto}
+.splash.hide{opacity:0;pointer-events:none}
+.splash-icon{font-size:4rem;animation:spl-in 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both}
+.splash-title{font-size:2rem;font-weight:900;text-align:center;max-width:80vw;line-height:1.15;background:linear-gradient(90deg,var(--acc),var(--acc2),var(--acc));background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s linear infinite,spl-in 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.25s both}
+.splash-by{font-size:0.85rem;color:rgba(255,255,255,0.45);animation:spl-in 0.5s ease 0.55s both}
+.splash-badge{font-size:0.65rem;font-weight:800;color:rgba(167,139,250,0.8);border:1px solid rgba(167,139,250,0.25);padding:0.3rem 0.8rem;border-radius:9999px;background:rgba(139,92,246,0.08);animation:spl-in 0.5s ease 0.75s both}
+.splash-skip{position:absolute;top:1rem;right:1rem;font-size:0.7rem;color:rgba(255,255,255,0.25);cursor:pointer;background:none;border:none;font-family:inherit;transition:color 0.2s}
+.splash-skip:hover{color:rgba(255,255,255,0.6)}
+@keyframes spl-in{from{opacity:0;transform:scale(0.7) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.toast-wrap{position:fixed;top:1rem;right:1rem;z-index:9998;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;max-width:240px}
+.toast{background:rgba(18,14,42,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:0.75rem;padding:0.55rem 1rem;font-size:0.78rem;font-weight:600;color:#fff;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);opacity:0;transform:translateX(110%);transition:opacity 0.3s,transform 0.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(0)}
+.snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+</style>
+</head>
+<body>
+<div class="splash" id="splash">
+  <button class="splash-skip" onclick="hideSplash()">Skip ›</button>
+  <span class="splash-icon">${icon}</span>
+  <div class="splash-title">${safeTitle}</div>
+  ${safeCreator ? `<div class="splash-by">Made by ${safeCreator}</div>` : ''}
+  <div class="splash-badge">⚡ Made with ABITA</div>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+<header>
+  <div class="h-left">
+    <span class="h-icon">${icon}</span>
+    <div>
+      <div class="h-title">${safeTitle}</div>
+      <div class="h-sub">Cluster Explorer — Made with ABITA</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.5rem">
+    <button class="snd-btn" id="snd-toggle" onclick="toggleSound()" title="Toggle sounds">🔊</button>
+    <span class="abita-badge">⚡ ABITA</span>
+  </div>
+</header>
+<main id="main-content"></main>
+<footer>${safeCreator ? `Made by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
+<script>
+function hideSplash(){var s=document.getElementById('splash');if(!s)return;s.classList.add('hide');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},650);}
+setTimeout(hideSplash,2500);
+function showToast(msg){var w=document.getElementById('toasts');if(!w)return;var t=document.createElement('div');t.className='toast';t.textContent=msg;w.appendChild(t);requestAnimationFrame(function(){requestAnimationFrame(function(){t.classList.add('show');});});setTimeout(function(){t.classList.remove('show');setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},400);},2800);}
+var _soundOn=true,_actx=null;
+function toggleSound(){_soundOn=!_soundOn;var b=document.getElementById('snd-toggle');if(b)b.textContent=_soundOn?'🔊':'🔇';}
+function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _actx;}
+function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
+
+var CENTROIDS = ${centroidsJson};
+var LABELS = ${labelsJson};
+var VOCAB = ${vocabJson};
+var IDF = ${idfJson};
+var IS_IMAGE = ${isImage ? 'true' : 'false'};
+var _mobileNet = null;
+
+// Cosine similarity for nearest-centroid search
+function cosSim(a, b) {
+  var dot = 0, na = 0, nb = 0;
+  for (var i = 0; i < a.length; i++) { dot += a[i]*b[i]; na += a[i]*a[i]; nb += b[i]*b[i]; }
+  var denom = Math.sqrt(na) * Math.sqrt(nb);
+  return denom < 1e-9 ? 0 : dot / denom;
+}
+
+function nearestCentroid(vec) {
+  var best = 0, bestSim = -Infinity;
+  for (var c = 0; c < CENTROIDS.length; c++) {
+    var s = cosSim(vec, CENTROIDS[c]);
+    if (s > bestSim) { bestSim = s; best = c; }
+  }
+  // Build softmax-style confidence from similarities
+  var sims = CENTROIDS.map(function(cent) { return cosSim(vec, cent); });
+  var maxS = Math.max.apply(null, sims);
+  var exps = sims.map(function(s) { return Math.exp((s - maxS) * 10); });
+  var sum = exps.reduce(function(a, b) { return a + b; }, 0);
+  var probs = exps.map(function(e) { return e / sum; });
+  return { bestIdx: best, probs: probs };
+}
+
+function showClusterResult(bestIdx, probs) {
+  var el = document.getElementById('cluster-result');
+  if (!el) return;
+  var bestLabel = LABELS[bestIdx];
+  var conf = Math.round(probs[bestIdx] * 100);
+  var pillsHtml = LABELS.map(function(lbl, i) {
+    return '<span class="cluster-pill' + (i === bestIdx ? ' active' : '') + '">' + lbl + ' ' + Math.round(probs[i]*100) + '%</span>';
+  }).join('');
+  el.innerHTML =
+    '<div class="result-box">' +
+      '<div class="result-group">📍 ' + bestLabel + '</div>' +
+      '<div class="result-conf">Similarity: ' + conf + '%</div>' +
+      '<div class="cluster-pills">' + pillsHtml + '</div>' +
+    '</div>';
+  showToast('📍 Best match: ' + bestLabel);
+  _blip(550, 0.18);
+}
+
+// ── Text clustering ──────────────────────────────────────────────────────────
+function tokenize(t) { return t.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(function(w){return w.length>1;}); }
+function tfidfVec(text) {
+  var tokens = tokenize(text);
+  return VOCAB.map(function(w, j) {
+    var count = tokens.filter(function(t) { return t === w; }).length;
+    var tf = tokens.length > 0 ? count / tokens.length : 0;
+    return tf * (IDF[j] || 0);
+  });
+}
+function clusterText() {
+  var text = document.getElementById('cluster-input').value || '';
+  if (!text.trim()) { showToast('⚠ Type something first!'); return; }
+  if (!VOCAB.length) { showToast('⚠ No vocabulary data'); return; }
+  var vec = tfidfVec(text);
+  var res = nearestCentroid(vec);
+  showClusterResult(res.bestIdx, res.probs);
+}
+
+// ── Image clustering ─────────────────────────────────────────────────────────
+async function clusterFrame() {
+  var videoEl = document.getElementById('cluster-cam');
+  var canvasEl = document.getElementById('cluster-cap');
+  var ovEl = document.getElementById('cluster-ov');
+  if (!_mobileNet) { showToast('AI engine still loading…'); return; }
+  if (ovEl) ovEl.style.display = 'none';
+  var ctx2d = canvasEl.getContext('2d');
+  canvasEl.width = 224; canvasEl.height = 224;
+  ctx2d.drawImage(videoEl, 0, 0, 224, 224);
+  try {
+    var imgTensor = tf.browser.fromPixels(canvasEl);
+    var features = _mobileNet.infer(imgTensor, true);
+    var vec = Array.from(await features.data());
+    imgTensor.dispose(); features.dispose();
+    var res = nearestCentroid(vec);
+    showClusterResult(res.bestIdx, res.probs);
+  } catch(e) { showToast('Prediction failed — try again'); }
+}
+
+async function clusterUpload(file) {
+  var canvasEl = document.getElementById('cluster-cap');
+  if (!_mobileNet) { showToast('AI engine still loading — please wait'); return; }
+  var url = URL.createObjectURL(file);
+  var img = new Image();
+  img.onload = async function() {
+    var ctx2d = canvasEl.getContext('2d');
+    canvasEl.width = 224; canvasEl.height = 224;
+    ctx2d.drawImage(img, 0, 0, 224, 224);
+    URL.revokeObjectURL(url);
+    try {
+      var imgTensor = tf.browser.fromPixels(canvasEl);
+      var features = _mobileNet.infer(imgTensor, true);
+      var vec = Array.from(await features.data());
+      imgTensor.dispose(); features.dispose();
+      var res = nearestCentroid(vec);
+      showClusterResult(res.bestIdx, res.probs);
+    } catch(e) { showToast('Prediction failed — try again'); }
+  };
+  img.src = url;
+}
+
+function startClusterCam() {
+  var videoEl = document.getElementById('cluster-cam');
+  var ovEl = document.getElementById('cluster-ov');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
+    .catch(function() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
+        .catch(function() { if (ovEl) ovEl.textContent = '⚠ Camera access denied — use Upload Photo instead'; });
+    });
+}
+
+var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
+(function initParticles(){
+  for(var i=0;i<22;i++){
+    var s=document.createElement('div');s.className='pt';
+    s.style.cssText='background:'+PT_BG+';width:'+PT_W+'px;height:'+PT_H+'px;border-radius:'+PT_RAD
+      +';top:'+(Math.random()*100).toFixed(1)+'%;left:'+(Math.random()*100).toFixed(1)+'%'
+      +';--dur:'+(Math.random()*4+3).toFixed(1)+'s;--dly:'+(Math.random()*7).toFixed(1)+'s'
+      +';--bright:'+(Math.random()*0.45+0.3).toFixed(2);
+    document.body.appendChild(s);
+  }
+})();
+
+function buildUI() {
+  var container = document.getElementById('main-content');
+  var clusterListHtml = LABELS.map(function(l, i) {
+    return '<span class="cluster-pill">' + l + '</span>';
+  }).join('');
+  var inputHtml = IS_IMAGE ?
+    '<div class="cam-wrap">' +
+      '<video id="cluster-cam" autoplay playsinline muted></video>' +
+      '<canvas id="cluster-cap" style="display:none"></canvas>' +
+      '<div class="cam-overlay" id="cluster-ov">📷 Click Start Camera to begin</div>' +
+    '</div>' +
+    '<div class="cam-actions">' +
+      '<button class="predict-btn" onclick="startClusterCam()">📷 Start Camera</button>' +
+      '<button class="predict-btn" onclick="clusterFrame()">Find My Group ✨</button>' +
+      '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="clusterUpload(this.files[0])"></label>' +
+    '</div>'
+    :
+    '<div class="input-area">' +
+      '<textarea class="ai-textarea" id="cluster-input" placeholder="Type something here to find which group it belongs to…"></textarea>' +
+      '<button class="predict-btn" onclick="clusterText()">Find My Group ✨</button>' +
+    '</div>';
+  container.innerHTML =
+    '<div class="cluster-card">' +
+      '<div>' +
+        '<div class="card-title">' + (IS_IMAGE ? '📷' : '📝') + ' ${model.name.replace(/'/g, "\\'")}</div>' +
+        '<div class="card-hint">This model grouped things into ' + LABELS.length + ' clusters: ' + clusterListHtml + '</div>' +
+      '</div>' +
+      inputHtml +
+      '<div id="cluster-result"><span class="waiting">' + (IS_IMAGE ? 'Point camera at something or upload a photo' : 'Type something above') + ', then click Find My Group ✨</span></div>' +
+    '</div>';
+  if (IS_IMAGE) {
+    document.getElementById('init-status') && (document.getElementById('init-status').style.display = 'none');
+  }
+}
+
+${isImage ? `
+// Load MobileNet then build image UI
+var initDiv = document.createElement('div');
+initDiv.id = 'init-status';
+initDiv.style.cssText = 'font-size:0.8rem;color:rgba(255,255,255,0.35);text-align:center;padding-top:1rem';
+initDiv.innerHTML = '<div style="margin-bottom:0.5rem">Loading AI vision engine… (requires internet)</div><div class="loading-bar" id="init-bar"></div>';
+document.getElementById('main-content').appendChild(initDiv);
+mobilenet.load({ version: 2, alpha: 0.5 }).then(function(net) {
+  _mobileNet = net;
+  var s = document.getElementById('init-status');
+  if (s) s.style.display = 'none';
+  buildUI();
+}).catch(function() {
+  var s = document.getElementById('init-status');
+  if (s) s.innerHTML = '<span style="color:rgba(255,80,80,0.8)">⚠ Could not load AI engine — check internet and reload</span>';
+});` : `buildUI();`}
 <\/script>
 </body>
 </html>`

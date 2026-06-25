@@ -162,9 +162,18 @@ function sqDist(a: number[], b: number[]): number {
   return a.reduce((s, v, i) => s + (v - b[i]) ** 2, 0)
 }
 
-function runKMeans(features: number[][], k: number): number[] {
+interface KMeansResult {
+  assignments: number[]
+  centroids: number[][]
+}
+
+function runKMeans(features: number[][], k: number): KMeansResult {
   const n = features.length
-  if (k >= n) return features.map((_, i) => i % k)
+  if (k >= n) {
+    const assignments = features.map((_, i) => i % k)
+    const centroids = features.slice(0, Math.min(k, n)).map((f) => [...f])
+    return { assignments, centroids }
+  }
 
   // K-means++ initialization
   const centroids: number[][] = [[...features[Math.floor(Math.random() * n)]]]
@@ -205,14 +214,19 @@ function runKMeans(features: number[][], k: number): number[] {
     }
   }
 
-  return assignments
+  return { assignments, centroids }
+}
+
+export interface ClusterImagesResult {
+  results: ClusterResult[]
+  centroids: number[][]
 }
 
 export async function clusterImages(
   items: Array<{ itemId: string; content: string }>,
   k: number,
   onProgress: ProgressCallback
-): Promise<ClusterResult[]> {
+): Promise<ClusterImagesResult> {
   const n = items.length
 
   onProgress('Loading AI engine…', 0, n + 3)
@@ -235,6 +249,9 @@ export async function clusterImages(
     features.dispose()
   }
 
-  const assignments = runKMeans(allFeatures, Math.min(k, n))
-  return items.map((item, i) => ({ itemId: item.itemId, clusterId: assignments[i] }))
+  const { assignments, centroids } = runKMeans(allFeatures, Math.min(k, n))
+  return {
+    results: items.map((item, i) => ({ itemId: item.itemId, clusterId: assignments[i] })),
+    centroids,
+  }
 }
