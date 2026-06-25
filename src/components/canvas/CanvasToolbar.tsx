@@ -13,7 +13,8 @@ import { useUIStore } from '@/store/useUIStore'
 import { SensorType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
-import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport } from '@/lib/exportRuleApp'
+import { Reorder } from 'framer-motion'
+import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport, getExportCards, ExportCardInfo } from '@/lib/exportRuleApp'
 
 type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
@@ -361,6 +362,8 @@ function SelectionBar() {
   const [theme, setTheme] = useState('space')
   const [layout, setLayout] = useState('classic')
   const [creatorName, setCreatorName] = useState('')
+  const [instructions, setInstructions] = useState('')
+  const [cardOrder, setCardOrder] = useState<ExportCardInfo[]>([])
 
   // Rule store removers
   const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
@@ -386,9 +389,18 @@ function SelectionBar() {
 
   useEffect(() => {
     if (count === 0 || (count === 1 && canvasSelection[0]?.type !== 'model')) {
-      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName('')
+      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName(''); setInstructions(''); setCardOrder([])
     }
   }, [count, canvasSelection])
+
+  useEffect(() => {
+    if (showNaming) {
+      const ids = new Set(canvasSelection.map(n => n.id))
+      const hasOutputs = canvasSelection.some(n => ['fan', 'alarm', 'ac', 'door', 'bulb'].includes(n.type))
+      if (hasOutputs) setCardOrder(getExportCards(ids))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNaming])
 
   if (count <= 1 && !isSingleModel) return null
 
@@ -422,16 +434,18 @@ function SelectionBar() {
     const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
     if (derivedMode === 'ai-model') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportAIModel(name, selectedIds, theme as any, creatorName.trim())
+      exportAIModel(name, selectedIds, theme as any, creatorName.trim(), instructions.trim())
     } else {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim())
+      exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim(), instructions.trim(), cardOrder.map(c => c.id))
     }
     setShowNaming(false)
     setAppName('My AI App')
     setTheme('space')
     setLayout('classic')
     setCreatorName('')
+    setInstructions('')
+    setCardOrder([])
   }
 
   function handleDelete() {
@@ -499,7 +513,6 @@ function SelectionBar() {
             value={creatorName}
             onChange={(e) => setCreatorName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleConfirm()
               if (e.key === 'Escape') setShowNaming(false)
             }}
             maxLength={30}
@@ -507,6 +520,18 @@ function SelectionBar() {
             className="bg-white/10 border border-white/20 rounded-lg px-2.5 py-1 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 w-28 transition-all"
           />
           <span className="text-[0.63rem] text-white/20 italic">appears in your app</span>
+        </div>
+        {/* row 1.75: instructions */}
+        <div className="flex items-start gap-2 pl-7">
+          <span className="text-xs font-heading text-white/55 whitespace-nowrap pt-1.5">Instructions:</span>
+          <textarea
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            maxLength={400}
+            rows={2}
+            placeholder="Describe your app — what it does, how to use it… (optional)"
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white font-heading outline-none focus:border-violet-400/60 focus:bg-white/15 transition-all resize-none placeholder:text-white/25"
+          />
         </div>
         {/* row 2: theme + (layout only for app mode) */}
         <div className="flex items-center gap-3 pl-7">
@@ -550,6 +575,58 @@ function SelectionBar() {
             </>
           )}
         </div>
+        {/* row 3: card reorder (rule-app only, when there are cards) */}
+        {!isAI && cardOrder.length > 0 && (
+          <div className="flex flex-col gap-1 pl-7">
+            <span className="text-[0.6rem] font-heading font-bold text-white/30 uppercase tracking-widest">Arrange Cards</span>
+            <div className="flex gap-3 max-h-40 overflow-y-auto">
+              {cardOrder.filter(c => c.category === 'input').length > 0 && (
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-[0.58rem] text-white/22 font-heading uppercase tracking-wider pb-0.5">Inputs</span>
+                  <Reorder.Group
+                    axis="y"
+                    values={cardOrder.filter(c => c.category === 'input')}
+                    onReorder={(ni) => setCardOrder([...ni, ...cardOrder.filter(c => c.category === 'output')])}
+                    className="flex flex-col gap-0.5"
+                  >
+                    {cardOrder.filter(c => c.category === 'input').map(card => (
+                      <Reorder.Item
+                        key={card.id}
+                        value={card}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none"
+                      >
+                        <span className="text-[0.6rem] text-white/22">⠿</span>
+                        <span className="text-[0.65rem] font-heading text-white/65 whitespace-nowrap">{card.icon} {card.name}</span>
+                      </Reorder.Item>
+                    ))}
+                  </Reorder.Group>
+                </div>
+              )}
+              {cardOrder.filter(c => c.category === 'output').length > 0 && (
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-[0.58rem] text-white/22 font-heading uppercase tracking-wider pb-0.5">Outputs</span>
+                  <Reorder.Group
+                    axis="y"
+                    values={cardOrder.filter(c => c.category === 'output')}
+                    onReorder={(no) => setCardOrder([...cardOrder.filter(c => c.category === 'input'), ...no])}
+                    className="flex flex-col gap-0.5"
+                  >
+                    {cardOrder.filter(c => c.category === 'output').map(card => (
+                      <Reorder.Item
+                        key={card.id}
+                        value={card}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/10 cursor-grab active:cursor-grabbing select-none"
+                      >
+                        <span className="text-[0.6rem] text-white/22">⠿</span>
+                        <span className="text-[0.65rem] font-heading text-white/65 whitespace-nowrap">{card.icon} {card.name}</span>
+                      </Reorder.Item>
+                    ))}
+                  </Reorder.Group>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     )
   }

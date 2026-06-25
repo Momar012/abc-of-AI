@@ -131,18 +131,32 @@ export default function ModelInspector() {
       return
     }
 
-    setProgressStep(0)
-    setProgressTotal(100)
-    setProgressMessage('Starting…')
     updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
 
     try {
-      const { results, centroids }: ClusterImagesResult = await clusterImages(imageItems, k, (message, step, total) => {
-        setProgressMessage(message)
-        setProgressStep(step)
-        setProgressTotal(total)
-        if (step > 2) updateModelBlock(block.id, { status: 'training' })
-      })
+      // Run real clustering silently first
+      const { results, centroids }: ClusterImagesResult = await clusterImages(imageItems, k, () => {})
+
+      // Fake animated progress (~10 s) so kids feel the model is working hard
+      const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+      updateModelBlock(block.id, { status: 'training' })
+      const fakeSteps = [
+        { msg: 'Collecting your images…',      ms: 800  },
+        { msg: 'Loading vision engine…',        ms: 1200 },
+        { msg: 'Extracting image features…',    ms: 1800 },
+        { msg: 'Finding natural groups…',       ms: 1500 },
+        { msg: 'Running k-means clustering…',   ms: 1500 },
+        { msg: 'Refining cluster boundaries…',  ms: 1200 },
+        { msg: 'Assigning images to groups…',   ms: 900  },
+        { msg: 'Almost there…',                 ms: 700  },
+      ]
+      for (let i = 0; i < fakeSteps.length; i++) {
+        setProgressMessage(fakeSteps[i].msg)
+        setProgressStep(i + 1)
+        setProgressTotal(fakeSteps.length)
+        await sleep(fakeSteps[i].ms)
+      }
+
       const actualK = centroids.length
       const labels = Array.from({ length: actualK }, (_, i) => `Group ${i + 1}`)
       const labelIds = Array.from({ length: actualK }, (_, i) => String(i))
@@ -215,7 +229,7 @@ export default function ModelInspector() {
     }
   }
 
-  const handleClusterTexts = () => {
+  const handleClusterTexts = async () => {
     if (!linkedBlock) return
     const k = block.clusterCount ?? 3
 
@@ -232,18 +246,32 @@ export default function ModelInspector() {
       return
     }
 
-    setProgressStep(0)
-    setProgressTotal(100)
-    setProgressMessage('Starting…')
     updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
 
     try {
-      const { results, centroids, vocab, idfWeights }: ClusterTextsResult = clusterTexts(textItems, k, (message, step, total) => {
-        setProgressMessage(message)
-        setProgressStep(step)
-        setProgressTotal(total)
-        if (step > 1) updateModelBlock(block.id, { status: 'training' })
-      })
+      // Run real clustering silently first
+      const { results, centroids, vocab, idfWeights }: ClusterTextsResult = clusterTexts(textItems, k, () => {})
+
+      // Fake animated progress (~10 s) so kids feel the model is working hard
+      const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+      updateModelBlock(block.id, { status: 'training' })
+      const fakeSteps = [
+        { msg: 'Reading your text examples…',   ms: 800  },
+        { msg: 'Building vocabulary…',           ms: 1200 },
+        { msg: 'Computing word frequencies…',    ms: 1400 },
+        { msg: 'Finding natural groups…',        ms: 1500 },
+        { msg: 'Running k-means clustering…',    ms: 1500 },
+        { msg: 'Refining cluster boundaries…',   ms: 1200 },
+        { msg: 'Assigning texts to groups…',     ms: 900  },
+        { msg: 'Almost there…',                  ms: 700  },
+      ]
+      for (let i = 0; i < fakeSteps.length; i++) {
+        setProgressMessage(fakeSteps[i].msg)
+        setProgressStep(i + 1)
+        setProgressTotal(fakeSteps.length)
+        await sleep(fakeSteps[i].ms)
+      }
+
       const actualK = centroids.length
       const labels = Array.from({ length: actualK }, (_, i) => `Group ${i + 1}`)
       const labelIds = Array.from({ length: actualK }, (_, i) => String(i))

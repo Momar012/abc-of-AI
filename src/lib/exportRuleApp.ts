@@ -2,6 +2,64 @@ import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useModelStore } from '@/store/useModelStore'
 
+export interface ExportCardInfo {
+  id: string
+  name: string
+  icon: string
+  category: 'input' | 'output'
+}
+
+const SENSOR_ICONS: Record<string, string> = {
+  temperature: '🌡️', light: '☀️', motion: '👁️', humidity: '💧', 'text-input': '📝',
+}
+
+export function getExportCards(selectedIds: Set<string>): ExportCardInfo[] {
+  const rule = useRuleStore.getState()
+  const workflow = useWorkflowStore.getState()
+  const modelState = useModelStore.getState()
+  const keep = (id: string) => selectedIds.has(id)
+  const cards: ExportCardInfo[] = []
+  const liveSensorIds = new Set(rule.sensorBlocks.filter(s => keep(s.id)).map(s => s.id))
+
+  rule.sensorBlocks.filter(s => keep(s.id)).forEach(s => {
+    cards.push({ id: s.id, name: s.name, icon: SENSOR_ICONS[s.sensorType] ?? '📡', category: 'input' })
+  })
+  rule.switchBlocks.filter(s => keep(s.id)).forEach(s => {
+    cards.push({ id: s.id, name: s.name, icon: '🎚️', category: 'input' })
+  })
+  rule.timerBlocks.filter(t => keep(t.id)).forEach(t => {
+    cards.push({ id: t.id, name: t.name, icon: '⏱️', category: 'input' })
+  })
+  modelState.modelBlocks
+    .filter(b => keep(b.id) && (b.modelType === 'text-supervised' || b.modelType === 'text-unsupervised') && b.trainedModelId)
+    .forEach(mb => {
+      if (!mb.liveLinkedSensorId || !liveSensorIds.has(mb.liveLinkedSensorId)) {
+        cards.push({ id: mb.id, name: mb.name, icon: '📝', category: 'input' })
+      }
+    })
+  modelState.modelBlocks
+    .filter(b => keep(b.id) && (b.modelType === 'image-supervised' || b.modelType === 'image-classifier' || b.modelType === 'image-unsupervised') && b.trainedModelId)
+    .forEach(mb => {
+      cards.push({ id: mb.id, name: mb.name, icon: '📷', category: 'input' })
+    })
+  workflow.bulbBlocks.filter(b => keep(b.id)).forEach(b => {
+    cards.push({ id: b.id, name: b.name, icon: '💡', category: 'output' })
+  })
+  rule.fanBlocks.filter(f => keep(f.id)).forEach(f => {
+    cards.push({ id: f.id, name: f.name, icon: '🌀', category: 'output' })
+  })
+  workflow.doorBlocks.filter(d => keep(d.id)).forEach(d => {
+    cards.push({ id: d.id, name: d.name, icon: '🚪', category: 'output' })
+  })
+  rule.alarmBlocks.filter(a => keep(a.id)).forEach(a => {
+    cards.push({ id: a.id, name: a.name, icon: '🚨', category: 'output' })
+  })
+  rule.acBlocks.filter(a => keep(a.id)).forEach(a => {
+    cards.push({ id: a.id, name: a.name, icon: '❄️', category: 'output' })
+  })
+  return cards
+}
+
 export function validateExportSelection(selectedIds: Set<string>): {
   valid: boolean
   reason: 'ok' | 'no-outputs' | 'unconnected-output' | 'incomplete-chain' | 'untrained-model' | 'unsupported-model-type'
@@ -130,6 +188,8 @@ export function exportRuleApp(
   theme: Theme = 'space',
   layout: Layout = 'classic',
   creatorName = '',
+  instructions = '',
+  cardOrder: string[] = [],
 ): void {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
@@ -228,7 +288,34 @@ export function exportRuleApp(
     imageClusterModels,
   }
 
-  const html = buildHTML(appName, data, THEMES[theme], layout, creatorName)
+  const defaultInputIds = [
+    ...data.sensors.map((s: {id:string}) => s.id),
+    ...data.switches.map((s: {id:string}) => s.id),
+    ...data.timers.map((t: {id:string}) => t.id),
+    ...data.models.map((m: {id:string}) => m.id),
+    ...data.textClusterModels.map((m: {id:string}) => m.id),
+    ...data.imageModels.map((m: {id:string}) => m.id),
+    ...data.imageClusterModels.map((m: {id:string}) => m.id),
+  ]
+  const defaultOutputIds = [
+    ...data.bulbs.map((b: {id:string}) => b.id),
+    ...data.fans.map((f: {id:string}) => f.id),
+    ...data.doors.map((d: {id:string}) => d.id),
+    ...data.alarms.map((a: {id:string}) => a.id),
+    ...data.acs.map((a: {id:string}) => a.id),
+  ]
+  const inputIdSet = new Set(defaultInputIds)
+  const outputIdSet = new Set(defaultOutputIds)
+  const resolvedInputOrder = [
+    ...cardOrder.filter(id => inputIdSet.has(id)),
+    ...defaultInputIds.filter(id => !cardOrder.includes(id)),
+  ]
+  const resolvedOutputOrder = [
+    ...cardOrder.filter(id => outputIdSet.has(id)),
+    ...defaultOutputIds.filter(id => !cardOrder.includes(id)),
+  ]
+
+  const html = buildHTML(appName, data, THEMES[theme], layout, creatorName, instructions, resolvedInputOrder, resolvedOutputOrder)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -238,9 +325,10 @@ export function exportRuleApp(
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout, creatorName: string): string {
+function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout, creatorName: string, instructions = '', inputOrder: string[] = [], outputOrder: string[] = []): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeInstructions = instructions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   const dataJson = JSON.stringify(data)
 
   return `<!DOCTYPE html>
@@ -401,6 +489,10 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
 .snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
 @keyframes card-in{from{opacity:0;transform:scale(0.85) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}
+#app-instructions{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 2rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);position:relative;z-index:2}
+.instr-icon{font-size:1.15rem;flex-shrink:0;opacity:.75;margin-top:.1rem}
+.instr-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:.2rem}
+.instr-text{font-size:0.82rem;line-height:1.5;color:rgba(255,255,255,0.7);white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -425,6 +517,7 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
     <span class="abita-badge">⚡ ABITA</span>
   </div>
 </header>
+${safeInstructions ? `<section id="app-instructions"><span class="instr-icon">📋</span><div class="instr-body"><p class="instr-title">How this app works</p><p class="instr-text">${safeInstructions}</p></div></section>` : ''}
 <main class="layout-${layout}">
   <div class="in-panel">
     <div class="panel-lbl">⬇ Inputs</div>
@@ -468,6 +561,7 @@ const state = {
 
 // ── Image-model inference ───────────────────────────────────────────────────
 var _imgPredictions={};
+var _pendingFiles={};
 var _mobileNet=null;
 if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.imageClusterModels.length)){
   function _loadScript(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
@@ -833,7 +927,7 @@ if(!state.sensors.length&&!state.switches.length){
 for(var si=0;si<state.sensors.length;si++){
   (function(sensor){
     var icon=ICONS[sensor.sensorType]||'📡';
-    var card=document.createElement('div'); card.className='in-card';
+    var card=document.createElement('div'); card.className='in-card'; card.id='in-'+sensor.id;
     if(sensor.sensorType==='motion'){
       var on=sensor.value===true||sensor.value==='true';
       card.innerHTML=
@@ -886,7 +980,7 @@ for(var si=0;si<state.sensors.length;si++){
 
 for(var wi=0;wi<state.switches.length;wi++){
   (function(sw){
-    var card=document.createElement('div'); card.className='in-card';
+    var card=document.createElement('div'); card.className='in-card'; card.id='in-'+sw.id;
     card.innerHTML=
       '<div class="in-lbl">🎚️ '+sw.name+'</div>'+
       '<div class="ios-sw" onclick="'+
@@ -907,7 +1001,7 @@ for(var wi=0;wi<state.switches.length;wi++){
 
 for(var tmi=0;tmi<state.timers.length;tmi++){
   (function(tm){
-    var card=document.createElement('div'); card.className='in-card';
+    var card=document.createElement('div'); card.className='in-card'; card.id='in-'+tm.id;
     card.innerHTML=
       '<div class="in-lbl">⏱️ '+tm.name+'</div>'+
       '<div style="display:flex;align-items:baseline;gap:0.5rem">'+
@@ -922,28 +1016,34 @@ for(var tmi=0;tmi<state.timers.length;tmi++){
 var _sensorIds=state.sensors.map(function(s){return s.id;});
 APP.models.forEach(function(m){
   if(m.liveSensorId&&_sensorIds.indexOf(m.liveSensorId)>=0) return;
-  var card=document.createElement('div'); card.className='in-card';
+  var card=document.createElement('div'); card.className='in-card'; card.id='in-'+m.id;
   var lbl=document.createElement('div'); lbl.className='in-lbl'; lbl.textContent='📝 '+m.name; card.appendChild(lbl);
   var ta=document.createElement('textarea'); ta.id='sv-mdl-'+m.id; ta.className='in-mdl-ta';
   ta.placeholder='Type text to classify…';
-  ta.addEventListener('input',function(){evaluate();updateOutputs();});
   card.appendChild(ta);
+  var sendBtn=document.createElement('button'); sendBtn.className='img-cam-btn'; sendBtn.textContent='→ Send';
+  sendBtn.style.marginTop='0.35rem';
+  sendBtn.onclick=function(){evaluate();updateOutputs();};
+  card.appendChild(sendBtn);
   inputCont.appendChild(card);
 });
 if(APP.textClusterModels) APP.textClusterModels.forEach(function(tcm){
   if(tcm.liveSensorId&&_sensorIds.indexOf(tcm.liveSensorId)>=0) return;
-  var card=document.createElement('div'); card.className='in-card';
+  var card=document.createElement('div'); card.className='in-card'; card.id='in-'+tcm.id;
   var lbl=document.createElement('div'); lbl.className='in-lbl'; lbl.textContent='📝 '+tcm.name; card.appendChild(lbl);
   var ta=document.createElement('textarea'); ta.id='sv-mdl-'+tcm.id; ta.className='in-mdl-ta';
   ta.placeholder='Type text to group…';
-  ta.addEventListener('input',function(){evaluate();updateOutputs();});
   card.appendChild(ta);
+  var sendBtn=document.createElement('button'); sendBtn.className='img-cam-btn'; sendBtn.textContent='→ Send';
+  sendBtn.style.marginTop='0.35rem';
+  sendBtn.onclick=function(){evaluate();updateOutputs();};
+  card.appendChild(sendBtn);
   inputCont.appendChild(card);
 });
 
 if(APP.imageModels&&APP.imageModels.length){
   APP.imageModels.forEach(function(im){
-    var card=document.createElement('div'); card.className='in-card';
+    var card=document.createElement('div'); card.className='in-card'; card.id='in-'+im.id;
     var lbl=document.createElement('div'); lbl.className='in-lbl'; lbl.textContent='📷 '+im.name; card.appendChild(lbl);
     var wrap=document.createElement('div'); wrap.className='img-cam-wrap';
     var vid=document.createElement('video'); vid.id='imgcam-'+im.id; vid.autoplay=true; vid.playsInline=true; vid.muted=true; wrap.appendChild(vid);
@@ -957,8 +1057,28 @@ if(APP.imageModels&&APP.imageModels.length){
     actions.appendChild(startBtn);
     var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
     var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
-    (function(mid){fileInp.onchange=function(){if(this.files[0])uploadImgModel(mid,this.files[0]);};})(im.id);
-    uplLbl.appendChild(fileInp); actions.appendChild(uplLbl); card.appendChild(actions);
+    (function(mid){
+      fileInp.onchange=function(){
+        if(!this.files[0]) return;
+        _pendingFiles[mid]=this.files[0];
+        var prev=document.getElementById('imgprev-'+mid);
+        var vid=document.getElementById('imgcam-'+mid);
+        var ov=document.getElementById('imgov-'+mid);
+        var predEl=document.getElementById('imgpred-'+mid);
+        var pBtn=document.getElementById('imgpbtn-'+mid);
+        if(prev&&prev._url) URL.revokeObjectURL(prev._url);
+        var url=URL.createObjectURL(this.files[0]);
+        if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
+        if(vid) vid.style.display='none';
+        if(ov) ov.style.display='none';
+        if(predEl) predEl.textContent='Photo selected — click Predict 🎯';
+        if(pBtn) pBtn.style.display='inline-flex';
+      };
+    })(im.id);
+    uplLbl.appendChild(fileInp); actions.appendChild(uplLbl);
+    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+im.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict'; pBtn.style.display='none';
+    (function(mid){pBtn.onclick=function(){if(_pendingFiles[mid])uploadImgModel(mid,_pendingFiles[mid]);};})(im.id);
+    actions.appendChild(pBtn); card.appendChild(actions);
     var predEl=document.createElement('div'); predEl.id='imgpred-'+im.id; predEl.className='img-pred-display'; predEl.textContent='Waiting for camera…'; card.appendChild(predEl);
     var hint=document.createElement('div'); hint.className='img-model-hint'; hint.textContent='Recognises: '+im.labels.join(', '); card.appendChild(hint);
     inputCont.appendChild(card);
@@ -967,7 +1087,7 @@ if(APP.imageModels&&APP.imageModels.length){
 
 if(APP.imageClusterModels&&APP.imageClusterModels.length){
   APP.imageClusterModels.forEach(function(icm){
-    var card=document.createElement('div'); card.className='in-card';
+    var card=document.createElement('div'); card.className='in-card'; card.id='in-'+icm.id;
     var lbl=document.createElement('div'); lbl.className='in-lbl'; lbl.textContent='📷 '+icm.name; card.appendChild(lbl);
     var wrap=document.createElement('div'); wrap.className='img-cam-wrap';
     var vid=document.createElement('video'); vid.id='imgcam-'+icm.id; vid.autoplay=true; vid.playsInline=true; vid.muted=true; wrap.appendChild(vid);
@@ -981,8 +1101,28 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
     actions.appendChild(startBtn);
     var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
     var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
-    (function(mid){fileInp.onchange=function(){if(this.files[0])uploadImgCluster(mid,this.files[0]);};})(icm.id);
-    uplLbl.appendChild(fileInp); actions.appendChild(uplLbl); card.appendChild(actions);
+    (function(mid){
+      fileInp.onchange=function(){
+        if(!this.files[0]) return;
+        _pendingFiles[mid]=this.files[0];
+        var prev=document.getElementById('imgprev-'+mid);
+        var vid=document.getElementById('imgcam-'+mid);
+        var ov=document.getElementById('imgov-'+mid);
+        var predEl=document.getElementById('imgpred-'+mid);
+        var pBtn=document.getElementById('imgpbtn-'+mid);
+        if(prev&&prev._url) URL.revokeObjectURL(prev._url);
+        var url=URL.createObjectURL(this.files[0]);
+        if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
+        if(vid) vid.style.display='none';
+        if(ov) ov.style.display='none';
+        if(predEl) predEl.textContent='Photo selected — click Predict 🎯';
+        if(pBtn) pBtn.style.display='inline-flex';
+      };
+    })(icm.id);
+    uplLbl.appendChild(fileInp); actions.appendChild(uplLbl);
+    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+icm.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict'; pBtn.style.display='none';
+    (function(mid){pBtn.onclick=function(){if(_pendingFiles[mid])uploadImgCluster(mid,_pendingFiles[mid]);};})(icm.id);
+    actions.appendChild(pBtn); card.appendChild(actions);
     var predEl=document.createElement('div'); predEl.id='imgpred-'+icm.id; predEl.className='img-pred-display'; predEl.textContent='Waiting for camera…'; card.appendChild(predEl);
     var hint=document.createElement('div'); hint.className='img-model-hint'; hint.textContent='Groups: '+icm.labels.join(', '); card.appendChild(hint);
     inputCont.appendChild(card);
@@ -1105,6 +1245,10 @@ for(var ci=0;ci<state.acs.length;ci++){
   outCont.appendChild(el);
 }
 
+var _inputOrder=${JSON.stringify(inputOrder)};
+var _outputOrder=${JSON.stringify(outputOrder)};
+_inputOrder.forEach(function(id){var c=document.getElementById('in-'+id);if(c&&c.parentNode===inputCont)inputCont.appendChild(c);});
+_outputOrder.forEach(function(id){var c=document.getElementById('out-'+id);if(c&&c.parentNode===outCont)outCont.appendChild(c);});
 refresh();
 _appReady=true;
 <\/script>
@@ -1119,6 +1263,7 @@ export function exportAIModel(
   selectedIds?: Set<string>,
   theme: Theme = 'space',
   creatorName = '',
+  instructions = '',
 ): void {
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
   const modelState = useModelStore.getState()
@@ -1138,7 +1283,7 @@ export function exportAIModel(
         knnData: tm?.knnData ?? {},
       }
     })
-    html = buildImageModelHTML(appName, models, THEMES[theme], creatorName)
+    html = buildImageModelHTML(appName, models, THEMES[theme], creatorName, instructions)
   } else if (primaryType === 'text-unsupervised' || primaryType === 'image-unsupervised') {
     const mb = allSelected[0]
     const tm = modelState.trainedModels.find(m => m.id === mb?.trainedModelId)
@@ -1150,7 +1295,7 @@ export function exportAIModel(
       centroids: tm?.clusterCentroids ?? [],
       vocab: tm?.clusterVocab,
       idfWeights: tm?.clusterIdfWeights,
-    }, THEMES[theme], creatorName)
+    }, THEMES[theme], creatorName, instructions)
   } else {
     const models = allSelected
       .filter(mb => mb.modelType === 'text-supervised')
@@ -1166,7 +1311,7 @@ export function exportAIModel(
           labelIds: tm?.labelIds ?? [],
         }
       })
-    html = buildAIModelHTML(appName, models, THEMES[theme], creatorName)
+    html = buildAIModelHTML(appName, models, THEMES[theme], creatorName, instructions)
   }
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
@@ -1187,9 +1332,11 @@ function buildAIModelHTML(
   }>,
   t: typeof THEMES[Theme],
   creatorName: string,
+  instructions = '',
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeInstructions = instructions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   const modelsJson = JSON.stringify(models)
 
   return `<!DOCTYPE html>
@@ -1256,6 +1403,10 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
 .toast.show{opacity:1;transform:translateX(0)}
 .snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+#app-instructions{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 2rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);position:relative;z-index:2}
+.instr-icon{font-size:1.15rem;flex-shrink:0;opacity:.75;margin-top:.1rem}
+.instr-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:.2rem}
+.instr-text{font-size:0.82rem;line-height:1.5;color:rgba(255,255,255,0.7);white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -1280,6 +1431,7 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
     <span class="abita-badge">⚡ ABITA</span>
   </div>
 </header>
+${safeInstructions ? `<section id="app-instructions"><span class="instr-icon">📋</span><div class="instr-body"><p class="instr-title">How this app works</p><p class="instr-text">${safeInstructions}</p></div></section>` : ''}
 <main id="cards"></main>
 <footer>${safeCreator ? `Made by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
 <script>
@@ -1394,9 +1546,11 @@ function buildImageModelHTML(
   }>,
   t: typeof THEMES[Theme],
   creatorName: string,
+  instructions = '',
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeInstructions = instructions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   const modelsJson = JSON.stringify(models)
 
   return `<!DOCTYPE html>
@@ -1470,6 +1624,10 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
 .toast.show{opacity:1;transform:translateX(0)}
 .snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+#app-instructions{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 2rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);position:relative;z-index:2}
+.instr-icon{font-size:1.15rem;flex-shrink:0;opacity:.75;margin-top:.1rem}
+.instr-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:.2rem}
+.instr-text{font-size:0.82rem;line-height:1.5;color:rgba(255,255,255,0.7);white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -1494,6 +1652,7 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
     <span class="abita-badge">⚡ ABITA</span>
   </div>
 </header>
+${safeInstructions ? `<section id="app-instructions"><span class="instr-icon">📋</span><div class="instr-body"><p class="instr-title">How this app works</p><p class="instr-text">${safeInstructions}</p></div></section>` : ''}
 <main id="cards">
   <div id="init-status" style="font-size:0.8rem;color:rgba(255,255,255,0.35);text-align:center;padding-top:1rem">
     <div style="margin-bottom:0.5rem">Loading AI vision engine… (requires internet)</div>
@@ -1697,9 +1856,11 @@ function buildClusterHTML(
   },
   t: typeof THEMES[Theme],
   creatorName: string,
+  instructions = '',
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const safeInstructions = instructions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
   const isImage = model.modelType === 'image-unsupervised'
   const icon = isImage ? '🔍' : '🔍'
   const centroidsJson = JSON.stringify(model.centroids)
@@ -1794,6 +1955,10 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
 .toast.show{opacity:1;transform:translateX(0)}
 .snd-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;color:rgba(255,255,255,0.4);font-size:0.8rem;padding:0.25rem 0.5rem;cursor:pointer;transition:all 0.2s;font-family:inherit}
 .snd-btn:hover{border-color:rgba(255,255,255,0.3);color:rgba(255,255,255,0.8)}
+#app-instructions{display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem 2rem;background:rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.07);position:relative;z-index:2}
+.instr-icon{font-size:1.15rem;flex-shrink:0;opacity:.75;margin-top:.1rem}
+.instr-title{font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,0.3);margin-bottom:.2rem}
+.instr-text{font-size:0.82rem;line-height:1.5;color:rgba(255,255,255,0.7);white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -1818,6 +1983,7 @@ footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,2
     <span class="abita-badge">⚡ ABITA</span>
   </div>
 </header>
+${safeInstructions ? `<section id="app-instructions"><span class="instr-icon">📋</span><div class="instr-body"><p class="instr-title">How this app works</p><p class="instr-text">${safeInstructions}</p></div></section>` : ''}
 <main id="main-content"></main>
 <footer>${safeCreator ? `Made by ${safeCreator} · ` : ''}Built with ABITA · AI Sandbox for Kids</footer>
 <script>
