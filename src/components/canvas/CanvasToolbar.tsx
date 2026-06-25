@@ -381,12 +381,15 @@ function SelectionBar() {
   const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
 
   const count = canvasSelection.length
+  const isSingleModel = count === 1 && canvasSelection[0]?.type === 'model'
 
   useEffect(() => {
-    if (count <= 1) { setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName('') }
-  }, [count])
+    if (count === 0 || (count === 1 && canvasSelection[0]?.type !== 'model')) {
+      setShowNaming(false); setTheme('space'); setLayout('classic'); setCreatorName('')
+    }
+  }, [count, canvasSelection])
 
-  if (count <= 1) return null
+  if (count <= 1 && !isSingleModel) return null
 
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
 
@@ -552,10 +555,14 @@ function SelectionBar() {
 
   return (
     <div className="flex items-center gap-2 px-2.5 py-1.5 glass-panel rounded-xl">
-      <span className="text-xs text-white/40 font-heading whitespace-nowrap">
-        {count} node{count !== 1 ? 's' : ''} selected
-      </span>
-      <div className="w-px h-4 bg-white/10 self-center" />
+      {!isSingleModel && (
+        <>
+          <span className="text-xs text-white/40 font-heading whitespace-nowrap">
+            {count} node{count !== 1 ? 's' : ''} selected
+          </span>
+          <div className="w-px h-4 bg-white/10 self-center" />
+        </>
+      )}
       <button
         onClick={() => setShowNaming(true)}
         disabled={!activeCheck.valid}
@@ -568,12 +575,14 @@ function SelectionBar() {
       >
         {derivedMode === 'app' ? '📱 Export App' : '🧠 Export AI Model'}
       </button>
-      <button
-        onClick={handleDelete}
-        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold border border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-300 transition-all"
-      >
-        🗑️ Delete
-      </button>
+      {!isSingleModel && (
+        <button
+          onClick={handleDelete}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold border border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-300 transition-all"
+        >
+          🗑️ Delete
+        </button>
+      )}
     </div>
   )
 }
