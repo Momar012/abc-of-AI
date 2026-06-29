@@ -25,7 +25,7 @@ export default function Home() {
         </p>
 
         <p className="text-white/60 mb-10 leading-relaxed">
-        A fun and simple way for kids to build datasets, train AI models, and explore how machines learn.
+        Create datasets, train AI models, build interactive apps, and learn how machines think and learn.
         </p>
 
         <Link href="/dataset-builder">
