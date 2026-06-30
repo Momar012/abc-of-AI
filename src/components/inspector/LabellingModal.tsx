@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useUIStore } from '@/store/useUIStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
+import EditableLabelPill from '@/components/ui/EditableLabelPill'
 
 export default function LabellingModal() {
   const blockId = useUIStore((s) => s.labellingModalBlockId)
@@ -107,19 +108,7 @@ export default function LabellingModal() {
         {block.labels.length > 0 && (
           <div className="px-5 py-3 border-b border-white/8 flex-shrink-0 flex flex-wrap gap-2">
             {block.labels.map((label) => (
-              <span
-                key={label.id}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-body font-semibold"
-                style={{
-                  background: `${label.color}22`,
-                  border: `1px solid ${label.color}55`,
-                  color: label.color,
-                }}
-              >
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: label.color }} />
-                {label.name}
-                <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
-              </span>
+              <EditableLabelPill key={label.id} blockId={block.id} label={label} />
             ))}
           </div>
         )}

@@ -10,6 +10,7 @@ import LabelCreator from '@/components/blocks/LabelCreator'
 import DroppedItemChip from '@/components/blocks/DroppedItemChip'
 import SpreadsheetPasteModal from '@/components/inspector/SpreadsheetPasteModal'
 import UnlabelledPasteModal from '@/components/inspector/UnlabelledPasteModal'
+import EditableLabelPill from '@/components/ui/EditableLabelPill'
 
 function ExpandViewButton({ blockId }: { blockId: string }) {
   const openLabellingModal = useUIStore((s) => s.openLabellingModal)
@@ -117,15 +118,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
         {block.labels.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {block.labels.map((label) => (
-              <span
-                key={label.id}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-body"
-                style={{ background: `${label.color}22`, border: `1px solid ${label.color}55`, color: label.color }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />
-                {label.name}
-                <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
-              </span>
+              <EditableLabelPill key={label.id} blockId={block.id} label={label} />
             ))}
           </div>
         )}
