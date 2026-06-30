@@ -71,40 +71,6 @@ function PanelToggleIcon({ side }: { side: 'left' | 'right' }) {
   )
 }
 
-function GettingStartedPanel() {
-  const steps = [
-    { emoji: '📸', step: '1', title: 'Feed it photos', body: <>Upload some <span className="text-pink-300 font-semibold">cat photos</span> and some <span className="text-teal-300 font-semibold">dog photos</span> using the panel on the left. Try at least 5 of each!</> },
-    { emoji: '🗂️', step: '2', title: 'Teach it the names', body: <>Drag a <span className="text-violet-300 font-semibold">Labelled block</span> onto the canvas. Make two labels: <span className="text-pink-300 font-semibold">Cat 🐱</span> and <span className="text-teal-300 font-semibold">Dog 🐶</span>, then sort your photos into them.</> },
-    { emoji: '🤖', step: '3', title: 'Add a Brain', body: <>Drag a <span className="text-teal-300 font-semibold">Model block</span> onto the canvas. Double-click it, link it to your labelled block, and pick <span className="text-emerald-300 font-semibold">Image Supervised</span>.</> },
-    { emoji: '🚀', step: '4', title: 'Train it!', body: <>Hit <span className="text-amber-300 font-semibold">Train Model</span> and watch your AI learn! More photos = <span className="text-emerald-300 font-semibold">smarter AI</span> 🧠</> },
-    { emoji: '🎯', step: '5', title: 'Can you trick it?', body: <>Drop in a photo it&apos;s never seen. Does it guess <span className="text-pink-300 font-semibold">Cat</span> or <span className="text-teal-300 font-semibold">Dog</span>? Try to fool it! 😄</> },
-  ]
-
-  return (
-    <div className="glass-panel flex flex-col gap-4 p-5">
-      <div>
-        <p className="text-base font-heading font-extrabold text-white">🐱 vs 🐶</p>
-        <p className="text-sm font-heading font-bold text-violet-300 mt-0.5">
-          Build an AI that knows the difference!
-        </p>
-      </div>
-
-      {steps.map(({ emoji, step, title, body }) => (
-        <div key={step} className="flex gap-3">
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-base">
-            {emoji}
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-heading font-bold text-white">
-              Step {step}: {title}
-            </p>
-            <p className="text-xs text-white/55 font-body leading-relaxed mt-0.5">{body}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 export default function DatasetBuilderPage() {
   const sensors = useSensors(
@@ -480,9 +446,7 @@ export default function DatasetBuilderPage() {
                     <LogicInspector key={selectedBlockId} />
                   ) : selectedBlockId ? (
                     <BlockInspector key={selectedBlockId} />
-                  ) : (
-                    <GettingStartedPanel />
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}
