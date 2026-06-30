@@ -92,10 +92,10 @@ export default function DatasetBuilderPage() {
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
-  const rightPanelCollapsed = useUIStore((s) => s.rightPanelCollapsed)
+
   const curriculumCollapsed = useUIStore((s) => s.curriculumCollapsed)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
-  const toggleRightPanel = useUIStore((s) => s.toggleRightPanel)
+
   const toggleCurriculumPanel = useUIStore((s) => s.toggleCurriculumPanel)
   const { panelWidth, setPanelWidth } = useCurriculumStore()
   const modelBlocks = useModelStore((s) => s.modelBlocks)
@@ -383,7 +383,7 @@ export default function DatasetBuilderPage() {
               className="absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300"
               style={{
                 left: leftPanelCollapsed ? '1rem' : '16rem',
-                right: rightPanelCollapsed ? '1rem' : '17rem',
+                right: selectedBlockId ? '17rem' : '1rem',
               }}
             >
               <div className="pointer-events-auto max-w-full">
@@ -413,40 +413,25 @@ export default function DatasetBuilderPage() {
               </div>
             )}
 
-            {/* Floating Inspector (right) */}
-            {(rightPanelCollapsed || !selectedBlockId) ? (
-              <button
-                onClick={toggleRightPanel}
-                title="Show inspector"
-                className="absolute top-4 right-4 z-20 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                <PanelToggleIcon side="right" />
-              </button>
-            ) : (
+            {/* Inspector (right) — shown only when a block is selected */}
+            {selectedBlockId && (
               <div className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
-                <button
-                  onClick={toggleRightPanel}
-                  title="Hide inspector"
-                  className="absolute -top-3 -left-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <PanelToggleIcon side="right" />
-                </button>
                 <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 flex-1">
-                  {selectedBlockId && selectedBlockType === 'rl-gridworld' ? (
+                  {selectedBlockType === 'rl-gridworld' ? (
                     <RLInspector key={selectedBlockId} />
-                  ) : selectedBlockId && selectedBlockType === 'model' ? (
+                  ) : selectedBlockType === 'model' ? (
                     <ModelInspector key={selectedBlockId} />
-                  ) : selectedBlockId && selectedBlockType === 'sensor' ? (
+                  ) : selectedBlockType === 'sensor' ? (
                     <SensorInspector key={selectedBlockId} />
-                  ) : selectedBlockId && selectedBlockType === 'condition' ? (
+                  ) : selectedBlockType === 'condition' ? (
                     <ConditionInspector key={selectedBlockId} />
-                  ) : selectedBlockId && selectedBlockType === 'timer' ? (
+                  ) : selectedBlockType === 'timer' ? (
                     <TimerInspector key={selectedBlockId} />
-                  ) : selectedBlockId && (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
+                  ) : (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
                     <LogicInspector key={selectedBlockId} />
-                  ) : selectedBlockId ? (
+                  ) : (
                     <BlockInspector key={selectedBlockId} />
-                  ) : null}
+                  )}
                 </div>
               </div>
             )}
