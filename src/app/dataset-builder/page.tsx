@@ -92,7 +92,8 @@ export default function DatasetBuilderPage() {
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
-
+  const dataBankWidth = useUIStore((s) => s.dataBankWidth)
+  const setDataBankWidth = useUIStore((s) => s.setDataBankWidth)
   const curriculumCollapsed = useUIStore((s) => s.curriculumCollapsed)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
 
@@ -252,6 +253,23 @@ export default function DatasetBuilderPage() {
     document.addEventListener('mouseup', onUp)
   }
 
+  function handleDataBankResizeStart(e: React.MouseEvent) {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = dataBankWidth
+    function onMove(ev: MouseEvent) {
+      const maxW = Math.min(380, Math.floor(window.innerWidth * 0.32))
+      const next = Math.max(180, Math.min(maxW, startWidth + ev.clientX - startX))
+      setDataBankWidth(next)
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -382,7 +400,7 @@ export default function DatasetBuilderPage() {
             <div
               className="absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300"
               style={{
-                left: leftPanelCollapsed ? '1rem' : '16rem',
+                left: leftPanelCollapsed ? '1rem' : `${dataBankWidth + 32}px`,
                 right: selectedBlockId ? '17rem' : '1rem',
               }}
             >
@@ -401,7 +419,7 @@ export default function DatasetBuilderPage() {
                 <PanelToggleIcon side="left" />
               </button>
             ) : (
-              <div className="absolute top-4 left-4 z-20 w-52 lg:w-56 xl:w-60 2xl:w-72 h-[calc(100%-2rem)] flex flex-col">
+              <div className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
                 <button
                   onClick={toggleLeftPanel}
                   title="Hide Data Bank"
@@ -409,6 +427,10 @@ export default function DatasetBuilderPage() {
                 >
                   <PanelToggleIcon side="left" />
                 </button>
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
+                  onMouseDown={handleDataBankResizeStart}
+                />
                 <DataBank />
               </div>
             )}

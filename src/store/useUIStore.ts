@@ -22,6 +22,7 @@ interface UIState {
   leftPanelCollapsed: boolean
   rightPanelCollapsed: boolean
   curriculumCollapsed: boolean
+  dataBankWidth: number
   canvasTool: 'select' | 'pan' | 'text'
   canvasInteractive: boolean
   canvasSelection: Array<{ id: string; type: string }>
@@ -45,6 +46,7 @@ interface UIState {
   toggleLeftPanel: () => void
   toggleRightPanel: () => void
   toggleCurriculumPanel: () => void
+  setDataBankWidth: (w: number) => void
   setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
   setCanvasInteractive: (v: boolean) => void
   setCanvasSelection: (nodes: Array<{ id: string; type: string }>) => void
@@ -64,6 +66,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   leftPanelCollapsed: true,
   rightPanelCollapsed: true,
   curriculumCollapsed: false,
+  dataBankWidth: 288,
   canvasTool: 'select',
   canvasInteractive: true,
   canvasSelection: [],
@@ -113,11 +116,12 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   toggleLeftPanel: () => set((s) => ({ leftPanelCollapsed: !s.leftPanelCollapsed })),
   toggleRightPanel: () => set((s) => ({ rightPanelCollapsed: !s.rightPanelCollapsed })),
   toggleCurriculumPanel: () => set((s) => ({ curriculumCollapsed: !s.curriculumCollapsed })),
+  setDataBankWidth: (w) => set({ dataBankWidth: w }),
 
   setCanvasTool: (tool) => set({ canvasTool: tool }),
   setCanvasInteractive: (v) => set({ canvasInteractive: v }),
   setCanvasSelection: (nodes) => set({ canvasSelection: nodes }),
 }), {
   name: 'abcai_ui_panels_v2',
-  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed }),
+  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed, dataBankWidth: s.dataBankWidth }),
 }))
