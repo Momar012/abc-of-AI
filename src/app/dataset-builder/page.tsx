@@ -414,7 +414,7 @@ export default function DatasetBuilderPage() {
             )}
 
             {/* Floating Inspector (right) */}
-            {rightPanelCollapsed ? (
+            {(rightPanelCollapsed || !selectedBlockId) ? (
               <button
                 onClick={toggleRightPanel}
                 title="Show inspector"
