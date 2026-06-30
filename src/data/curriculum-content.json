@@ -1,10 +1,50 @@
 [
   {
     "id": "ch-1782200140421",
-    "title": "🧭 Your AI Learning Journey,",
-    "subtitle": "Learn How AI Works by Building It",
+    "title": "Learn AI by Building Real Applications.",
+    "subtitle": "Build AI. Understand AI. Share AI.",
     "emoji": "📚",
     "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1782813300194",
+        "title": "🚀 Learn AI by Building Real Applications",
+        "icon": "📖",
+        "body": "# 📖 Welcome to ABITA\n\n**ABITA** is a visual AI learning platform where you don't just learn about AI...\n\n👉 **You build it.**\n\nInstead of only reading lessons, you'll create **real AI systems** step by step.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782813909398",
+        "title": "🚀 Learn by Doing with ABITA",
+        "icon": "📖",
+        "body": "Unlike traditional courses, you won't just watch videos or read lessons.\n\nWith **ABITA**, you'll learn by building **real AI applications**.\n\nEvery chapter includes hands-on activities where you'll:\n\n\n- 🛠️ Build\n- 🧪 Experiment\n- 🤖 Train AI models\n- 📊 Test your AI\n- 🚀 Export and share your applications",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782813439981",
+        "title": "🛠️ Every Lesson Becomes a Real Application",
+        "icon": "📖",
+        "body": "As you progress through the curriculum, you'll build exciting **AI-powered applications**.\n\n\n# 🚀 Projects You'll Build\n\n- 🤖 AI that recognises **Cats and Dogs**\n- 📧 AI that detects **Spam Messages**\n- 🚦 AI that recognises **Cars and Bikes**\n- 🦁 AI that identifies **Wild Animals**\n- 🍎 AI that sorts **Fruits**\n- 🌱 **Smart Greenhouse** Automation\n- 🏫 **Smart Classroom** Controller\n- 🚪 **Smart Security** System\n- 😊 AI that understands **Positive and Negative Text**\n- 💬 Your own **AI Chat Application**\n\n\nEvery new chapter teaches you a **new AI skill**, and every skill helps you build **smarter AI applications**.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782813593196",
+        "title": "🚀 Learn → Build → Share",
+        "icon": "📖",
+        "body": "By the end of the course, every project you build can be exported as an **interactive application**.\n\n\nYou can:\n\n- ▶️ Run it\n- 🧪 Test it\n- 📱 Share it with your teachers, friends, and family\n\nYou're not just completing lessons...\n\n\nYou're building a **portfolio of AI applications**.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782813649975",
+        "title": "🎯 Your Goal",
+        "icon": "📖",
+        "body": "By the end of this journey, you won't just know **what AI is**...\n\nYou'll know **how AI systems are built**, because **you'll have built them yourself**.",
+        "tip": ""
+      },
       {
         "type": "learn",
         "id": "learn-1782200167405",
