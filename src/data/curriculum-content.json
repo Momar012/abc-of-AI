@@ -894,5 +894,69 @@
         "successHint": ""
       }
     ]
+  },
+  {
+    "id": "ch-1782989953195",
+    "title": "8. 📝 Supervised Learning with Text",
+    "subtitle": "Teaching AI to Understand Words",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1782990086175",
+        "title": "🤔 Can AI Learn from Text Too?",
+        "icon": "📖",
+        "body": "# 💬 AI Can Learn from Words Too\n\nUntil now...\n\nyou have trained AI using **images**.\n\n- 🐱 Cat\n- 🐶 Dog\n\nBut images aren't the only kind of data that AI can learn from.\n\n\n\n## 🤔 What If We Used Words Instead?\n\nWhat if we wanted AI to understand **text**?\n\nCan AI learn from words...\n\njust like it learns from images?\n\n\n\n# ✅ Absolutely!\n\n\n\nAI can learn from **text**, **emails**, **messages**, **reviews**, **documents**, and much more.\n\nThe surprising part is...\n\nthe learning process is **almost exactly the same**.\n\nThe only thing that changes is the **type of data**.\n\n\n\nIn the next chapter, you'll discover how AI learns from **language** and powers tools like modern AI chatbots.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782990302093",
+        "title": "📝 Text is Data Too",
+        "icon": "📖",
+        "body": "# 🖼️ Images or 📝 Text... It's the Same Process\n\n\nImages are **one type of data**.\n\nText is **another**.\n\n\n\n## 📚 Example 1: Image Classification\n\n- 🐱 Cat Image -> 🏷️ **Cat**\n\n\n\n## 📚 Example 2: Text Classification\n\n- 💬 \"I love this game.\" -> 🏷️ **Positive**\n\n\n\n\n## 💡 What's Different?\n\nThe **data** is different.\n\nBut the **learning process** is exactly the same.\n\nThe AI still:\n\n- Learns from labelled examples.\n- Discovers patterns.\n- Makes predictions on new data.\n\n\n\n```diagram\n      🖼️ Images                 📝 Text\n           │                        │\n           ▼                        ▼\n     🧠 Train Model          🧠 Train Model\n           │                        │\n           ▼                        ▼\n   🏷️ Image Prediction      🏷️ Text Prediction\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782991087652",
+        "title": "🏷️ Teaching AI with Labels",
+        "icon": "📖",
+        "body": "# 🏷️ Text Needs Labels Too\n\nJust like **images**...\n\n**text** also needs **labels**.\n\nThe labels tell the AI what each sentence means.\n\n\n## 📚 Examples\n\n\n\n| 💬 Text | 🏷️ Label |\n|---------|----------|\n| \"I love pizza.\" | 😊 Positive |\n| \"This movie is boring.\" | 😞 Negative |\n| \"The food was amazing.\" | 😊 Positive |\n| \"I hate waiting.\" | 😞 Negative |\n\n\n\n## 🤖 How Does the AI Learn?\n\nDuring training...\n\nthe model reads **many labelled sentences**.\n\nOver time, it discovers patterns in the words and phrases.\n\nThese patterns help it understand the **sentiment** of new sentences it has never seen before.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782991207419",
+        "title": "🧠 What Does the AI Learn?",
+        "icon": "📖",
+        "body": "# 🧩 How Does AI Learn from Text?\n\nThe AI doesn't understand **English** the way people do.\n\nInstead...\n\nit starts discovering **patterns** in the words it sees.\n\n## 😊 Words Often Found in Positive Sentences\n\n- Amazing\n- Great\n- Excellent\n- Wonderful\n\nThese words often appear in **Positive** examples.\n\n\n\n## 😞 Words Often Found in Negative Sentences\n\n- Terrible\n- Awful\n- Horrible\n- Bad\n\nThese words often appear in **Negative** examples.\n\n\n\n## 🧠 Learning the Patterns\n\nAs the model reads more and more labelled sentences...\n\nit begins recognizing which words and phrases are commonly associated with each label.\n\nOver time...\n\nthese language patterns help the model predict whether a **new sentence** is positive or negative.\n\n\n# 🗺️ Positive Pattern Concept Map\n\n```diagram\n\n     😊 Positive Sentences\n\n      😊   😊   😊   😊\n              │\n              ▼\n         💬 Common Words\n\n              • Amazing\n              • Great\n              • Excellent\n              • Wonderful\n              │\n              ▼\n         🧩 Positive Pattern\n              │\n              ▼\n        😊 Predict Positive\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782991269539",
+        "title": "🤔 Does the AI Understand Every Word?",
+        "icon": "📖",
+        "body": "# 🤔 Words Can Have More Than One Meaning\n\nNot always.\n\nSometimes...\n\nthe **same word** can have **different meanings**.\n\n\n\n## 💬 Example\n\n\n**\"This movie is sick!\"**\n\nDoes **\"sick\"** mean...\n\n\n- 🤒 **Ill?**\n\nor\n\n- 😎 **Awesome?**\n\n\n\n## 💡 The Answer Depends on the Context\n\n\nAI can't decide based on **one word** alone.\n\nIt has to look at the **surrounding words** and understand the **context**.\n\nThat's why understanding **text** is often more challenging than understanding **images**.\n\nThe same word can mean **different things** in different situations.",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1782993186706",
+        "title": "Guided Lab 1: Build Your First Sentiment Classifier",
+        "icon": "🔬",
+        "instruction": "🎯 Objective\n\nTrain an AI model to recognise whether a sentence expresses a Positive or Negative opinion.\n\n## 🎯 Objective\n\nTrain an AI model that can recognise whether a sentence expresses a **Positive** or **Negative** opinion.\n\n---\n\n## Step 1\n\nOpen **ABITA**.\n\n\n## Step 2\n\nFrom the **Datasets** menu, drag a **Label Data** block onto the canvas.\n\n\n## Step 3\n\nDouble-click the **Label Data** block to open its **Properties Panel**.\n\n\n## Step 4\n\nCreate the following labels:\n\n- Positive\n- Negative\n\n\n\n## Step 5\n\nUnder the **Items** section, click **📋 Paste**.\n\n# 📚 Training Dataset\n\n| Text | Label |\n|------|-------|\n| I love this game. | Positive |\n| This pizza tastes amazing. | Positive |\n| The movie was fantastic. | Positive |\n| I really enjoyed the trip. | Positive |\n| This is the best day ever. | Positive |\n| The teacher explained everything clearly. | Positive |\n| I hate waiting in long lines. | Negative |\n| This food tastes terrible. | Negative |\n| The movie was boring. | Negative |\n| I am very disappointed. | Negative |\n| This game is awful. | Negative |\n| The service was really bad. | Negative |\n\n\n\n\n## Step 6\n\nCopy and paste the **Training Dataset** provided below.\n\n\n\n## Step 7\n\nBefore saving the dataset, carefully review every row.\n\nCheck for:\n\n- ✅ Correct labels\n- ✅ Spelling mistakes\n- ✅ Missing rows\n- ✅ Incorrect examples\n\n> **Remember:** Good AI starts with good data.\n\n\n\n## Step 8\n\nUnder **Save Dataset**, enter the dataset name:\n\n**Sentiment Training Dataset**\n\n\n\n## Step 9\n\nClick **💾 Save Dataset**.\n\n\n\n## Step 10\n\nOpen the **Datasets** tab from the left panel.\n\n\n\n## Step 11\n\nVerify that **Sentiment Training Dataset** appears in your list of saved datasets.\n\n\n\n## Step 12\n\nFrom the **AI Models** menu, drag a **Supervised Model (Text)** block onto the canvas.\n\n\n\n## Step 13\n\nConnect the **Label Data** block to the **Supervised Model**.\n\n\n\n## Step 14\n\nClick **🚀 Train Model** and wait for the training process to complete.\n\n\n## Step 15\n\nFrom the **Datasets** menu, drag another **Label Data** block onto the canvas.\n\nRename it:\n\n**Test Dataset**\n\n\n\n## Step 16\n\nDouble-click the **Test Dataset** block.\n\nClick **📋 Paste**.\n\nCopy and paste the **Test Dataset** provided below.\n\n# 🧪 Test Dataset\n\nThese sentences were **not** used during training.\n\n| Text | Expected Label |\n|------|----------------|\n| This cake is delicious. | Positive |\n| I really like this book. | Positive |\n| The concert was wonderful. | Positive |\n| I don't like this weather. | Negative |\n| This phone is horrible. | Negative |\n| The food was cold and tasteless. | Negative |\n\n\n\n\n## Step 17\n\nReview the dataset carefully.\n\nMake sure every sentence has the correct label.\n\nThen click **💾 Save Dataset**.\n\n\n\n## Step 18\n\nConnect the **Test Dataset** to the **Test Model** block.\n\nConnect the trained **Supervised Model** to the **Test Model** block.\n\n\n\n## Step 19\n\nClick **🧪 Test Model**.\n\nObserve the results.\n\n\n\n## Step 20\n\nOpen the **Expanded View** and observe:\n\n- 🤖 Prediction\n- 📈 Confidence\n- ✅ Correct or Incorrect\n- 📊 Overall Accuracy\n\n\n\n## Step 21\n\n## 💡 Think Like an AI Engineer\n\nIf your model made mistakes, how could you improve it?\n\n- ✅ Add more training examples.\n- ✅ Improve the quality of the data.\n- ✅ Correct incorrect labels.\n- ✅ Train the model again.\n\n\n\n# 🔍 Observe the Results\n\nAfter testing your model, answer the following questions:\n\n- 🤖 What prediction did the AI make for each sentence?\n- 📈 What was the confidence score?\n- 📊 What was the overall accuracy?\n- ❌ Did the AI make any mistakes?\n- 💡 Why do you think those mistakes happened?",
+        "canvasHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1782993994532",
+        "title": "💡 Reflection",
+        "icon": "📖",
+        "body": "# 🎉 Did You Notice Something Interesting?\n\nAlthough the **data changed** from **images** to **text**...\n\nthe **workflow stayed exactly the same**.\n\nThe only thing that changed was the **type of data**.\n\nEverything else remained the same.\n\n\n```diagram\n        📝 Text Data\n              │\n              ▼\n        🏷️ Add Labels\n              │\n              ▼\n        💾 Save Dataset\n              │\n              ▼\n        🧠 Train Model\n              │\n              ▼\n         🧪 Test Model\n              │\n              ▼\n        📊 Check Results\n              │\n              ▼\n        🔧 Improve Model\n```\n\n## 💡 The Big Idea\n\nWhether you're training AI with:\n\n- 🖼️ Images\n- 📝 Text\n- 🔊 Audio\n- 🎥 Video\n\nthe overall process is almost always the same:\n\n**Collect Data → Label → Train → Test → Improve**",
+        "tip": ""
+      }
+    ]
   }
 ]
