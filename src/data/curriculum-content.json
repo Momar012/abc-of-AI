@@ -884,6 +884,14 @@
         "icon": "📖",
         "body": "Today, you opened the **AI's brain**.\n\nNow you know that...\n\n\n- 🧠 A **model** is the brain of an AI system.\n- 📚 Models learn from **examples**.\n- 🧩 Models discover **patterns** in the data.\n- 🔢 Those patterns are stored as **millions of tiny numbers**.\n- 🎯 Models use those patterns to make **predictions**.\n- ❌ Models can still make **mistakes**.\n- 🔧 Better data and better training help models become more accurate.\n\n---\n\n\n\n# 💡 Remember\n\n> **AI isn't intelligent because it knows every answer.**\n\n> **AI is intelligent because it learns useful patterns from data.**\n\n---\n\n\n\n# 🚀 What's Next?\n\nIn the next chapter...\n\nyou'll become an **AI engineer**.\n\nYou'll improve your own AI model by:\n\n- 📚 Collecting better training data\n- 🏷️ Fixing incorrect labels\n- 🧹 Removing poor-quality data\n- 🔄 Training the model again\n\nJust like engineers do when building real-world AI systems.\n\n\n```diagram\n              📚 Examples\n                    │\n                    ▼\n             🧠 Train Model\n                    │\n                    ▼\n            🧩 Learn Patterns\n                    │\n                    ▼\n           🔢 Store as Numbers\n                    │\n                    ▼\n          🎯 Make Prediction\n                    │\n                    ▼\n          ✅ Right / ❌ Wrong\n                    │\n                    ▼\n          🔍 Investigate Why\n                    │\n                    ▼\n          🔧 Improve the AI\n                    │\n                    ▼\n             🧠 Train Again\n                    │\n                    ▼\n             🚀 Better Model",
         "tip": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1782987743759",
+        "title": "🏆 AI Engineer Challenge",
+        "icon": "🏆",
+        "prompt": "## 🔬 Diagnose the AI\n\nYour AI has finished testing.\n\nUnfortunately...\n\nit didn't perform as well as expected.\n\nAs an **AI Engineer**, your job is to investigate the problems and decide how to improve the model.\n\n\n\nComplete the table below.\n\n\n\n| 📝 Scenario | 🤔 Why did it happen? | 🔧 How would you improve it? |\n|---|---|---|\n| The model was trained using only 20 Cat images. |  |  |\n| Several Cat images were accidentally labelled as Dog. |  |  |\n| Many training images were blurry or very dark. |  |  |\n| The model achieved only 60% accuracy after testing. |  |  |\n\n\n\n## 💡 Think Like an AI Engineer\n\nAsk yourself:\n\n- ❓ What caused this problem?\n- ❓ What would you do to improve the model?\n\nThere may be **more than one correct answer**.",
+        "successHint": ""
       }
     ]
   }
