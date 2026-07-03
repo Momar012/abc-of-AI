@@ -4,6 +4,7 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { SensorBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useDebouncedSensorValue } from '@/hooks/useDebouncedSensorValue'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -27,6 +28,8 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
     updateSensorBlock(block.id, { value: newVal })
     evaluateGraph()
   }
+
+  const [localText, onTextChange] = useDebouncedSensorValue(String(block.value), handleValueChange)
 
   return (
     <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'sensor')}>
@@ -114,9 +117,9 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         {block.sensorType === 'text-input' && (
           <input
             type="text"
-            value={String(block.value)}
+            value={localText}
             onPointerDown={(e) => e.stopPropagation()}
-            onChange={(e) => handleValueChange(e.target.value)}
+            onChange={(e) => onTextChange(e.target.value)}
             placeholder="Type a value…"
             className="w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-orange-400 bg-transparent"
           />

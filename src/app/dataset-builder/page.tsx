@@ -172,31 +172,36 @@ export default function DatasetBuilderPage() {
     if (firstVisit) setShowEducationalOverlay(true)
   }, [firstVisit, setShowEducationalOverlay])
 
-  // Persist on every change
+  // Persist on every change (debounced so rapid typing doesn't serialize the whole app state per keystroke)
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
   useEffect(() => {
     if (!hydrated.current) return
-    saveToLocalStorage({
-      bankItems,
-      labelledBlocks,
-      unlabelledBlocks,
-      splitConfig,
-      earnedBadges,
-      currentDatasetName,
-      savedDatasets,
-      modelBlocks,
-      trainedModels,
-      rlBlocks,
-      doorBlocks,
-      bulbBlocks,
-      sensorBlocks,
-      conditionBlocks,
-      switchBlocks,
-      logicBlocks,
-      fanBlocks,
-      alarmBlocks,
-      acBlocks,
-      timerBlocks,
-    })
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      saveToLocalStorage({
+        bankItems,
+        labelledBlocks,
+        unlabelledBlocks,
+        splitConfig,
+        earnedBadges,
+        currentDatasetName,
+        savedDatasets,
+        modelBlocks,
+        trainedModels,
+        rlBlocks,
+        doorBlocks,
+        bulbBlocks,
+        sensorBlocks,
+        conditionBlocks,
+        switchBlocks,
+        logicBlocks,
+        fanBlocks,
+        alarmBlocks,
+        acBlocks,
+        timerBlocks,
+      })
+    }, 500)
+    return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
   }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
 
   // Clear selection if its block was deleted (e.g. via the node's own × button),
@@ -235,7 +240,7 @@ export default function DatasetBuilderPage() {
     if (hasItems && hasLabelledItems && validated && splitCustomized) {
       useUIStore.getState().earnBadge('data-scientist')
     }
-  })
+  }, [bankItems, labelledBlocks, splitConfig])
 
   function handleResizeStart(e: React.MouseEvent) {
     e.preventDefault()

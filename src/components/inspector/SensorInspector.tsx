@@ -2,6 +2,7 @@
 
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useDebouncedSensorValue } from '@/hooks/useDebouncedSensorValue'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -27,6 +28,16 @@ export default function SensorInspector() {
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
 
   const block = sensorBlocks.find((b) => b.id === selectedBlockId)
+
+  const [localText, onTextChange] = useDebouncedSensorValue(
+    block ? String(block.value) : '',
+    (v) => {
+      if (!block) return
+      updateSensorBlock(block.id, { value: v })
+      evaluateGraph()
+    }
+  )
+
   if (!block) return null
 
   const isNumeric = block.sensorType !== 'motion' && block.sensorType !== 'text-input'
@@ -113,8 +124,8 @@ export default function SensorInspector() {
         {block.sensorType === 'text-input' && (
           <input
             type="text"
-            value={String(block.value)}
-            onChange={(e) => setValue(e.target.value)}
+            value={localText}
+            onChange={(e) => onTextChange(e.target.value)}
             placeholder="Type a value…"
             className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-orange-400 bg-transparent"
           />

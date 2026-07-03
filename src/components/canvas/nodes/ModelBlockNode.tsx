@@ -62,7 +62,10 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
     const fakeItem: DataItem = { id: 'live', type: 'text', name: 'live', content: text, addedAt: 0 }
     const results = runTextInference(trainedModel, [fakeItem], () => {})
     const r = results[0]
-    if (r) {
+    const unchanged = r && block.liveResult
+      && block.liveResult.predictedLabelId === r.predictedLabelId
+      && block.liveResult.confidence === r.confidence
+    if (r && !unchanged) {
       updateModelBlock(block.id, {
         liveResult: {
           predictedLabel: r.predictedLabel,
