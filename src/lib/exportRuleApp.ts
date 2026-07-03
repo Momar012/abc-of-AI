@@ -1374,6 +1374,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .predict-btn{align-self:flex-start;padding:0.55rem 1.25rem;border-radius:0.625rem;border:none;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:0.85rem;font-weight:800;font-family:inherit;cursor:pointer;transition:opacity 0.15s,transform 0.1s}
 .predict-btn:hover{opacity:0.9}
 .predict-btn:active{transform:scale(0.97)}
+.predict-btn:disabled{opacity:0.5;cursor:not-allowed}
 .results{display:flex;flex-direction:column;gap:0.5rem;min-height:0}
 .result-row{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.625rem;border-radius:0.5rem;transition:background 0.2s}
 .result-row.best{background:rgba(255,255,255,0.06)}
@@ -1385,6 +1386,14 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .result-row.best .result-pct{color:var(--acc2)}
 .result-tag{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:9999px;font-size:0.72rem;font-weight:800;background:linear-gradient(90deg,var(--acc)22,var(--acc2)22);border:1px solid rgba(255,255,255,0.12);color:#fff}
 .waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
+.thinking{display:flex;flex-direction:column;align-items:center;gap:0.6rem;padding:1rem 0.5rem;text-align:center}
+.think-emoji{font-size:2rem;animation:think-pulse 1s ease-in-out infinite}
+.think-msg{font-size:0.8rem;color:rgba(255,255,255,0.5);font-weight:600}
+.think-bar-wrap{width:100%;max-width:220px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.think-bar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 8s linear}
+@keyframes think-pulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
+.reveal-pop{animation:reveal-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes reveal-pop{0%{opacity:0;transform:scale(0.6) translateY(6px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
@@ -1469,32 +1478,73 @@ function runNBFull(modelId,text){
   var bestI=probs.indexOf(Math.max.apply(null,probs));
   return {labels:m.labels,probs:probs,bestLabel:m.labels[bestI]};
 }
-function predict(modelId,inputId,resultsId){
-  var text=document.getElementById(inputId).value||'';
-  var res=runNBFull(modelId,text);
+var THINK_MESSAGES_NB=['🧠 Reading your words…','📚 Comparing with what I learned…','⚡ Weighing the evidence…','✨ Almost ready…'];
+
+function showTextResults(resultsId,res){
   var el=document.getElementById(resultsId);
-  if(res&&res.error==='nodata'){
-    el.innerHTML='<span class="waiting">⚠ Model needs retraining — go back to ABITA and retrain this model.</span>';
-    return;
-  }
-  if(!res||!text.trim()){
-    el.innerHTML='<span class="waiting">Type something above and click Predict ✨</span>';
-    return;
-  }
+  if(!el) return;
   var sorted=res.labels.map(function(l,i){return{l:l,p:res.probs[i]};}).sort(function(a,b){return b.p-a.p;});
-  var html='<div class="result-tag">🎯 Predicted: '+res.bestLabel+'</div>';
+  var html='<div class="result-tag reveal-pop">🎯 Predicted: '+res.bestLabel+'</div>';
   for(var i=0;i<sorted.length;i++){
     var isBest=sorted[i].l===res.bestLabel;
     var pct=Math.round(sorted[i].p*100);
     html+='<div class="result-row'+(isBest?' best':'')+'">'+
       '<span class="result-lbl">'+sorted[i].l+'</span>'+
-      '<div class="bar-wrap"><div class="bar-fill" style="width:'+pct+'%"></div></div>'+
+      '<div class="bar-wrap"><div class="bar-fill" data-w="'+pct+'" style="width:0%"></div></div>'+
       '<span class="result-pct">'+pct+'%</span>'+
     '</div>';
   }
   el.innerHTML=html;
-  showToast('🎯 '+res.bestLabel+' — '+Math.round(sorted[0].p*100)+'% confident');
-  _blip(660,0.15);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      var bars=el.querySelectorAll('.bar-fill');
+      for(var i=0;i<bars.length;i++) bars[i].style.width=bars[i].getAttribute('data-w')+'%';
+    });
+  });
+  showToast('🎉 '+res.bestLabel+' — '+Math.round(sorted[0].p*100)+'% confident');
+  _blip(880,0.12,'sine');
+  setTimeout(function(){ _blip(1175,0.15,'sine'); },90);
+}
+
+async function predict(modelId,inputId,resultsId,btnId){
+  var text=document.getElementById(inputId).value||'';
+  var el=document.getElementById(resultsId);
+  var btnEl=document.getElementById(btnId);
+
+  if(!text.trim()){
+    el.innerHTML='<span class="waiting">Type something above and click Predict ✨</span>';
+    return;
+  }
+
+  if(btnEl) btnEl.disabled=true;
+  var msgId='think-msg-'+resultsId, barId='think-bar-'+resultsId;
+  el.innerHTML='<div class="thinking"><div class="think-emoji">🧠</div>'+
+    '<div class="think-msg" id="'+msgId+'">'+THINK_MESSAGES_NB[0]+'</div>'+
+    '<div class="think-bar-wrap"><div class="think-bar" id="'+barId+'"></div></div></div>';
+  requestAnimationFrame(function(){ var bar=document.getElementById(barId); if(bar) bar.style.width='100%'; });
+  var msgIdx=0;
+  var msgTimer=setInterval(function(){
+    msgIdx=(msgIdx+1)%THINK_MESSAGES_NB.length;
+    var msgEl=document.getElementById(msgId);
+    if(msgEl) msgEl.textContent=THINK_MESSAGES_NB[msgIdx];
+  },1800);
+
+  var THINK_MS=8000;
+  var pair=await Promise.all([Promise.resolve(runNBFull(modelId,text)), new Promise(function(r){setTimeout(r,THINK_MS);})]);
+  var res=pair[0];
+
+  clearInterval(msgTimer);
+  if(btnEl) btnEl.disabled=false;
+
+  if(res&&res.error==='nodata'){
+    el.innerHTML='<span class="waiting">⚠ Model needs retraining — go back to ABITA and retrain this model.</span>';
+    return;
+  }
+  if(!res){
+    el.innerHTML='<span class="waiting">Prediction failed — try again</span>';
+    return;
+  }
+  showTextResults(resultsId,res);
 }
 
 var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
@@ -1514,6 +1564,7 @@ for(var mi=0;mi<MODELS.length;mi++){
   (function(m){
     var inputId='ai-input-'+m.id;
     var resultsId='ai-results-'+m.id;
+    var btnId='ai-btn-'+m.id;
     var mId=m.id;
     var div=document.createElement('div');
     div.className='model-card';
@@ -1524,7 +1575,7 @@ for(var mi=0;mi<MODELS.length;mi++){
       '</div>'+
       '<div class="input-area">'+
         '<textarea class="ai-textarea" id="'+inputId+'" placeholder="Type some text and see what this AI thinks…"></textarea>'+
-        '<button class="predict-btn" onclick="predict(\\''+mId+'\\',\\''+inputId+'\\',\\''+resultsId+'\\')">Predict ✨</button>'+
+        '<button class="predict-btn" id="'+btnId+'" onclick="predict(\\''+mId+'\\',\\''+inputId+'\\',\\''+resultsId+'\\',\\''+btnId+'\\')">Predict ✨</button>'+
       '</div>'+
       '<div class="results" id="'+resultsId+'"><span class="waiting">Type something above and click Predict ✨</span></div>';
     cards.appendChild(div);
