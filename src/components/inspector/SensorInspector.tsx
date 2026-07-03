@@ -122,12 +122,12 @@ export default function SensorInspector() {
         )}
 
         {block.sensorType === 'text-input' && (
-          <input
-            type="text"
+          <textarea
             value={localText}
             onChange={(e) => onTextChange(e.target.value)}
             placeholder="Type a value…"
-            className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-orange-400 bg-transparent"
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-orange-400 bg-transparent resize-none"
           />
         )}
       </div>
