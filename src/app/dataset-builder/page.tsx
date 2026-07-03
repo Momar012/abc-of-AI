@@ -29,6 +29,7 @@ import EducationalOverlay from '@/components/feedback/EducationalOverlay'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
 import ClusterResultsModal from '@/components/inspector/ClusterResultsModal'
 import LabellingModal from '@/components/inspector/LabellingModal'
+import GlowButton from '@/components/ui/GlowButton'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
@@ -400,7 +401,7 @@ export default function DatasetBuilderPage() {
             <div
               className="absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300"
               style={{
-                left: leftPanelCollapsed ? '1rem' : `${dataBankWidth + 32}px`,
+                left: leftPanelCollapsed ? '8rem' : `${dataBankWidth + 32}px`,
                 right: selectedBlockId ? '17rem' : '1rem',
               }}
             >
@@ -411,19 +412,21 @@ export default function DatasetBuilderPage() {
 
             {/* Floating DataBank (left) */}
             {leftPanelCollapsed ? (
-              <button
+              <GlowButton
+                size="sm"
+                variant="primary"
                 onClick={toggleLeftPanel}
                 title="Show Data Bank"
-                className="absolute top-4 left-4 z-20 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                className="absolute top-4 left-4 z-20"
               >
-                <PanelToggleIcon side="left" />
-              </button>
+                🗃️ Data
+              </GlowButton>
             ) : (
               <div className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
                 <button
                   onClick={toggleLeftPanel}
                   title="Hide Data Bank"
-                  className="absolute -top-3 -right-3 z-10 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                  className="absolute -top-3 -right-3 z-30 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <PanelToggleIcon side="left" />
                 </button>
