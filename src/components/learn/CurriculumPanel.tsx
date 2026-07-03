@@ -159,7 +159,7 @@ export default function CurriculumPanel() {
               transition={{ duration: 0.18 }}
               className="overflow-hidden"
             >
-              <div className="mt-3">
+              <div className="mt-3 max-h-64 overflow-y-auto overscroll-contain pr-1">
                 <ModuleSelector modules={CURRICULUM} currentModuleId={currentModuleId} onSelect={handleModuleSelect} />
               </div>
             </motion.div>
