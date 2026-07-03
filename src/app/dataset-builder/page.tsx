@@ -419,7 +419,7 @@ export default function DatasetBuilderPage() {
                 title="Show Data Bank"
                 className="absolute top-4 left-4 z-20"
               >
-                🗃️ Data
+                🗃️ Data-Panel
               </GlowButton>
             ) : (
               <div className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
