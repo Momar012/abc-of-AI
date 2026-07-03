@@ -83,6 +83,34 @@ export async function trainImageSupervisedModel(
   }
 }
 
+function weightedKnnPredict(
+  queryVec: number[],
+  knnData: Record<string, { values: number[]; shape: number[] }>,
+  labelIds: string[],
+  k = 5
+): Record<string, number> {
+  const dists: { labelId: string; d: number }[] = []
+  for (const [labelId, { values, shape }] of Object.entries(knnData)) {
+    const [n, dim] = shape
+    for (let row = 0; row < n; row++) {
+      dists.push({ labelId, d: sqDist(queryVec, values.slice(row * dim, (row + 1) * dim)) })
+    }
+  }
+  dists.sort((a, b) => a.d - b.d)
+
+  const weights: Record<string, number> = Object.fromEntries(labelIds.map((id) => [id, 0]))
+  let totalWeight = 0
+  for (const { labelId, d } of dists.slice(0, Math.min(k, dists.length))) {
+    const w = 1 / (d + 1e-6)
+    weights[labelId] += w
+    totalWeight += w
+  }
+
+  const confidences: Record<string, number> = {}
+  for (const id of labelIds) confidences[id] = totalWeight > 0 ? weights[id] / totalWeight : 0
+  return confidences
+}
+
 export async function runInference(
   trainedModel: TrainedModel,
   testItems: DataItem[],
@@ -95,15 +123,6 @@ export async function runInference(
 
   onProgress(1, testItems.length + 2)
   const mobilenetModule = await import('@tensorflow-models/mobilenet')
-  const knnModule = await import('@tensorflow-models/knn-classifier')
-
-  // Restore KNN dataset from saved tensors
-  const knn = knnModule.create()
-  const restoredDataset: Record<string, ReturnType<typeof tf.tensor>> = {}
-  for (const [key, { values, shape }] of Object.entries(trainedModel.knnData)) {
-    restoredDataset[key] = tf.tensor(values, shape as [number, number])
-  }
-  knn.setClassifierDataset(restoredDataset as Parameters<typeof knn.setClassifierDataset>[0])
 
   const mobileNet = await mobilenetModule.load({ version: 2, alpha: 0.5 })
 
@@ -120,27 +139,24 @@ export async function runInference(
     const img = await decodeImage(item.content)
     const imgTensor = tf.browser.fromPixels(img)
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
-
-    const prediction = await knn.predictClass(features)
+    const featureValues = Array.from(await features.data())
 
     imgTensor.dispose()
     features.dispose()
 
-    // Map labelId back to label name
-    const labelIdx = trainedModel.labelIds.indexOf(prediction.label)
-    const predictedLabel = labelIdx >= 0 ? trainedModel.labels[labelIdx] : prediction.label
+    const allConfidences = weightedKnnPredict(featureValues, trainedModel.knnData, trainedModel.labelIds)
 
-    // Convert confidences: labelId → score
-    const allConfidences: Record<string, number> = {}
-    for (const [labelId, score] of Object.entries(prediction.confidences)) {
-      allConfidences[labelId] = score
-    }
+    const predictedLabelId = trainedModel.labelIds.reduce((best, id) =>
+      allConfidences[id] > allConfidences[best] ? id : best
+    )
+    const labelIdx = trainedModel.labelIds.indexOf(predictedLabelId)
+    const predictedLabel = labelIdx >= 0 ? trainedModel.labels[labelIdx] : predictedLabelId
 
     results.push({
       itemId: item.id,
       predictedLabel,
-      predictedLabelId: prediction.label,
-      confidence: prediction.confidences[prediction.label] ?? 0,
+      predictedLabelId,
+      confidence: allConfidences[predictedLabelId] ?? 0,
       allConfidences,
       actualLabelId: null,
       actualLabel: null,
@@ -148,11 +164,6 @@ export async function runInference(
 
     step++
     onProgress(step, testItems.length + 2)
-  }
-
-  // Clean up restored tensors
-  for (const tensor of Object.values(restoredDataset)) {
-    tensor.dispose()
   }
 
   return results

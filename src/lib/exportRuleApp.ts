@@ -592,11 +592,11 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     }
     if(!all.length) return null;
     all.sort(function(a,b){return a.dist-b.dist;});
-    var top=all.slice(0,Math.min(k,all.length)),votes={};
-    labels.forEach(function(l){votes[l]=0;});
-    top.forEach(function(x){votes[x.label]++;});
-    var best=labels[0],bestV=-1;
-    for(var lab in votes){if(votes[lab]>bestV){bestV=votes[lab];best=lab;}}
+    var top=all.slice(0,Math.min(k,all.length)),weights={};
+    labels.forEach(function(l){weights[l]=0;});
+    top.forEach(function(x){weights[x.label]+=1/(x.dist+1e-6);});
+    var best=labels[0],bestW=-1;
+    for(var lab in weights){if(weights[lab]>bestW){bestW=weights[lab];best=lab;}}
     return best;
   }
   function _inferCanvas(im,canEl,cb){
@@ -1687,14 +1687,15 @@ function knnPredict(queryVec, knnData, labels, labelIds, k) {
     }
   }
   dists.sort(function(a, b) { return a.d - b.d; });
-  var votes = {};
+  var weights = {};
+  var totalWeight = 0;
   for (var i = 0; i < Math.min(k, dists.length); i++) {
-    var l = dists[i].lid;
-    votes[l] = (votes[l] || 0) + 1;
+    var w = 1 / (dists[i].d + 1e-6);
+    weights[dists[i].lid] = (weights[dists[i].lid] || 0) + w;
+    totalWeight += w;
   }
-  var total = Math.min(k, dists.length);
   var result = labelIds.map(function(lid, i) {
-    return { label: labels[i], labelId: lid, p: (votes[lid] || 0) / total };
+    return { label: labels[i], labelId: lid, p: totalWeight > 0 ? (weights[lid] || 0) / totalWeight : 0 };
   });
   result.sort(function(a, b) { return b.p - a.p; });
   return result;
