@@ -1606,6 +1606,15 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .result-tag{display:inline-flex;align-items:center;gap:0.4rem;padding:0.3rem 0.75rem;border-radius:9999px;font-size:0.72rem;font-weight:800;background:linear-gradient(90deg,var(--acc)22,var(--acc2)22);border:1px solid rgba(255,255,255,0.12);color:#fff}
 .waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
 .loading-bar{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0%;transition:width 0.5s}
+.thinking{display:flex;flex-direction:column;align-items:center;gap:0.6rem;padding:1rem 0.5rem;text-align:center}
+.think-emoji{font-size:2rem;animation:think-pulse 1s ease-in-out infinite}
+.think-msg{font-size:0.8rem;color:rgba(255,255,255,0.5);font-weight:600}
+.think-bar-wrap{width:100%;max-width:220px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.think-bar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 8s linear}
+@keyframes think-pulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
+.reveal-pop{animation:reveal-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes reveal-pop{0%{opacity:0;transform:scale(0.6) translateY(6px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.upload-btn.disabled{opacity:0.45;pointer-events:none}
 footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
@@ -1705,52 +1714,87 @@ function showResults(resultsId, sorted) {
   var el = document.getElementById(resultsId);
   if (!el) return;
   var bestLabel = sorted[0].label;
-  var html = '<div class="result-tag">🎯 ' + bestLabel + '</div>';
+  var html = '<div class="result-tag reveal-pop">🎯 ' + bestLabel + '</div>';
   for (var i = 0; i < sorted.length; i++) {
     var isBest = sorted[i].label === bestLabel;
     var pct = Math.round(sorted[i].p * 100);
     html += '<div class="result-row' + (isBest ? ' best' : '') + '">' +
       '<span class="result-lbl">' + sorted[i].label + '</span>' +
-      '<div class="bar-wrap"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="bar-wrap"><div class="bar-fill" data-w="' + pct + '" style="width:0%"></div></div>' +
       '<span class="result-pct">' + pct + '%</span>' +
       '</div>';
   }
   el.innerHTML = html;
-  showToast('🎯 ' + bestLabel + ' — ' + Math.round(sorted[0].p * 100) + '% confident');
-  _blip(660, 0.15);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      var bars = el.querySelectorAll('.bar-fill');
+      for (var i = 0; i < bars.length; i++) bars[i].style.width = bars[i].getAttribute('data-w') + '%';
+    });
+  });
+  showToast('🎉 ' + bestLabel + ' — ' + Math.round(sorted[0].p * 100) + '% confident');
+  _blip(880, 0.12, 'sine');
+  setTimeout(function() { _blip(1175, 0.15, 'sine'); }, 90);
 }
 
-async function predictFrame(modelIdx) {
-  var m = MODELS[modelIdx];
-  var videoEl = document.getElementById('cam-' + modelIdx);
-  var canvasEl = document.getElementById('cap-' + modelIdx);
-  var resultsId = 'res-' + modelIdx;
-  var overlayEl = document.getElementById('ov-' + modelIdx);
-  if (!_mobileNet) { if (overlayEl) overlayEl.textContent = 'AI engine still loading…'; return; }
-  if (overlayEl) overlayEl.style.display = 'none';
-  var ctx2d = canvasEl.getContext('2d');
-  canvasEl.width = 224; canvasEl.height = 224;
-  ctx2d.drawImage(videoEl, 0, 0, 224, 224);
-  try {
-    var imgTensor = tf.browser.fromPixels(canvasEl);
-    var features = _mobileNet.infer(imgTensor, true);
-    var featureValues = Array.from(await features.data());
-    imgTensor.dispose(); features.dispose();
-    var sorted = knnPredict(featureValues, m.knnData, m.labels, m.labelIds, 5);
-    showResults(resultsId, sorted);
-  } catch(e) {
-    document.getElementById(resultsId).innerHTML = '<span class="waiting">Prediction failed — try again</span>';
+var _lastUploadImg = {};
+var THINK_MESSAGES = ['🧠 Looking closely at your photo…', '🔍 Comparing it with what I learned…', '⚡ Crunching the pixels…', '✨ Almost ready…'];
+
+function setButtonsDisabled(modelIdx, disabled) {
+  var card = document.querySelectorAll('.model-card')[modelIdx];
+  if (!card) return;
+  var buttons = card.querySelectorAll('.predict-btn');
+  for (var i = 0; i < buttons.length; i++) buttons[i].disabled = disabled;
+  var uploadLabel = card.querySelector('.upload-btn');
+  if (uploadLabel) {
+    uploadLabel.classList.toggle('disabled', disabled);
+    var input = uploadLabel.querySelector('input');
+    if (input) input.disabled = disabled;
   }
 }
 
-async function predictUpload(modelIdx, file) {
-  var m = MODELS[modelIdx];
-  var canvasEl = document.getElementById('cap-' + modelIdx);
-  var videoEl = document.getElementById('cam-' + modelIdx);
+async function runPrediction(modelIdx, computeFn) {
+  var resultsId = 'res-' + modelIdx;
+  var el = document.getElementById(resultsId);
+  if (!el) return;
+  setButtonsDisabled(modelIdx, true);
+  var msgId = 'think-msg-' + modelIdx, barId = 'think-bar-' + modelIdx;
+  el.innerHTML = '<div class="thinking"><div class="think-emoji">🧠</div>' +
+    '<div class="think-msg" id="' + msgId + '">' + THINK_MESSAGES[0] + '</div>' +
+    '<div class="think-bar-wrap"><div class="think-bar" id="' + barId + '"></div></div></div>';
+  requestAnimationFrame(function() {
+    var bar = document.getElementById(barId);
+    if (bar) bar.style.width = '100%';
+  });
+  var msgIdx = 0;
+  var msgTimer = setInterval(function() {
+    msgIdx = (msgIdx + 1) % THINK_MESSAGES.length;
+    var msgEl = document.getElementById(msgId);
+    if (msgEl) msgEl.textContent = THINK_MESSAGES[msgIdx];
+  }, 1800);
+
+  var THINK_MS = 8000;
+  var results;
+  try {
+    var pair = await Promise.all([computeFn(), new Promise(function(res) { setTimeout(res, THINK_MS); })]);
+    results = pair[0];
+  } catch (e) {
+    results = null;
+  }
+  clearInterval(msgTimer);
+  setButtonsDisabled(modelIdx, false);
+  if (!results) {
+    el.innerHTML = '<span class="waiting">Prediction failed — try again</span>';
+    return;
+  }
+  showResults(resultsId, results);
+}
+
+function handleUploadChange(modelIdx, file) {
   var previewEl = document.getElementById('prev-' + modelIdx);
+  var videoEl = document.getElementById('cam-' + modelIdx);
   var ovEl = document.getElementById('ov-' + modelIdx);
   var resultsId = 'res-' + modelIdx;
-  if (!_mobileNet) { showToast('AI engine still loading — please wait'); return; }
+  if (!file) return;
   if (previewEl._prevUrl) { URL.revokeObjectURL(previewEl._prevUrl); }
   var url = URL.createObjectURL(file);
   previewEl._prevUrl = url;
@@ -1759,22 +1803,43 @@ async function predictUpload(modelIdx, file) {
   if (videoEl) videoEl.style.display = 'none';
   if (ovEl) ovEl.style.display = 'none';
   var img = new Image();
-  img.onload = async function() {
-    var ctx2d = canvasEl.getContext('2d');
-    canvasEl.width = 224; canvasEl.height = 224;
-    ctx2d.drawImage(img, 0, 0, 224, 224);
-    try {
-      var imgTensor = tf.browser.fromPixels(canvasEl);
-      var features = _mobileNet.infer(imgTensor, true);
-      var featureValues = Array.from(await features.data());
-      imgTensor.dispose(); features.dispose();
-      var sorted = knnPredict(featureValues, m.knnData, m.labels, m.labelIds, 5);
-      showResults(resultsId, sorted);
-    } catch(e) {
-      document.getElementById(resultsId).innerHTML = '<span class="waiting">Prediction failed — try again</span>';
-    }
+  img.onload = function() {
+    _lastUploadImg[modelIdx] = img;
+    var el = document.getElementById(resultsId);
+    if (el) el.innerHTML = '<span class="waiting">📸 Photo ready — click <b>Predict ✨</b> to see the result!</span>';
   };
   img.src = url;
+}
+
+function predictClick(modelIdx) {
+  var m = MODELS[modelIdx];
+  var canvasEl = document.getElementById('cap-' + modelIdx);
+  var videoEl = document.getElementById('cam-' + modelIdx);
+  var previewEl = document.getElementById('prev-' + modelIdx);
+  var overlayEl = document.getElementById('ov-' + modelIdx);
+  if (!_mobileNet) { showToast('AI engine still loading — please wait'); return; }
+
+  var usingUpload = previewEl && previewEl.style.display === 'block' && _lastUploadImg[modelIdx];
+  if (!usingUpload && (!videoEl || !videoEl.srcObject)) {
+    showToast('Start the camera or upload a photo first 📸');
+    return;
+  }
+  if (overlayEl) overlayEl.style.display = 'none';
+
+  runPrediction(modelIdx, async function() {
+    var ctx2d = canvasEl.getContext('2d');
+    canvasEl.width = 224; canvasEl.height = 224;
+    if (usingUpload) {
+      ctx2d.drawImage(_lastUploadImg[modelIdx], 0, 0, 224, 224);
+    } else {
+      ctx2d.drawImage(videoEl, 0, 0, 224, 224);
+    }
+    var imgTensor = tf.browser.fromPixels(canvasEl);
+    var features = _mobileNet.infer(imgTensor, true);
+    var featureValues = Array.from(await features.data());
+    imgTensor.dispose(); features.dispose();
+    return knnPredict(featureValues, m.knnData, m.labels, m.labelIds, 5);
+  });
 }
 
 var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
@@ -1813,8 +1878,8 @@ mobilenet.load({ version: 2, alpha: 0.5 }).then(function(net) {
       '</div>' +
       '<div class="cam-actions">' +
         '<button class="predict-btn" onclick="startCam(' + mi + ')">📷 Start Camera</button>' +
-        '<button class="predict-btn" onclick="predictFrame(' + mi + ')">Predict ✨</button>' +
-        '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="predictUpload(' + mi + ',this.files[0])"></label>' +
+        '<button class="predict-btn" onclick="predictClick(' + mi + ')">Predict ✨</button>' +
+        '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="handleUploadChange(' + mi + ',this.files[0])"></label>' +
       '</div>' +
       '<div class="results" id="res-' + mi + '"><span class="waiting">Start camera or upload a photo, then click Predict ✨</span></div>';
     cards.appendChild(div);
