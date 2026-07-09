@@ -20,7 +20,10 @@ export interface ConditionBlock {
   name: string
   linkedSensorId: string | null
   operator: RuleOperator
-  threshold: number | boolean | string
+  // null means "no value entered yet" — numeric thresholds start empty rather
+  // than defaulting to a specific number, so a real "> 0" is unambiguous from
+  // an untouched field.
+  threshold: number | boolean | string | null
   linkedModelId?: string | null
   modelCondition?: string | null
   currentOutput: boolean | null

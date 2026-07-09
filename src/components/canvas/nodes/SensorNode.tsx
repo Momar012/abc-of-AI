@@ -4,6 +4,7 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { SensorBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useModelStore } from '@/store/useModelStore'
 import { useDebouncedSensorValue } from '@/hooks/useDebouncedSensorValue'
 
 const SENSOR_EMOJI: Record<string, string> = {
@@ -19,10 +20,15 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
   const updateSensorBlock = useRuleStore((s) => s.updateSensorBlock)
   const removeSensorBlock = useRuleStore((s) => s.removeSensorBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
+  const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
+  const modelBlocks = useModelStore((s) => s.modelBlocks)
 
   const emoji = SENSOR_EMOJI[block.sensorType] ?? '📡'
   const isNumeric = block.sensorType !== 'motion' && block.sensorType !== 'text-input'
+  const isConnected =
+    conditionBlocks.some((c) => c.linkedSensorId === block.id) ||
+    modelBlocks.some((m) => m.liveLinkedSensorId === block.id)
 
   const handleValueChange = (newVal: number | boolean | string) => {
     updateSensorBlock(block.id, { value: newVal })
@@ -32,7 +38,11 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
   const [localText, onTextChange] = useDebouncedSensorValue(String(block.value), handleValueChange)
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'sensor')}>
+    <div
+      className="flex flex-col"
+      onDoubleClick={() => setSelectedBlock(block.id, 'sensor')}
+      title={!isConnected ? 'Wire this sensor into an IF block (or a model) to use it.' : undefined}
+    >
       <Handle
         type="source"
         position={Position.Right}
@@ -53,6 +63,8 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         style={{
           boxShadow: selected
             ? '0 0 0 2px rgba(249,115,22,0.9), 0 0 20px rgba(249,115,22,0.3)'
+            : !isConnected
+            ? '0 0 0 2px rgba(245,158,11,0.6), 0 0 16px rgba(245,158,11,0.35)'
             : undefined,
           transition: 'box-shadow 0.2s ease',
         }}
@@ -70,6 +82,10 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
             ×
           </button>
         </div>
+
+        {!isConnected && (
+          <p className="text-[10px] text-amber-400 font-body flex items-center gap-1">⚠ Not connected</p>
+        )}
 
         {/* Inline value control */}
         {isNumeric && (() => {

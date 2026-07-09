@@ -36,7 +36,7 @@ export default function ConditionInspector() {
   const trainedModels = useModelStore((s) => s.trainedModels)
 
   const block = conditionBlocks.find((b) => b.id === selectedBlockId)
-  const [thresholdText, setThresholdText] = useState(() => String(block?.threshold ?? 0))
+  const [thresholdText, setThresholdText] = useState(() => (block?.threshold == null ? '' : String(block.threshold)))
   if (!block) return null
 
   const isModelMode = !!block.linkedModelId
@@ -198,15 +198,20 @@ export default function ConditionInspector() {
                 onChange={(e) => {
                   const v = e.target.value
                   setThresholdText(v)
+                  if (v === '' || v === '-') {
+                    update({ threshold: null })
+                    return
+                  }
                   const n = Number(v)
-                  if (v !== '' && v !== '-' && !Number.isNaN(n)) update({ threshold: n })
+                  if (!Number.isNaN(n)) update({ threshold: n })
                 }}
                 onBlur={() => {
                   if (thresholdText === '' || Number.isNaN(Number(thresholdText))) {
-                    setThresholdText('0')
-                    update({ threshold: 0 })
+                    setThresholdText('')
+                    update({ threshold: null })
                   }
                 }}
+                placeholder="Enter a number…"
                 className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 bg-transparent"
               />
             )}
@@ -224,7 +229,7 @@ export default function ConditionInspector() {
               {sensor ? (sensor.name.split(' ').slice(1).join(' ') || sensor.name) : '?'}
             </span>{' '}
             <span className="text-yellow-300">{block.operator}</span>{' '}
-            <span className="text-lime-300">{String(block.threshold)}</span>
+            <span className="text-lime-300">{block.threshold === null ? '…' : String(block.threshold)}</span>
           </p>
         )}
         {isModelMode && block.modelCondition && (

@@ -799,7 +799,7 @@ function evaluate(){
       }
     } else {
       var sen=state.sensors.find(function(s){return s.id===c.linkedSensorId});
-      c._out=sen?evalCond(sen.value,c.operator,c.threshold):false;
+      c._out=(sen&&c.threshold!==null&&c.threshold!=='')?evalCond(sen.value,c.operator,c.threshold):false;
     }
   }
   for(var pass=0;pass<5;pass++){

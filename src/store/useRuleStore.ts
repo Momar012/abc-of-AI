@@ -355,6 +355,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       if (!c.linkedSensorId) return { ...c, currentOutput: null }
       const sensor = sensorBlocks.find((s) => s.id === c.linkedSensorId)
       if (!sensor) return { ...c, currentOutput: null }
+      if (c.threshold === null || c.threshold === '') return { ...c, currentOutput: null }
       return { ...c, currentOutput: evalCondition(sensor.value, c.operator, c.threshold) }
     })
 

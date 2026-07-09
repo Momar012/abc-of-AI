@@ -228,6 +228,7 @@ export default function DatasetCanvas() {
   const canvasInteractive = useUIStore((s) => s.canvasInteractive)
   const setCanvasInteractive = useUIStore((s) => s.setCanvasInteractive)
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
+  const addToast = useUIStore((s) => s.addToast)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -442,7 +443,7 @@ export default function DatasetCanvas() {
           } else if (sensor?.sensorType === 'text-input') {
             updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '==', threshold: '' })
           } else {
-            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '>', threshold: 0 })
+            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '>', threshold: null })
           }
         }
         evaluateGraph()
@@ -491,6 +492,56 @@ export default function DatasetCanvas() {
       updateACBlock, updateTimerBlock,
       logicBlocks, sensorBlocks, evaluateGraph, modelBlocks,
     ]
+  )
+
+  // Kids sometimes wire a Switch into an IF block's sensor-input handle by habit —
+  // that silently stores the Switch's id as linkedSensorId, which never resolves
+  // against sensorBlocks in evaluateGraph(), leaving the condition stuck forever.
+  // Refuse it at the connection layer instead.
+  const isValidConnection = useCallback(
+    (connection: Connection | Edge) => {
+      if (connection.targetHandle !== 'condition-in') return true
+      if (connection.sourceHandle === 'prediction-out') return true
+      return sensorBlocks.some((b) => b.id === connection.source)
+    },
+    [sensorBlocks]
+  )
+
+  // Let kids know *why* a drag onto an IF block's input got refused, instead of
+  // it just silently snapping back. isValidConnection fires continuously while
+  // dragging (for handle hover-styling), so we can't toast from inside it — we
+  // capture the drag's source on start, then resolve what was actually under
+  // the pointer on release (onConnectEnd fires for every outcome: valid drop,
+  // invalid drop, or cancel onto empty canvas) and only toast for a confirmed
+  // rejected condition-in drop.
+  const connectionStartRef = useRef<{ nodeId: string | null; handleId: string | null }>({ nodeId: null, handleId: null })
+
+  const onConnectStart = useCallback((_event: unknown, params: { nodeId: string | null; handleId: string | null }) => {
+    connectionStartRef.current = { nodeId: params.nodeId, handleId: params.handleId }
+  }, [])
+
+  const onConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const { nodeId: sourceId, handleId: sourceHandleId } = connectionStartRef.current
+      connectionStartRef.current = { nodeId: null, handleId: null }
+
+      const target = event.target as HTMLElement | null
+      const handleEl = target?.closest?.('.react-flow__handle') as HTMLElement | null
+      if (!handleEl || !handleEl.classList.contains('target')) return
+      if (handleEl.getAttribute('data-handleid') !== 'condition-in') return
+
+      if (sourceHandleId === 'prediction-out') return
+      if (sourceId && sensorBlocks.some((b) => b.id === sourceId)) return
+
+      const sourceIsSwitch = !!sourceId && switchBlocks.some((b) => b.id === sourceId)
+      addToast(
+        sourceIsSwitch
+          ? '❌ Switches can’t plug into an IF block, try a Sensor instead!'
+          : '❌ Only a Sensor (or a trained Model) can plug into an IF block!',
+        'warn'
+      )
+    },
+    [sensorBlocks, switchBlocks, addToast]
   )
 
   // Delete selected nodes — dispatch to each block's owning store
@@ -722,6 +773,9 @@ export default function DatasetCanvas() {
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
+        isValidConnection={isValidConnection}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
         onSelectionChange={({ nodes }: OnSelectionChangeParams) =>

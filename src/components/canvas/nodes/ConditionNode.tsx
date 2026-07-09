@@ -51,6 +51,21 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
 
   const isModelMode = !!block.linkedModelId
   const isSensorMode = !!block.linkedSensorId
+  // Numeric thresholds start empty (null) rather than defaulting to a specific
+  // number, and text thresholds start as '' — both read unambiguously as
+  // "nothing entered yet" without guessing at whatever value the student lands on.
+  const thresholdEmpty = isSensorMode && (block.threshold === null || block.threshold === '')
+  const noSensorOrModel = !block.linkedSensorId && !block.linkedModelId
+  const modelNoLabel = !!block.linkedModelId && !block.modelCondition
+  const needsAttention = noSensorOrModel || modelNoLabel || thresholdEmpty
+  const attentionMessage = noSensorOrModel
+    ? 'This IF block needs a sensor or trained model plugged in, plus a condition picked below.'
+    : modelNoLabel
+    ? 'Double-click and pick which prediction label this should match.'
+    : thresholdEmpty
+    ? 'Double-click and enter a value to compare against.'
+    : undefined
+  const attentionBadge = thresholdEmpty && !noSensorOrModel && !modelNoLabel ? '⚠ Missing a value' : '⚠ Not set up yet'
 
   const matchCount = (isModelMode && block.modelCondition && linkedModel?.testResults?.length && !linkedModel?.liveLinkedSensorId)
     ? linkedModel.testResults.filter((r) => r.predictedLabel === block.modelCondition).length
@@ -58,13 +73,17 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
 
   const sensorShortName = sensor ? (sensor.name.split(' ').slice(1).join(' ') || sensor.name) : ''
   const conditionPreview = isSensorMode
-    ? `${sensorShortName} ${block.operator} ${block.threshold}`
+    ? `${sensorShortName} ${block.operator} ${thresholdEmpty ? '…' : block.threshold}`
     : isModelMode
     ? (block.modelCondition ? `prediction == "${block.modelCondition}"` : 'Pick a label…')
     : 'Connect a sensor or model'
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'condition')}>
+    <div
+      className="flex flex-col"
+      onDoubleClick={() => setSelectedBlock(block.id, 'condition')}
+      title={needsAttention ? attentionMessage : undefined}
+    >
       {/* Input: from sensor OR model prediction */}
       <Handle
         type="target"
@@ -93,6 +112,8 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
         style={{
           boxShadow: selected
             ? '0 0 0 2px rgba(234,179,8,0.9), 0 0 20px rgba(234,179,8,0.3)'
+            : needsAttention
+            ? '0 0 0 2px rgba(245,158,11,0.6), 0 0 16px rgba(245,158,11,0.35)'
             : undefined,
           transition: 'box-shadow 0.2s ease',
         }}
@@ -110,6 +131,10 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
             ×
           </button>
         </div>
+
+        {needsAttention && (
+          <p className="text-[10px] text-amber-400 font-body flex items-center gap-1">{attentionBadge}</p>
+        )}
 
         {/* Model mode: inline label picker */}
         {isModelMode ? (
@@ -141,7 +166,9 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
           /* Sensor mode or empty: show condition preview */
           <div className="rounded-lg bg-white/5 px-3 py-2">
             <p className="text-[10px] text-white/40 font-body mb-0.5">IF</p>
-            <p className="text-xs font-heading font-semibold text-yellow-300 truncate">{conditionPreview}</p>
+            <p className={`text-xs font-heading font-semibold truncate ${
+              needsAttention ? 'text-amber-400' : 'text-yellow-300'
+            }`}>{conditionPreview}</p>
           </div>
         )}
 
