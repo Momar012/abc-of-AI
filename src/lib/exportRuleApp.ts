@@ -472,7 +472,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.2)}
 @keyframes alarm-ring{from{transform:scale(0.5);opacity:0.8}to{transform:scale(2.5);opacity:0}}
 @keyframes alarm-flash{from{background:rgba(239,68,68,0.02)}to{background:rgba(239,68,68,0.1)}}
 @keyframes flake-rise{0%{transform:translateY(0) rotate(0deg);opacity:0.85}100%{transform:translateY(-56px) rotate(180deg);opacity:0}}
-footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.45);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 .empty-hint{color:rgba(255,255,255,0.18);font-size:0.82rem;font-style:italic;padding:1.5rem 0;text-align:center}
 .splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.25rem;background:linear-gradient(135deg,var(--bg1),var(--bg2));transition:opacity 0.6s ease;pointer-events:auto}
 .splash.hide{opacity:0;pointer-events:none}
@@ -1394,7 +1394,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 @keyframes think-pulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
 .reveal-pop{animation:reveal-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both}
 @keyframes reveal-pop{0%{opacity:0;transform:scale(0.6) translateY(6px)}100%{opacity:1;transform:scale(1) translateY(0)}}
-footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.45);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 @keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
@@ -1666,7 +1666,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .reveal-pop{animation:reveal-pop 0.45s cubic-bezier(0.34,1.56,0.64,1) both}
 @keyframes reveal-pop{0%{opacity:0;transform:scale(0.6) translateY(6px)}100%{opacity:1;transform:scale(1) translateY(0)}}
 .upload-btn.disabled{opacity:0.45;pointer-events:none}
-footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.45);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 @keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
@@ -2054,7 +2054,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .cluster-pill.active{background:linear-gradient(90deg,var(--acc)33,var(--acc2)33);border-color:rgba(255,255,255,0.25);color:#fff}
 .waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
 .loading-bar{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0%;transition:width 0.5s}
-footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.13);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
+footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.45);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 @keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
