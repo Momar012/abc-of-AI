@@ -348,7 +348,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
         }
 
         // Batch test mode (existing)
-        if (!modelBlock?.testResults?.length) return { ...c, currentOutput: null }
+        if (!modelBlock?.trainedModelId || !modelBlock?.testResults?.length) return { ...c, currentOutput: null }
         const matchCount = modelBlock.testResults.filter((r: { predictedLabel: string }) => r.predictedLabel === c.modelCondition).length
         return { ...c, currentOutput: matchCount > 0 }
       }

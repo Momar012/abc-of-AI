@@ -6,6 +6,18 @@ import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBl
 
 const KEY = 'abcai_dataset_v1'
 
+export type SaveResult = { ok: true } | { ok: false; quotaExceeded: boolean }
+
+export function isQuotaExceededError(err: unknown): boolean {
+  return (
+    err instanceof DOMException &&
+    (err.name === 'QuotaExceededError' ||
+      err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      err.code === 22 ||
+      err.code === 1014)
+  )
+}
+
 interface PersistedState {
   bankItems: Omit<DataItem, 'thumbnailUrl'>[]
   labelledBlocks: LabelledDatasetBlock[]
@@ -50,7 +62,7 @@ export function saveToLocalStorage(state: {
   alarmBlocks: AlarmBlock[]
   acBlocks: ACBlock[]
   timerBlocks: TimerBlock[]
-}) {
+}): SaveResult {
   try {
     const toSave: PersistedState = {
       bankItems: state.bankItems.map(({ thumbnailUrl: _, ...rest }) => rest),
@@ -77,8 +89,12 @@ export function saveToLocalStorage(state: {
       })),
     }
     localStorage.setItem(KEY, JSON.stringify(toSave))
-  } catch {
-    // Storage quota exceeded (knnData can be large) or unavailable — silently ignore
+    return { ok: true }
+  } catch (err) {
+    // Storage quota exceeded (knnData/images can be large) or unavailable.
+    // setItem throws before writing anything, so the previous successful
+    // snapshot is untouched — only changes since then are at risk.
+    return { ok: false, quotaExceeded: isQuotaExceededError(err) }
   }
 }
 

@@ -131,7 +131,7 @@ export default function ModelInspector() {
       return
     }
 
-    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null, testStatus: 'idle', testResults: null })
 
     try {
       // Run real clustering silently first
@@ -183,7 +183,7 @@ export default function ModelInspector() {
 
   const handleTrainTextSupervised = async () => {
     if (!linkedLabelledBlock) return
-    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null })
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null, testStatus: 'idle', testResults: null })
 
     try {
       // Run the actual training silently (it's synchronous and near-instant)
@@ -246,7 +246,7 @@ export default function ModelInspector() {
       return
     }
 
-    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null })
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, clusterResults: null, testStatus: 'idle', testResults: null })
 
     try {
       // Run real clustering silently first
@@ -346,7 +346,7 @@ export default function ModelInspector() {
     setProgressStep(0)
     setProgressTotal(100)
     setProgressMessage('Starting…')
-    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null })
+    updateModelBlock(block.id, { status: 'loading', errorMessage: undefined, trainedModelId: null, testStatus: 'idle', testResults: null })
 
     try {
       const result = await trainImageSupervisedModel(
@@ -599,6 +599,8 @@ export default function ModelInspector() {
                               clusterCount: n,
                               clusterResults: null,
                               status: block.status === 'trained' ? 'idle' : block.status,
+                              testStatus: 'idle',
+                              testResults: null,
                             })}
                             className={`w-8 h-8 rounded-full text-sm font-heading font-bold transition-all ${
                               selected
@@ -657,6 +659,8 @@ export default function ModelInspector() {
                               clusterCount: n,
                               clusterResults: null,
                               status: block.status === 'trained' ? 'idle' : block.status,
+                              testStatus: 'idle',
+                              testResults: null,
                             })}
                             className={`w-8 h-8 rounded-full text-sm font-heading font-bold transition-all ${
                               selected

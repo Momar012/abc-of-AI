@@ -17,6 +17,11 @@ export default function EditableLabelPill({ blockId, label }: Props) {
   const [renameError, setRenameError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const labels = useDatasetStore((s) => s.labelledBlocks.find((b) => b.id === blockId)?.labels ?? [])
+  const bankItems = useDatasetStore((s) => s.bankItems)
+  // Defensive: count only ids that still resolve to a real item, so an orphaned
+  // reference (e.g. an item deleted straight from the Data Bank) can't leave a
+  // stale, misleadingly-high count with nothing behind it.
+  const liveItemCount = label.itemIds.filter((id) => bankItems.some((i) => i.id === id)).length
 
   const commitRename = () => {
     const trimmed = nameValue.trim()
@@ -30,7 +35,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (label.itemIds.length === 0) {
+    if (liveItemCount === 0) {
       removeLabel(blockId, label.id)
     } else {
       setConfirmDelete(true)
@@ -44,7 +49,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
         style={{ background: `${label.color}22`, border: `1px solid ${label.color}88`, color: label.color }}
       >
         <span className="text-white/70 whitespace-nowrap">
-          Delete? <span className="font-semibold">{label.itemIds.length}</span> unassigned
+          Delete? <span className="font-semibold">{liveItemCount}</span> unassigned
         </span>
         <button
           onPointerDown={(e) => e.stopPropagation()}
@@ -102,7 +107,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
         </button>
       )}
 
-      <span className="text-white/40 ml-0.5">({label.itemIds.length})</span>
+      <span className="text-white/40 ml-0.5">({liveItemCount})</span>
 
       <button
         onPointerDown={(e) => e.stopPropagation()}

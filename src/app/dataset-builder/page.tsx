@@ -87,6 +87,7 @@ export default function DatasetBuilderPage() {
   const currentDatasetName = useDatasetStore((s) => s.currentDatasetName)
   const savedDatasets = useDatasetStore((s) => s.savedDatasets)
   const earnedBadges = useUIStore((s) => s.earnedBadges)
+  const addToast = useUIStore((s) => s.addToast)
   const firstVisit = useUIStore((s) => s.firstVisit)
   const setShowEducationalOverlay = useUIStore((s) => s.setShowEducationalOverlay)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
@@ -174,11 +175,14 @@ export default function DatasetBuilderPage() {
 
   // Persist on every change (debounced so rapid typing doesn't serialize the whole app state per keystroke)
   const saveTimer = useRef<ReturnType<typeof setTimeout>>()
+  // Tracks whether we've already warned about the *current* run of save failures,
+  // so a kid editing while over quota gets one toast, not one every 500ms.
+  const hasWarnedSaveFailureRef = useRef(false)
   useEffect(() => {
     if (!hydrated.current) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
-      saveToLocalStorage({
+      const result = saveToLocalStorage({
         bankItems,
         labelledBlocks,
         unlabelledBlocks,
@@ -200,9 +204,20 @@ export default function DatasetBuilderPage() {
         acBlocks,
         timerBlocks,
       })
+      if (result.ok) {
+        hasWarnedSaveFailureRef.current = false
+      } else if (!hasWarnedSaveFailureRef.current) {
+        hasWarnedSaveFailureRef.current = true
+        addToast(
+          result.quotaExceeded
+            ? "⚠️ Your project got too big to save! Try removing some pictures from your Data Bank."
+            : "⚠️ We couldn't save your work just now. Try refreshing, or check your browser's storage settings.",
+          'warn'
+        )
+      }
     }, 500)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, addToast])
 
   // Clear selection if its block was deleted (e.g. via the node's own × button),
   // so the right panel falls back to the Getting Started view instead of going blank.

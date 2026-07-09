@@ -92,5 +92,12 @@ export const useModelStore = create<ModelState>((set) => ({
     })),
 
   deleteTrainedModel: (id) =>
-    set((s) => ({ trainedModels: s.trainedModels.filter((m) => m.id !== id) })),
+    set((s) => ({
+      trainedModels: s.trainedModels.filter((m) => m.id !== id),
+      modelBlocks: s.modelBlocks.map((b) =>
+        b.trainedModelId === id
+          ? { ...b, trainedModelId: null, status: 'idle', testResults: null, testStatus: 'idle' }
+          : b
+      ),
+    })),
 }))

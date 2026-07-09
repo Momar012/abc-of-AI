@@ -3,11 +3,13 @@ import { TrainedModel, TestResult, ClusterResult } from '@/types/model'
 
 type ProgressCallback = (message: string, step: number, total: number) => void
 
-function decodeImage(base64: string): Promise<HTMLImageElement> {
+export function decodeImage(base64: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
-    img.onerror = reject
+    // The browser hands onerror a raw Event, not an Error — wrap it so
+    // callers get a real, catchable reason instead of a generic failure.
+    img.onerror = () => reject(new Error('Image failed to load — it may be corrupted or in an unsupported format.'))
     img.crossOrigin = 'anonymous'
     img.src = base64
   })
@@ -52,7 +54,12 @@ export async function trainImageSupervisedModel(
         totalImages + 3
       )
 
-      const img = await decodeImage(bankItem.content)
+      let img: HTMLImageElement
+      try {
+        img = await decodeImage(bankItem.content)
+      } catch {
+        throw new Error(`The image "${bankItem.name}" couldn't be loaded for training — it may be corrupted or in an unsupported format. Try removing and re-uploading it.`)
+      }
       const imgTensor = tf.browser.fromPixels(img)
       const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
 
@@ -136,7 +143,12 @@ export async function runInference(
       continue
     }
 
-    const img = await decodeImage(item.content)
+    let img: HTMLImageElement
+    try {
+      img = await decodeImage(item.content)
+    } catch {
+      throw new Error(`The image "${item.name}" couldn't be loaded for testing — it may be corrupted or in an unsupported format.`)
+    }
     const imgTensor = tf.browser.fromPixels(img)
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
     const featureValues = Array.from(await features.data())
@@ -252,7 +264,12 @@ export async function clusterImages(
   const allFeatures: number[][] = []
   for (let i = 0; i < n; i++) {
     onProgress(`Analysing image ${i + 1}/${n}…`, 3 + i, n + 3)
-    const img = await decodeImage(items[i].content)
+    let img: HTMLImageElement
+    try {
+      img = await decodeImage(items[i].content)
+    } catch {
+      throw new Error(`One of the images (id: ${items[i].itemId}) couldn't be loaded — it may be corrupted or in an unsupported format.`)
+    }
     const imgTensor = tf.browser.fromPixels(img)
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
     allFeatures.push(Array.from(await features.data()))

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 import { MAX_BANK_ITEMS } from '@/lib/constants'
+import { decodeImage } from '@/lib/trainModel'
 
 export default function DataBankUploader() {
   const addBankItem = useDatasetStore((s) => s.addBankItem)
@@ -25,6 +26,17 @@ export default function DataBankUploader() {
 
         if (file.type.startsWith('image/')) {
           const base64 = await fileToBase64(file)
+          // The browser reports a MIME type based on the file extension, not the
+          // actual bytes — a HEIC photo renamed .jpg (common straight off an iPhone)
+          // or a genuinely corrupted file will pass this check but fail to decode.
+          // Catch that now, at upload time, instead of later during training when
+          // the connection to this specific file is much less obvious.
+          try {
+            await decodeImage(base64)
+          } catch {
+            addToast(`⚠ "${file.name}" isn't a format this browser can use — try converting it to JPG or PNG first.`, 'warn')
+            continue
+          }
           const blob = new Blob([await file.arrayBuffer()], { type: file.type })
           const thumbnailUrl = URL.createObjectURL(blob)
           addBankItem({ type: 'image', name: file.name, content: base64, thumbnailUrl })

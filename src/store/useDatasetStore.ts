@@ -85,10 +85,35 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
     })),
 
   removeBankItem: (id) =>
-    set((s) => ({ bankItems: s.bankItems.filter((i) => i.id !== id) })),
+    set((s) => ({
+      bankItems: s.bankItems.filter((i) => i.id !== id),
+      labelledBlocks: s.labelledBlocks.map((b) => ({
+        ...b,
+        itemIds: b.itemIds.filter((i) => i !== id),
+        labels: b.labels.map((l) => ({ ...l, itemIds: l.itemIds.filter((i) => i !== id) })),
+      })),
+      unlabelledBlocks: s.unlabelledBlocks.map((b) => ({
+        ...b,
+        itemIds: b.itemIds.filter((i) => i !== id),
+      })),
+    })),
 
   bulkRemoveBankItems: (ids) =>
-    set((s) => ({ bankItems: s.bankItems.filter((i) => !ids.includes(i.id)) })),
+    set((s) => {
+      const idSet = new Set(ids)
+      return {
+        bankItems: s.bankItems.filter((i) => !idSet.has(i.id)),
+        labelledBlocks: s.labelledBlocks.map((b) => ({
+          ...b,
+          itemIds: b.itemIds.filter((i) => !idSet.has(i)),
+          labels: b.labels.map((l) => ({ ...l, itemIds: l.itemIds.filter((i) => !idSet.has(i)) })),
+        })),
+        unlabelledBlocks: s.unlabelledBlocks.map((b) => ({
+          ...b,
+          itemIds: b.itemIds.filter((i) => !idSet.has(i)),
+        })),
+      }
+    }),
 
   addLabelledBlock: (pos?) =>
     set((s) => ({

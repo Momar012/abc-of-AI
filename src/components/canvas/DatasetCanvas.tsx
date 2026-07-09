@@ -430,7 +430,7 @@ export default function DatasetCanvas() {
           // the user must explicitly retrain if they want to update the model.
           updateModelBlock(target, { linkedBlockId: source })
         } else {
-          updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null })
+          updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null, testStatus: 'idle', testResults: null })
         }
       } else if (targetHandle === 'door-in') {
         updateDoorBlock(target, { linkedRuleBlockId: source, isOpen: false })
@@ -604,7 +604,7 @@ export default function DatasetCanvas() {
       for (const edge of deleted) {
         const { target, targetHandle, type } = edge
         if (targetHandle === 'in') {
-          updateModelBlock(target, { linkedBlockId: null, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null })
+          updateModelBlock(target, { linkedBlockId: null, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null, testStatus: 'idle', testResults: null })
         } else if (targetHandle === 'test-in') {
           updateModelBlock(target, { testLinkedBlockId: null, testStatus: 'idle', testResults: null })
         } else if (targetHandle === 'condition-in') {
