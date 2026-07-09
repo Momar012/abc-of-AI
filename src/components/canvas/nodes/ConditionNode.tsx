@@ -35,7 +35,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
     if (sensor?.sensorType === 'motion' && block.operator !== 'is') {
       updateConditionBlock(block.id, {
         operator: 'is',
-        threshold: typeof block.threshold === 'boolean' ? block.threshold : true,
+        threshold: typeof block.threshold === 'boolean' || block.threshold === null ? block.threshold : true,
       })
       evaluateGraph()
     }
@@ -63,7 +63,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
     : modelNoLabel
     ? 'Double-click and pick which prediction label this should match.'
     : thresholdEmpty
-    ? 'Double-click and enter a value to compare against.'
+    ? 'Double-click and finish setting the condition below.'
     : undefined
   const attentionBadge = thresholdEmpty && !noSensorOrModel && !modelNoLabel ? '⚠ Missing a value' : '⚠ Not set up yet'
 

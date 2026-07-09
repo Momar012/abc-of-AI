@@ -175,11 +175,12 @@ export default function ConditionInspector() {
 
             {sensorType === 'motion' ? (
               <select
-                value={String(block.threshold)}
-                onChange={(e) => update({ threshold: e.target.value === 'true' })}
+                value={block.threshold === null ? '' : String(block.threshold)}
+                onChange={(e) => update({ threshold: e.target.value === '' ? null : e.target.value === 'true' })}
                 className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 cursor-pointer"
                 style={{ backgroundColor: '#1e1b4b' }}
               >
+                <option value="" disabled style={{ backgroundColor: '#1e1b4b' }}>Choose a condition…</option>
                 <option value="true" style={{ backgroundColor: '#1e1b4b' }}>true (motion detected)</option>
                 <option value="false" style={{ backgroundColor: '#1e1b4b' }}>false (no motion)</option>
               </select>

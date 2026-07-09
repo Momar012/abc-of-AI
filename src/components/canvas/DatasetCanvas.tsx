@@ -439,7 +439,7 @@ export default function DatasetCanvas() {
         } else {
           const sensor = sensorBlocks.find((b) => b.id === source)
           if (sensor?.sensorType === 'motion') {
-            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: 'is', threshold: true })
+            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: 'is', threshold: null })
           } else if (sensor?.sensorType === 'text-input') {
             updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '==', threshold: '' })
           } else {
