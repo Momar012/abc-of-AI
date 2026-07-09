@@ -50,9 +50,9 @@ function LabelledContent({ blockId }: { blockId: string }) {
   const totalItems = allRows.length
 
   return (
-    <div className="flex flex-col gap-0">
+    <div className="flex flex-col gap-0 h-full">
       {/* Items header with expand button */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1 flex-shrink-0">
         <p className="text-xs text-white/40 font-heading font-semibold uppercase tracking-wider">Items</p>
         <div className="flex items-center gap-2">
           <button
@@ -76,7 +76,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
         animate={{ boxShadow: isOver ? '0 0 24px 6px rgba(124,58,237,0.4)' : 'none' }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         style={{ borderColor: isOver ? 'rgba(124,58,237,0.6)' : undefined }}
-        className="min-h-[80px]"
+        className="min-h-[80px] flex-1 min-h-0 overflow-y-auto"
       >
         {totalItems === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
@@ -112,7 +112,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
       </motion.div>
 
       {/* Label creator */}
-      <div className="px-4 py-3 border-t border-white/8">
+      <div className="px-4 py-3 border-t border-white/8 flex-shrink-0">
         <p className="text-xs text-white/40 mb-1.5 font-heading font-semibold">Labels</p>
         <LabelCreator blockId={block.id} labels={block.labels} />
         {block.labels.length > 0 && (
