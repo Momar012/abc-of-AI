@@ -802,6 +802,14 @@ function evaluate(){
       c._out=sen?evalCond(sen.value,c.operator,c.threshold):false;
     }
   }
+  for(var pass=0;pass<5;pass++){
+    for(var j=0;j<state.logic.length;j++){
+      var l=state.logic[j]; var a=l.inputs[0]; var b=l.inputs[1];
+      if(l.logicType==='and')       l._out=(a&&b)?getOut(a)&&getOut(b):false;
+      else if(l.logicType==='or')   l._out=a?getOut(a)||(b?getOut(b):false):false;
+      else if(l.logicType==='not')  l._out=a?!getOut(a):true;
+    }
+  }
   for(var ti=0;ti<state.timers.length;ti++){
     var tm=state.timers[ti];
     var up=tm.linkedRuleBlockId?getOut(tm.linkedRuleBlockId):false;
@@ -812,14 +820,6 @@ function evaluate(){
       if(up&&!tm._lastInput&&tm._remaining===null){ tm._remaining=tm.totalSeconds; tm._on=true; }
     }
     tm._lastInput=up;
-  }
-  for(var pass=0;pass<5;pass++){
-    for(var j=0;j<state.logic.length;j++){
-      var l=state.logic[j]; var a=l.inputs[0]; var b=l.inputs[1];
-      if(l.logicType==='and')       l._out=(a&&b)?getOut(a)&&getOut(b):false;
-      else if(l.logicType==='or')   l._out=a?getOut(a)||(b?getOut(b):false):false;
-      else if(l.logicType==='not')  l._out=a?!getOut(a):true;
-    }
   }
   for(var k=0;k<state.fans.length;k++)   state.fans[k]._on=state.fans[k].linkedRuleBlockId?getOut(state.fans[k].linkedRuleBlockId):false;
   for(var k=0;k<state.alarms.length;k++) state.alarms[k]._on=state.alarms[k].linkedRuleBlockId?getOut(state.alarms[k].linkedRuleBlockId):false;
