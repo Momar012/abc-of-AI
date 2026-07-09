@@ -157,6 +157,14 @@ const edgeTypes = {
   rule: RuleEdge,
 }
 
+// Rule-graph handles that expect a boolean-producing block (Condition/Logic/
+// Timer/Switch) as their source — a raw Sensor id never resolves here.
+const SENSOR_BLOCKED_HANDLES: Record<string, string> = {
+  'logic-in-1': 'a Logic gate', 'logic-in-2': 'a Logic gate', 'logic-in': 'a Logic gate',
+  'timer-in': 'a Timer',
+  'door-in': 'a Door', 'bulb-in': 'a Bulb', 'fan-in': 'a Fan', 'alarm-in': 'an Alarm', 'ac-in': 'an AC',
+}
+
 export default function DatasetCanvas() {
   const labelledBlocks = useDatasetStore((s) => s.labelledBlocks)
   const unlabelledBlocks = useDatasetStore((s) => s.unlabelledBlocks)
@@ -497,12 +505,20 @@ export default function DatasetCanvas() {
   // Kids sometimes wire a Switch into an IF block's sensor-input handle by habit —
   // that silently stores the Switch's id as linkedSensorId, which never resolves
   // against sensorBlocks in evaluateGraph(), leaving the condition stuck forever.
-  // Refuse it at the connection layer instead.
+  // Sensors have the mirror-image problem: wired straight into a Logic gate,
+  // Timer, or actuator, their raw value never appears in evaluateGraph()'s
+  // resolved boolean map, so the block is silently dead forever too. Refuse
+  // both at the connection layer instead.
   const isValidConnection = useCallback(
     (connection: Connection | Edge) => {
-      if (connection.targetHandle !== 'condition-in') return true
-      if (connection.sourceHandle === 'prediction-out') return true
-      return sensorBlocks.some((b) => b.id === connection.source)
+      if (connection.targetHandle === 'condition-in') {
+        if (connection.sourceHandle === 'prediction-out') return true
+        return sensorBlocks.some((b) => b.id === connection.source)
+      }
+      if (connection.targetHandle && SENSOR_BLOCKED_HANDLES[connection.targetHandle]) {
+        return !sensorBlocks.some((b) => b.id === connection.source)
+      }
+      return true
     },
     [sensorBlocks]
   )
@@ -528,18 +544,24 @@ export default function DatasetCanvas() {
       const target = event.target as HTMLElement | null
       const handleEl = target?.closest?.('.react-flow__handle') as HTMLElement | null
       if (!handleEl || !handleEl.classList.contains('target')) return
-      if (handleEl.getAttribute('data-handleid') !== 'condition-in') return
+      const targetHandleId = handleEl.getAttribute('data-handleid')
+      const sourceIsSensor = !!sourceId && sensorBlocks.some((b) => b.id === sourceId)
 
-      if (sourceHandleId === 'prediction-out') return
-      if (sourceId && sensorBlocks.some((b) => b.id === sourceId)) return
+      if (targetHandleId === 'condition-in') {
+        if (sourceHandleId === 'prediction-out' || sourceIsSensor) return
+        const sourceIsSwitch = !!sourceId && switchBlocks.some((b) => b.id === sourceId)
+        addToast(
+          sourceIsSwitch
+            ? '❌ Switches can’t plug into an IF block, try a Sensor instead!'
+            : '❌ Only a Sensor (or a trained Model) can plug into an IF block!',
+          'warn'
+        )
+        return
+      }
 
-      const sourceIsSwitch = !!sourceId && switchBlocks.some((b) => b.id === sourceId)
-      addToast(
-        sourceIsSwitch
-          ? '❌ Switches can’t plug into an IF block, try a Sensor instead!'
-          : '❌ Only a Sensor (or a trained Model) can plug into an IF block!',
-        'warn'
-      )
+      if (targetHandleId && SENSOR_BLOCKED_HANDLES[targetHandleId] && sourceIsSensor) {
+        addToast(`❌ Sensors can’t plug straight into ${SENSOR_BLOCKED_HANDLES[targetHandleId]} — wire it through an IF block first!`, 'warn')
+      }
     },
     [sensorBlocks, switchBlocks, addToast]
   )
