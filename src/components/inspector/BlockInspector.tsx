@@ -218,7 +218,7 @@ export default function BlockInspector() {
 
   const handleSave = () => {
     const name = saveName.trim() || block.name
-    const isOverwrite = savedDatasets.some((d) => d.name === name)
+    const isOverwrite = savedDatasets.some((d) => d.sourceBlockId === selectedBlockId)
     if (selectedBlockType === 'labelled') renameLabelledBlock(selectedBlockId, name)
     else renameUnlabelledBlock(selectedBlockId, name)
     saveCurrentDataset(selectedBlockId, selectedBlockType as 'labelled' | 'unlabelled')

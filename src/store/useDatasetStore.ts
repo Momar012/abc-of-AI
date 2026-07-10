@@ -409,7 +409,10 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         if (!block) return s
         const usedIds = new Set([...block.itemIds, ...block.labels.flatMap((l) => l.itemIds)])
         const bankItems = s.bankItems.filter((i) => usedIds.has(i.id)).map(({ thumbnailUrl: _, ...rest }) => rest)
-        const existingIdx = s.savedDatasets.findIndex((d) => d.name === block.name)
+        // Match by the block's own id, not its display name — two different blocks can share
+        // a name (e.g. both default to "Dataset 1"), and matching by name would silently
+        // overwrite one block's saved snapshot with another's.
+        const existingIdx = s.savedDatasets.findIndex((d) => d.sourceBlockId === blockId)
         const snapshot: SavedDataset = {
           id: existingIdx >= 0 ? s.savedDatasets[existingIdx].id : uuid(),
           name: block.name,
@@ -418,6 +421,7 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
           labelledBlocks: [{ ...block, itemIds: [...block.itemIds], labels: block.labels.map((l) => ({ ...l, itemIds: [...l.itemIds] })) }],
           unlabelledBlocks: [],
           splitConfig: s.splitConfig,
+          sourceBlockId: blockId,
         }
         if (existingIdx >= 0) { const u = [...s.savedDatasets]; u[existingIdx] = snapshot; return { savedDatasets: u } }
         return { savedDatasets: [snapshot, ...s.savedDatasets] }
@@ -428,7 +432,8 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
         if (!block) return s
         const usedIds = new Set(block.itemIds)
         const bankItems = s.bankItems.filter((i) => usedIds.has(i.id)).map(({ thumbnailUrl: _, ...rest }) => rest)
-        const existingIdx = s.savedDatasets.findIndex((d) => d.name === block.name)
+        // See comment above — match by block id, not display name.
+        const existingIdx = s.savedDatasets.findIndex((d) => d.sourceBlockId === blockId)
         const snapshot: SavedDataset = {
           id: existingIdx >= 0 ? s.savedDatasets[existingIdx].id : uuid(),
           name: block.name,
@@ -437,6 +442,7 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
           labelledBlocks: [],
           unlabelledBlocks: [{ ...block, itemIds: [...block.itemIds] }],
           splitConfig: s.splitConfig,
+          sourceBlockId: blockId,
         }
         if (existingIdx >= 0) { const u = [...s.savedDatasets]; u[existingIdx] = snapshot; return { savedDatasets: u } }
         return { savedDatasets: [snapshot, ...s.savedDatasets] }

@@ -60,4 +60,5 @@ export interface SavedDataset {
   labelledBlocks: LabelledDatasetBlock[]
   unlabelledBlocks: UnlabelledDatasetBlock[]
   splitConfig: SplitConfig
+  sourceBlockId?: string // which live block this snapshot was saved from — used to match re-saves, not the display name
 }
