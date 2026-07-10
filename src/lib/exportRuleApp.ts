@@ -586,6 +586,28 @@ function scheduleTextPrediction(modelId,text,isCluster){
   },THINK_MS);
 }
 
+// ── Image "thinking" rotation ────────────────────────────────────────────────
+var IMG_THINK_MSGS=['🧠 Looking closely at your photo…','🔍 Comparing it with what I learned…','⚡ Crunching the pixels…','👀 Spotting the details…','✨ Almost got it…'];
+var _imgThinkTimers={};
+function startImgThinking(predEl){
+  if(!predEl) return;
+  if(_imgThinkTimers[predEl.id]){ clearInterval(_imgThinkTimers[predEl.id]); delete _imgThinkTimers[predEl.id]; }
+  predEl.className='img-pred-display thinking-badge';
+  var idx=0;
+  predEl.textContent=IMG_THINK_MSGS[0];
+  var timerId=setInterval(function(){
+    idx=(idx+1)%IMG_THINK_MSGS.length;
+    predEl.textContent=IMG_THINK_MSGS[idx];
+  },1400);
+  _imgThinkTimers[predEl.id]=timerId;
+}
+function stopImgThinking(predEl){
+  if(!predEl) return;
+  var timerId=_imgThinkTimers[predEl.id];
+  if(timerId){ clearInterval(timerId); delete _imgThinkTimers[predEl.id]; }
+  predEl.className='img-pred-display';
+}
+
 // ── Image-model inference ───────────────────────────────────────────────────
 var _imgPredictions={};
 var _pendingFiles={};
@@ -664,13 +686,15 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     img.onload=function(){
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(img,0,0,224,224);
-      if(predEl) predEl.textContent='🤔 Analysing…';
+      startImgThinking(predEl);
       if(pBtn) pBtn.disabled=true;
       var _t0=Date.now();
+      var floorMs=5000+Math.random()*3000;
       _inferCanvas(im,canEl,function(label){
-        var wait=Math.max(0,450-(Date.now()-_t0));
+        var wait=Math.max(0,floorMs-(Date.now()-_t0));
         setTimeout(function(){
           _imgPredictions[modelId]=label;
+          stopImgThinking(predEl);
           if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
           if(pBtn) pBtn.disabled=false;
           evaluate();updateOutputs();
@@ -738,17 +762,19 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     img.onload=function(){
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(img,0,0,224,224);
-      if(predEl) predEl.textContent='🤔 Analysing…';
+      startImgThinking(predEl);
       if(pBtn) pBtn.disabled=true;
       var _t0=Date.now();
+      var floorMs=5000+Math.random()*3000;
       var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
       t.dispose();
       feat.data().then(function(data){
         feat.dispose();
         var label=_nearestCentroid(Array.from(data),icm.centroids,icm.labels);
-        var wait=Math.max(0,450-(Date.now()-_t0));
+        var wait=Math.max(0,floorMs-(Date.now()-_t0));
         setTimeout(function(){
           _imgPredictions[modelId]=label;
+          stopImgThinking(predEl);
           if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
           if(pBtn) pBtn.disabled=false;
           evaluate();updateOutputs();
