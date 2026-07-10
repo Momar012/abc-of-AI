@@ -604,7 +604,13 @@ export default function DatasetCanvas() {
       for (const edge of deleted) {
         const { target, targetHandle, type } = edge
         if (targetHandle === 'in') {
-          updateModelBlock(target, { linkedBlockId: null, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null, testStatus: 'idle', testResults: null })
+          const current = modelBlocks.find((b) => b.id === target)
+          if (current?.trainedModelId) {
+            // Model already trained — keep the trained artifact, just drop the live link.
+            updateModelBlock(target, { linkedBlockId: null })
+          } else {
+            updateModelBlock(target, { linkedBlockId: null, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null, testStatus: 'idle', testResults: null })
+          }
         } else if (targetHandle === 'test-in') {
           updateModelBlock(target, { testLinkedBlockId: null, testStatus: 'idle', testResults: null })
         } else if (targetHandle === 'condition-in') {
@@ -646,7 +652,7 @@ export default function DatasetCanvas() {
       evaluateGraph()
     },
     [
-      logicBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
+      logicBlocks, modelBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
       updateAlarmBlock, updateACBlock, updateTimerBlock, updateDoorBlock, updateBulbBlock, evaluateGraph,
     ]
   )
