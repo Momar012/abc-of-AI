@@ -379,6 +379,8 @@ main.layout-mobile .out-card{min-height:190px}
 .in-mdl-ta{width:100%;min-height:3.5rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);border-radius:0.5rem;padding:0.5rem 0.65rem;color:#fff;font-size:0.82rem;font-family:inherit;resize:vertical;outline:none;transition:border-color 0.2s}
 .in-mdl-ta:focus{border-color:rgba(255,255,255,0.28)}
 .in-mdl-ta::placeholder{color:rgba(255,255,255,0.22)}
+.thinking-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.5);animation:think-pulse 1s ease-in-out infinite}
+@keyframes think-pulse{0%,100%{opacity:0.55}50%{opacity:1}}
 .img-cam-wrap{position:relative;width:100%;border-radius:0.75rem;overflow:hidden;background:#000;aspect-ratio:4/3}
 .img-cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
 .img-cam-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.65);font-size:0.78rem;color:rgba(255,255,255,0.55);text-align:center;padding:0.75rem}
@@ -559,6 +561,31 @@ const state = {
   timers: APP.timers.map(function(x){return Object.assign({},x,{_remaining:null,_on:false,_lastInput:false})}),
 };
 
+// ── Text-model "thinking" scheduler ─────────────────────────────────────────
+var _modelOut={};
+var _thinkTimers={};
+var THINK_MS=650;
+function setThinking(modelId,isThinking){
+  var el=document.getElementById('think-'+modelId);
+  if(el) el.style.display=isThinking?'inline-flex':'none';
+}
+function scheduleTextPrediction(modelId,text,isCluster){
+  setThinking(modelId,true);
+  if(_thinkTimers[modelId]) clearTimeout(_thinkTimers[modelId]);
+  _thinkTimers[modelId]=setTimeout(function(){
+    var result;
+    if(isCluster){
+      var tcm=APP.textClusterModels&&APP.textClusterModels.find(function(m){return m.id===modelId;});
+      result=tcm?_clusterTextPredict(tcm,text):null;
+    } else {
+      result=runNB(modelId,text);
+    }
+    _modelOut[modelId]=result;
+    setThinking(modelId,false);
+    evaluate();updateOutputs();
+  },THINK_MS);
+}
+
 // ── Image-model inference ───────────────────────────────────────────────────
 var _imgPredictions={};
 var _pendingFiles={};
@@ -627,6 +654,7 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     var prev=document.getElementById('imgprev-'+modelId);
     var canEl=document.getElementById('imgcap-'+modelId);
     var predEl=document.getElementById('imgpred-'+modelId);
+    var pBtn=document.getElementById('imgpbtn-'+modelId);
     if(prev&&prev._url) URL.revokeObjectURL(prev._url);
     var url=URL.createObjectURL(file);
     if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
@@ -636,10 +664,17 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     img.onload=function(){
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(img,0,0,224,224);
+      if(predEl) predEl.textContent='🤔 Analysing…';
+      if(pBtn) pBtn.disabled=true;
+      var _t0=Date.now();
       _inferCanvas(im,canEl,function(label){
-        _imgPredictions[modelId]=label;
-        if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
-        evaluate();updateOutputs();
+        var wait=Math.max(0,450-(Date.now()-_t0));
+        setTimeout(function(){
+          _imgPredictions[modelId]=label;
+          if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
+          if(pBtn) pBtn.disabled=false;
+          evaluate();updateOutputs();
+        },wait);
       });
     };
     img.src=url;
@@ -652,11 +687,13 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
       var canEl=document.getElementById('imgcap-'+im.id);
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(vid,0,0,224,224);
+      var predElLive=document.getElementById('imgpred-'+im.id);
+      if(predElLive) predElLive.textContent='🤔 Analysing…';
       _inferCanvas(im,canEl,function(label){
+        var predEl=document.getElementById('imgpred-'+im.id);
+        if(predEl) predEl.textContent=label?'🎯 '+label:'…';
         if(label!==_imgPredictions[im.id]){
           _imgPredictions[im.id]=label;
-          var predEl=document.getElementById('imgpred-'+im.id);
-          if(predEl) predEl.textContent=label?'🎯 '+label:'…';
           evaluate();updateOutputs();
         }
       });
@@ -667,15 +704,17 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
       var canEl=document.getElementById('imgcap-'+icm.id);
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(vid,0,0,224,224);
+      var predElLive=document.getElementById('imgpred-'+icm.id);
+      if(predElLive) predElLive.textContent='🤔 Analysing…';
       var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
       t.dispose();
       feat.data().then(function(data){
         feat.dispose();
         var label=_nearestCentroid(Array.from(data),icm.centroids,icm.labels);
+        var predEl=document.getElementById('imgpred-'+icm.id);
+        if(predEl) predEl.textContent=label?'🎯 '+label:'…';
         if(label!==_imgPredictions[icm.id]){
           _imgPredictions[icm.id]=label;
-          var predEl=document.getElementById('imgpred-'+icm.id);
-          if(predEl) predEl.textContent=label?'🎯 '+label:'…';
           evaluate();updateOutputs();
         }
       });
@@ -689,6 +728,7 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     var prev=document.getElementById('imgprev-'+modelId);
     var canEl=document.getElementById('imgcap-'+modelId);
     var predEl=document.getElementById('imgpred-'+modelId);
+    var pBtn=document.getElementById('imgpbtn-'+modelId);
     if(prev&&prev._url) URL.revokeObjectURL(prev._url);
     var url=URL.createObjectURL(file);
     if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
@@ -698,14 +738,21 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     img.onload=function(){
       canEl.width=224;canEl.height=224;
       canEl.getContext('2d').drawImage(img,0,0,224,224);
+      if(predEl) predEl.textContent='🤔 Analysing…';
+      if(pBtn) pBtn.disabled=true;
+      var _t0=Date.now();
       var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
       t.dispose();
       feat.data().then(function(data){
         feat.dispose();
         var label=_nearestCentroid(Array.from(data),icm.centroids,icm.labels);
-        _imgPredictions[modelId]=label;
-        if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
-        evaluate();updateOutputs();
+        var wait=Math.max(0,450-(Date.now()-_t0));
+        setTimeout(function(){
+          _imgPredictions[modelId]=label;
+          if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
+          if(pBtn) pBtn.disabled=false;
+          evaluate();updateOutputs();
+        },wait);
       });
     };
     img.src=url;
@@ -782,18 +829,13 @@ function evaluate(){
       }else{
         var tcm=APP.textClusterModels&&APP.textClusterModels.find(function(m){return m.id===c.linkedModelId;});
         if(tcm){
-          var tsinput=tcm.liveSensorId?document.getElementById('sv-'+tcm.liveSensorId):document.getElementById('sv-mdl-'+tcm.id);
-          var ttext=tsinput?(tsinput.value||''):'';
-          c._out=_clusterTextPredict(tcm,ttext)===c.modelCondition;
+          c._out=(_modelOut[c.linkedModelId]||null)===c.modelCondition;
         }else{
           var im=APP.imageModels&&APP.imageModels.find(function(m){return m.id===c.linkedModelId;});
           if(im){
             c._out=(_imgPredictions[c.linkedModelId]||null)===c.modelCondition;
           }else{
-            var m=APP.models.find(function(m){return m.id===c.linkedModelId;});
-            var sinput=m&&m.liveSensorId?document.getElementById('sv-'+m.liveSensorId):document.getElementById('sv-mdl-'+c.linkedModelId);
-            var text=sinput?(sinput.value||''):'';
-            c._out=runNB(c.linkedModelId,text)===c.modelCondition;
+            c._out=(_modelOut[c.linkedModelId]||null)===c.modelCondition;
           }
         }
       }
@@ -918,7 +960,14 @@ inputCont.style.cssText='display:flex;flex-direction:column;gap:0.75rem';
 var ICONS={temperature:'🌡️',light:'☀️',motion:'👁️',humidity:'💧','text-input':'📝'};
 var UNITS={temperature:'°C',light:'%',humidity:'%'};
 var TINTS={temperature:'rgba(251,146,60,0.85)',light:'rgba(250,204,21,0.85)',humidity:'rgba(96,165,250,0.85)'};
-function setVal(id,val){var s=state.sensors.find(function(x){return x.id===id});if(s){s.value=val;refresh();}}
+function setVal(id,val){
+  var s=state.sensors.find(function(x){return x.id===id});
+  if(!s) return;
+  s.value=val;
+  refresh();
+  (APP.models||[]).forEach(function(m){ if(m.liveSensorId===id) scheduleTextPrediction(m.id,val,false); });
+  (APP.textClusterModels||[]).forEach(function(m){ if(m.liveSensorId===id) scheduleTextPrediction(m.id,val,true); });
+}
 
 if(!state.sensors.length&&!state.switches.length){
   inputCont.innerHTML='<p class="empty-hint">No inputs connected.</p>';
@@ -950,6 +999,11 @@ for(var si=0;si<state.sensors.length;si++){
         '<div class="in-lbl">'+icon+' '+sensor.name+'</div>'+
         '<input class="txt-inp" type="text" placeholder="Type something…" value="'+String(sensor.value||'')+'" '+
           'oninput="setVal(\\''+sensor.id+'\\',this.value)">';
+      var linkedModel=(APP.models||[]).concat(APP.textClusterModels||[]).find(function(m){return m.liveSensorId===sensor.id;});
+      if(linkedModel){
+        var think=document.createElement('span'); think.id='think-'+linkedModel.id; think.className='thinking-badge'; think.style.display='none'; think.textContent='🤔 Thinking…';
+        card.appendChild(think);
+      }
     } else {
       var min=sensor.min!==undefined?sensor.min:0;
       var max=sensor.max!==undefined?sensor.max:100;
@@ -1023,8 +1077,10 @@ APP.models.forEach(function(m){
   card.appendChild(ta);
   var sendBtn=document.createElement('button'); sendBtn.className='img-cam-btn'; sendBtn.textContent='→ Send';
   sendBtn.style.marginTop='0.35rem';
-  sendBtn.onclick=function(){evaluate();updateOutputs();};
+  (function(mid){sendBtn.onclick=function(){scheduleTextPrediction(mid,ta.value,false);};})(m.id);
   card.appendChild(sendBtn);
+  var think=document.createElement('span'); think.id='think-'+m.id; think.className='thinking-badge'; think.style.display='none'; think.textContent='🤔 Thinking…';
+  card.appendChild(think);
   inputCont.appendChild(card);
 });
 if(APP.textClusterModels) APP.textClusterModels.forEach(function(tcm){
@@ -1036,8 +1092,10 @@ if(APP.textClusterModels) APP.textClusterModels.forEach(function(tcm){
   card.appendChild(ta);
   var sendBtn=document.createElement('button'); sendBtn.className='img-cam-btn'; sendBtn.textContent='→ Send';
   sendBtn.style.marginTop='0.35rem';
-  sendBtn.onclick=function(){evaluate();updateOutputs();};
+  (function(mid){sendBtn.onclick=function(){scheduleTextPrediction(mid,ta.value,true);};})(tcm.id);
   card.appendChild(sendBtn);
+  var think=document.createElement('span'); think.id='think-'+tcm.id; think.className='thinking-badge'; think.style.display='none'; think.textContent='🤔 Thinking…';
+  card.appendChild(think);
   inputCont.appendChild(card);
 });
 
