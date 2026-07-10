@@ -16,6 +16,7 @@ export default function DatasetEdge({
   animated,
 }: EdgeProps) {
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
+  const modelBlocks = useModelStore((s) => s.modelBlocks)
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -62,14 +63,22 @@ export default function DatasetEdge({
       >
         <div style={{ width: 20, height: 20 }}>
           <button
-            onClick={() => updateModelBlock(target, {
-              linkedBlockId: null,
-              status: 'idle',
-              trainedModelId: null,
-              trainedLinkedBlockId: null,
-              testStatus: 'idle',
-              testResults: null,
-            })}
+            onClick={() => {
+              const current = modelBlocks.find((b) => b.id === target)
+              if (current?.trainedModelId) {
+                // Model already trained — keep the trained artifact, just drop the live link.
+                updateModelBlock(target, { linkedBlockId: null })
+              } else {
+                updateModelBlock(target, {
+                  linkedBlockId: null,
+                  status: 'idle',
+                  trainedModelId: null,
+                  trainedLinkedBlockId: null,
+                  testStatus: 'idle',
+                  testResults: null,
+                })
+              }
+            }}
             style={{
               width: 20,
               height: 20,
