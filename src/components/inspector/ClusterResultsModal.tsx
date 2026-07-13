@@ -92,7 +92,7 @@ export default function ClusterResultsModal() {
                   {/* Item display: text list for text-unsupervised, image grid otherwise */}
                   {block.modelType === 'text-unsupervised' ? (
                     <div className="p-2 flex flex-col gap-1">
-                      {itemIds.slice(0, 8).map((itemId) => {
+                      {itemIds.map((itemId) => {
                         const bankItem = bankItems.find((i) => i.id === itemId)
                         return (
                           <div
@@ -105,9 +105,6 @@ export default function ClusterResultsModal() {
                           </div>
                         )
                       })}
-                      {itemIds.length > 8 && (
-                        <p className="text-xs text-white/30 font-body text-center">+{itemIds.length - 8} more</p>
-                      )}
                     </div>
                   ) : (
                     <div className="p-2 grid grid-cols-4 gap-1">
