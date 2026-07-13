@@ -2,10 +2,12 @@
 
 import { EdgeProps, getBezierPath } from 'reactflow'
 import { useRuleStore } from '@/store/useRuleStore'
+import { useModelStore } from '@/store/useModelStore'
 
 export default function WorkflowEdge({
   id,
   target,
+  targetHandleId: targetHandle,
   sourceX,
   sourceY,
   sourcePosition,
@@ -14,6 +16,7 @@ export default function WorkflowEdge({
   targetPosition,
 }: EdgeProps) {
   const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
+  const updateModelBlock = useModelStore((s) => s.updateModelBlock)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX, sourceY, sourcePosition,
@@ -23,7 +26,11 @@ export default function WorkflowEdge({
   const gradId = `wf-grad-${id}`
 
   const handleDelete = () => {
-    updateConditionBlock(target, { linkedModelId: null, currentOutput: null })
+    if (targetHandle === 'live-in') {
+      updateModelBlock(target, { liveLinkedSensorId: null, liveResult: null })
+    } else {
+      updateConditionBlock(target, { linkedModelId: null, currentOutput: null })
+    }
   }
 
   return (

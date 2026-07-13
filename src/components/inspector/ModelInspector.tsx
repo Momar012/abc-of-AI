@@ -951,7 +951,7 @@ export default function ModelInspector() {
                   <div className="flex flex-col gap-2 mt-1">
                     <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
                       <p className="text-xs text-emerald-400 font-body font-semibold">
-                        ✓ {block.testResults.length} images tested
+                        ✓ {block.testResults.length} {block.modelType === 'text-supervised' ? 'texts' : 'images'} tested
                         {accuracy !== null ? ` · ${accuracy.pct}% accurate (${accuracy.correct}/${accuracy.total})` : ''}
                       </p>
                     </div>

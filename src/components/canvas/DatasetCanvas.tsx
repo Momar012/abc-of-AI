@@ -613,6 +613,8 @@ export default function DatasetCanvas() {
           }
         } else if (targetHandle === 'test-in') {
           updateModelBlock(target, { testLinkedBlockId: null, testStatus: 'idle', testResults: null })
+        } else if (targetHandle === 'live-in') {
+          updateModelBlock(target, { liveLinkedSensorId: null, liveResult: null })
         } else if (targetHandle === 'condition-in') {
           if (type === 'workflow') {
             updateConditionBlock(target, { linkedModelId: null, currentOutput: null })
