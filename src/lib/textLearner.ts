@@ -9,12 +9,37 @@ export function splitSentences(text: string): string[] {
     .filter((s) => s.length > 2)
 }
 
+const STOPWORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'if', 'then', 'so', 'as', 'of', 'to', 'in', 'on',
+  'at', 'by', 'for', 'with', 'about', 'into', 'up', 'down', 'out', 'over', 'under', 'again',
+  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am', 'do', 'does', 'did', 'have', 'has',
+  'had', 'this', 'that', 'these', 'those', 'it', 'its', 'i', 'you', 'he', 'she', 'we', 'they',
+  'my', 'your', 'his', 'her', 'our', 'their', 'me', 'him', 'us', 'them', 'not', 'no', 'nor',
+  'too', 'very', 'can', 'will', 'just', 'also', 'than',
+])
+
+function dedouble(stem: string): string {
+  const last = stem[stem.length - 1]
+  return stem.length > 2 && last === stem[stem.length - 2] && !'aeiou'.includes(last) ? stem.slice(0, -1) : stem
+}
+
+function stem(word: string): string {
+  if (word.length > 4 && word.endsWith('ies')) return word.slice(0, -3) + 'y'
+  if (word.length > 4 && word.endsWith('es')) return word.slice(0, -2)
+  if (word.length > 3 && word.endsWith('s') && !word.endsWith('ss')) return word.slice(0, -1)
+  if (word.length > 5 && word.endsWith('ing')) return dedouble(word.slice(0, -3))
+  if (word.length > 4 && word.endsWith('ed')) return dedouble(word.slice(0, -2))
+  if (word.length > 4 && word.endsWith('ly')) return word.slice(0, -2)
+  return word
+}
+
 function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length > 1)
+    .filter((w) => w.length > 1 && !STOPWORDS.has(w))
+    .map(stem)
 }
 
 function buildVocab(sentences: string[]): string[] {
@@ -352,4 +377,51 @@ export function clusterTexts(
     vocab,
     idfWeights,
   }
+}
+
+function nearestClusterPrediction(
+  trainedModel: TrainedModel,
+  text: string
+): Omit<TestResult, 'itemId' | 'actualLabelId' | 'actualLabel'> | null {
+  const { clusterVocab, clusterIdfWeights, clusterCentroids, labels, labelIds } = trainedModel
+  if (!clusterVocab || !clusterIdfWeights || !clusterCentroids || !clusterCentroids.length) return null
+  const tokens = tokenize(text)
+  if (!tokens.length) return null
+  const vec = clusterVocab.map((w, j) => tf(w, tokens) * clusterIdfWeights[j])
+  const dists = clusterCentroids.map((c) => sqDist(vec, c))
+  let bestIdx = 0
+  for (let i = 1; i < dists.length; i++) if (dists[i] < dists[bestIdx]) bestIdx = i
+  const maxNeg = Math.max(...dists.map((d) => -d))
+  const expScores = dists.map((d) => Math.exp(-d - maxNeg))
+  const sumExp = expScores.reduce((a, b) => a + b, 0)
+  const allConfidences: Record<string, number> = {}
+  labelIds.forEach((lid, i) => { allConfidences[lid] = expScores[i] / sumExp })
+  return {
+    predictedLabel: labels[bestIdx] ?? `Group ${bestIdx + 1}`,
+    predictedLabelId: labelIds[bestIdx] ?? String(bestIdx),
+    confidence: allConfidences[labelIds[bestIdx]] ?? 0,
+    allConfidences,
+  }
+}
+
+export function predictClusterText(trainedModel: TrainedModel, text: string): TestResult | null {
+  const r = nearestClusterPrediction(trainedModel, text)
+  return r ? { itemId: 'live', actualLabelId: null, actualLabel: null, ...r } : null
+}
+
+export function runClusterTextInference(
+  trainedModel: TrainedModel,
+  testItems: DataItem[],
+  onProgress: (step: number, total: number) => void
+): TestResult[] {
+  const textTestItems = testItems.filter((i) => i.type === 'text' && i.content)
+  const total = textTestItems.length
+  const results: TestResult[] = []
+  textTestItems.forEach((item, idx) => {
+    onProgress(idx, total)
+    const r = nearestClusterPrediction(trainedModel, item.content!)
+    if (r) results.push({ itemId: item.id, actualLabelId: null, actualLabel: null, ...r })
+  })
+  onProgress(total, total)
+  return results
 }

@@ -6,7 +6,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { trainImageSupervisedModel, runInference, clusterImages, ClusterImagesResult } from '@/lib/trainModel'
-import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts, ClusterTextsResult } from '@/lib/textLearner'
+import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts, ClusterTextsResult, runClusterTextInference } from '@/lib/textLearner'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import { TrainedModel, TestResult, ChatMessage } from '@/types/model'
 
@@ -89,7 +89,7 @@ export default function ModelInspector() {
     .map((id) => bankItems.find((i) => i.id === id))
     .filter((i): i is NonNullable<typeof i> => {
       if (!i || !i.content) return false
-      return block.modelType === 'text-supervised' ? i.type === 'text' : i.type === 'image'
+      return (block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? i.type === 'text' : i.type === 'image'
     })
 
   // Find the TrainedModel object for inference
@@ -387,20 +387,22 @@ export default function ModelInspector() {
     try {
       const raw = block.modelType === 'text-supervised'
         ? runTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+        : block.modelType === 'text-unsupervised'
+        ? runClusterTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
         : await runInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
       const enriched: TestResult[] = raw.map((r) => ({
         ...r,
-        actualLabelId: groundTruthMap[r.itemId]?.labelId ?? null,
-        actualLabel: groundTruthMap[r.itemId]?.labelName ?? null,
+        actualLabelId: block.modelType === 'text-unsupervised' ? null : (groundTruthMap[r.itemId]?.labelId ?? null),
+        actualLabel: block.modelType === 'text-unsupervised' ? null : (groundTruthMap[r.itemId]?.labelName ?? null),
       }))
       updateModelBlock(block.id, { testStatus: 'done', testResults: enriched })
       const hasGT = enriched.some((r) => r.actualLabelId !== null)
+      const itemWord = (block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? 'texts' : 'images'
       if (hasGT) {
         const correct = enriched.filter((r) => r.predictedLabel === r.actualLabel).length
         const pct = Math.round((correct / enriched.length) * 100)
         addToast(`🔬 Test complete: ${pct}% accurate (${correct}/${enriched.length})`, 'success')
       } else {
-        const itemWord = block.modelType === 'text-supervised' ? 'texts' : 'images'
         addToast(`🔬 Test complete: ${enriched.length} ${itemWord} classified!`, 'success')
       }
     } catch (err) {
@@ -882,10 +884,10 @@ export default function ModelInspector() {
         )}
 
         {/* Step 5: Test with test set */}
-        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-unsupervised' && block.modelType !== 'text-corpus' && (
+        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
-              4 · Test Model
+              {block.modelType === 'text-unsupervised' ? '5 · Test with New Data' : '4 · Test Model'}
             </p>
 
             {!block.testLinkedBlockId ? (
@@ -951,7 +953,7 @@ export default function ModelInspector() {
                   <div className="flex flex-col gap-2 mt-1">
                     <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
                       <p className="text-xs text-emerald-400 font-body font-semibold">
-                        ✓ {block.testResults.length} {block.modelType === 'text-supervised' ? 'texts' : 'images'} tested
+                        ✓ {block.testResults.length} {(block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? 'texts' : 'images'} tested
                         {accuracy !== null ? ` · ${accuracy.pct}% accurate (${accuracy.correct}/${accuracy.total})` : ''}
                       </p>
                     </div>

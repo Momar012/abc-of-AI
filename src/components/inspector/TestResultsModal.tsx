@@ -3,6 +3,7 @@
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
+import { LABEL_PALETTE } from '@/lib/constants'
 
 export default function TestResultsModal() {
   const blockId = useUIStore((s) => s.testResultsModalBlockId)
@@ -59,7 +60,7 @@ export default function TestResultsModal() {
             <span className="text-lg">🔬</span>
             <div>
               <p className="text-sm font-heading font-bold text-white">Test Results: {block.name}</p>
-              <p className="text-xs text-white/40 font-body">{results.length} {block.modelType === 'text-supervised' ? 'texts' : 'images'} evaluated</p>
+              <p className="text-xs text-white/40 font-body">{results.length} {(block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? 'texts' : 'images'} evaluated</p>
             </div>
           </div>
           <button
@@ -105,7 +106,9 @@ export default function TestResultsModal() {
             {results.map((result) => {
               const bankItem = bankItems.find((i) => i.id === result.itemId)
               const pct = Math.round(result.confidence * 100)
-              const color = labelColorMap[result.predictedLabelId] ?? '#8B5CF6'
+              const color = block.modelType === 'text-unsupervised'
+                ? LABEL_PALETTE[Number(result.predictedLabelId) % LABEL_PALETTE.length]
+                : labelColorMap[result.predictedLabelId] ?? '#8B5CF6'
               const isCorrect = result.actualLabel !== null
                 ? result.predictedLabel === result.actualLabel
                 : null
@@ -124,7 +127,7 @@ export default function TestResultsModal() {
                 >
                   {/* Thumbnail */}
                   <div className="relative">
-                    {block.modelType === 'text-supervised' ? (
+                    {(block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? (
                       <div className="w-full aspect-square bg-white/5 flex items-center justify-center p-2 overflow-hidden">
                         <p className="text-xs text-white/60 font-body leading-tight line-clamp-5 text-center">
                           {bankItem?.content ?? '?'}

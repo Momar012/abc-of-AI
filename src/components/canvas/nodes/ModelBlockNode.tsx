@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { ModelBlock } from '@/types/model'
+import type { TestResult } from '@/types/model'
 import type { DataItem } from '@/types/dataset'
 import { useModelStore } from '@/store/useModelStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
-import { runTextInference } from '@/lib/textLearner'
+import { runTextInference, predictClusterText } from '@/lib/textLearner'
 
 function HandleTooltip({ color, label, detail }: { color: string; label: string; detail: string }) {
   return (
@@ -49,8 +50,10 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
   const liveSensor = sensorBlocks.find((s) => s.id === block.liveLinkedSensorId)
 
   // Keep liveResult updated as the sensor text changes
+  const isSupervisedTrained = !!trainedModel?.nbWordLogProbs
+  const isClusterTrained = !!(trainedModel?.clusterCentroids && trainedModel?.clusterVocab)
   useEffect(() => {
-    if (!block.liveLinkedSensorId || !trainedModel?.nbWordLogProbs) {
+    if (!block.liveLinkedSensorId || !trainedModel || (!isSupervisedTrained && !isClusterTrained)) {
       if (block.liveResult != null) updateModelBlock(block.id, { liveResult: null })
       return
     }
@@ -59,9 +62,17 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
       if (block.liveResult != null) updateModelBlock(block.id, { liveResult: null })
       return
     }
-    const fakeItem: DataItem = { id: 'live', type: 'text', name: 'live', content: text, addedAt: 0 }
-    const results = runTextInference(trainedModel, [fakeItem], () => {})
-    const r = results[0]
+    let r: TestResult | null
+    if (isSupervisedTrained) {
+      const fakeItem: DataItem = { id: 'live', type: 'text', name: 'live', content: text, addedAt: 0 }
+      r = runTextInference(trainedModel, [fakeItem], () => {})[0] ?? null
+    } else {
+      r = predictClusterText(trainedModel, text)
+    }
+    if (!r) {
+      if (block.liveResult != null) updateModelBlock(block.id, { liveResult: null })
+      return
+    }
     const unchanged = r && block.liveResult
       && block.liveResult.predictedLabelId === r.predictedLabelId
       && block.liveResult.confidence === r.confidence
@@ -118,8 +129,8 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
         </div>
       )}
 
-      {/* Live text input port (text-supervised only) */}
-      {block.modelType === 'text-supervised' && (
+      {/* Live text input port (text-supervised and text-unsupervised only) */}
+      {(block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') && (
         <>
           <Handle
             type="target"
@@ -131,7 +142,13 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
           />
           {hoveredHandle === 'live-in' && (
             <div className="absolute left-4 z-50 pointer-events-none" style={{ top: '88%', transform: 'translateY(-50%)' }}>
-              <HandleTooltip color="#7C3AED" label="💬 Live Testing" detail="Connect a Text Input field to try predictions in real time" />
+              <HandleTooltip
+                color="#7C3AED"
+                label="💬 Live Testing"
+                detail={block.modelType === 'text-unsupervised'
+                  ? 'Connect a Text Input field to see which group it\'s closest to'
+                  : 'Connect a Text Input field to try predictions in real time'}
+              />
             </div>
           )}
         </>
@@ -217,7 +234,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
             className="text-[10px] font-body text-center py-0.5 px-2 rounded-full"
             style={{ background: 'rgba(124,58,237,0.2)', color: '#a78bfa', border: '1px solid rgba(124,58,237,0.3)' }}
           >
-            Live: &quot;{block.liveResult.predictedLabel}&quot; ({Math.round(block.liveResult.confidence * 100)}%)
+            {block.modelType === 'text-unsupervised' ? 'Closest' : 'Live'}: &quot;{block.liveResult.predictedLabel}&quot; ({Math.round(block.liveResult.confidence * 100)}%)
           </div>
         )}
 
