@@ -296,15 +296,20 @@ function sqDist(a: number[], b: number[]): number {
   return s
 }
 
+function normalize(vec: number[]): number[] {
+  const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0))
+  return norm > 0 ? vec.map((v) => v / norm) : vec
+}
+
 interface KMeansTextResult {
   assignments: number[]
   centroids: number[][]
 }
 
-function runKMeansText(features: number[][], k: number): KMeansTextResult {
+function runKMeansTextOnce(features: number[][], k: number): KMeansTextResult & { inertia: number } {
   const n = features.length
   const dim = features[0]?.length ?? 0
-  if (n === 0 || k <= 0) return { assignments: [], centroids: [] }
+  if (n === 0 || k <= 0) return { assignments: [], centroids: [], inertia: 0 }
   const clampedK = Math.min(k, n)
 
   // K-means++ init
@@ -326,15 +331,29 @@ function runKMeansText(features: number[][], k: number): KMeansTextResult {
       for (let c = 0; c < clampedK; c++) { const d = sqDist(features[i], centroids[c]); if (d < bestD) { bestD = d; best = c } }
       assignments[i] = best
     }
-    // Update
+    // Update — spherical k-means: re-normalize each centroid back onto the unit sphere
     const sums = Array.from({ length: clampedK }, () => new Array(dim).fill(0))
     const counts = new Array(clampedK).fill(0)
     for (let i = 0; i < n; i++) { const c = assignments[i]; counts[c]++; for (let d = 0; d < dim; d++) sums[c][d] += features[i][d] }
     for (let c = 0; c < clampedK; c++) {
-      if (counts[c] > 0) for (let d = 0; d < dim; d++) centroids[c][d] = sums[c][d] / counts[c]
+      if (counts[c] > 0) centroids[c] = normalize(sums[c].map((s) => s / counts[c]))
     }
   }
-  return { assignments, centroids }
+
+  let inertia = 0
+  for (let i = 0; i < n; i++) inertia += sqDist(features[i], centroids[assignments[i]])
+  return { assignments, centroids, inertia }
+}
+
+function runKMeansText(features: number[][], k: number): KMeansTextResult {
+  const normed = features.map(normalize)
+  let best: (KMeansTextResult & { inertia: number }) | null = null
+  const RESTARTS = 25
+  for (let r = 0; r < RESTARTS; r++) {
+    const result = runKMeansTextOnce(normed, k)
+    if (!best || result.inertia < best.inertia) best = result
+  }
+  return { assignments: best!.assignments, centroids: best!.centroids }
 }
 
 export interface ClusterTextsResult {
@@ -387,7 +406,7 @@ function nearestClusterPrediction(
   if (!clusterVocab || !clusterIdfWeights || !clusterCentroids || !clusterCentroids.length) return null
   const tokens = tokenize(text)
   if (!tokens.length) return null
-  const vec = clusterVocab.map((w, j) => tf(w, tokens) * clusterIdfWeights[j])
+  const vec = normalize(clusterVocab.map((w, j) => tf(w, tokens) * clusterIdfWeights[j]))
   const dists = clusterCentroids.map((c) => sqDist(vec, c))
   let bestIdx = 0
   for (let i = 1; i < dists.length; i++) if (dists[i] < dists[bestIdx]) bestIdx = i
