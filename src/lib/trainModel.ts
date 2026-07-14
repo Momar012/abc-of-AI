@@ -3,6 +3,24 @@ import { TrainedModel, TestResult, ClusterResult } from '@/types/model'
 
 type ProgressCallback = (message: string, step: number, total: number) => void
 
+// Self-hosted so training works with zero external network calls — the tfhub.dev/kaggle.com
+// hand-off that @tensorflow-models/mobilenet uses by default is unreliable on locked-down machines.
+// Weights are Google's MobileNet v2 (alpha 0.5), Apache 2.0 licensed.
+const MOBILENET_CONFIG = {
+  version: 2 as const,
+  alpha: 0.5 as const,
+  modelUrl: '/models/mobilenet-v2-050/model.json',
+  inputRange: [0, 1] as [number, number],
+}
+
+async function loadMobileNet(mobilenetModule: typeof import('@tensorflow-models/mobilenet')) {
+  try {
+    return await mobilenetModule.load(MOBILENET_CONFIG)
+  } catch {
+    throw new Error("Couldn't load the vision model — try refreshing the page.")
+  }
+}
+
 export function decodeImage(base64: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -38,7 +56,7 @@ export async function trainImageSupervisedModel(
   onProgress('Initializing classifier…', 2, totalImages + 3)
   const knnModule = await import('@tensorflow-models/knn-classifier')
 
-  const mobileNet = await mobilenetModule.load({ version: 2, alpha: 0.5 })
+  const mobileNet = await loadMobileNet(mobilenetModule)
   const knn = knnModule.create()
 
   let processedImages = 3
@@ -131,7 +149,7 @@ export async function runInference(
   onProgress(1, testItems.length + 2)
   const mobilenetModule = await import('@tensorflow-models/mobilenet')
 
-  const mobileNet = await mobilenetModule.load({ version: 2, alpha: 0.5 })
+  const mobileNet = await loadMobileNet(mobilenetModule)
 
   const results: TestResult[] = []
   let step = 2
@@ -259,7 +277,7 @@ export async function clusterImages(
   const mobilenetModule = await import('@tensorflow-models/mobilenet')
 
   onProgress('Initialising…', 2, n + 3)
-  const mobileNet = await mobilenetModule.load({ version: 2, alpha: 0.5 })
+  const mobileNet = await loadMobileNet(mobilenetModule)
 
   const allFeatures: number[][] = []
   for (let i = 0; i < n; i++) {
