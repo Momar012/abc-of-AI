@@ -254,6 +254,14 @@
         "successHint": ""
       },
       {
+        "type": "challenge",
+        "id": "challenge-1784024357872",
+        "title": "🏆 Challenge Lab 4.1: Emergency Message Detector",
+        "icon": "🏆",
+        "prompt": "## 🎯 Objective\n\nBuild a system that detects emergency messages and sounds an alarm.\n\n---\n\n## 🆘 Problem\n\nA monitoring system checks incoming messages for emergencies.\n\nIf a message contains the word **\"help\"**, the **Alarm** should turn **ON**.\n\nBuild a system that detects emergency messages.\n\n---\n\n## 📋 Requirements\n\nUse the following components:\n\n- ✅ Text Input\n- ✅ IF Condition\n- ✅ Contains\n- ✅ Alarm\n\n---\n\n## ✅ Success Criteria\n\n| Input Message | Expected Result |\n|---------------|-----------------|\n| I need help | 🚨 Alarm ON |\n| I need water | 🔕 Alarm OFF |\n\n---\n\n## 💡 Expected Result\n\nMany emergency systems automatically detect important words like **\"help\"** so they can respond more quickly.",
+        "successHint": ""
+      },
+      {
         "type": "lab",
         "id": "lab-1781876701209",
         "title": "🎚️Two Switch AC System",
@@ -995,6 +1003,86 @@
         "title": "🤔 Reflection",
         "icon": "📖",
         "body": "Discuss the following questions:\n\n- 1. What was your model's final accuracy?\n- 2. Which headlines were classified correctly?\n- 3. Did your AI make any mistakes?\n- 4. Why do you think those mistakes happened?\n- 5. Could a real Fake News Detector rely only on headlines? Why or why not?",
+        "tip": ""
+      }
+    ]
+  },
+  {
+    "id": "ch-1784028436955",
+    "title": "🧩 AI Without a Teacher",
+    "subtitle": "Discovering Patterns on Its Own",
+    "emoji": "📚",
+    "steps": [
+      {
+        "type": "learn",
+        "id": "learn-1784028497239",
+        "title": "🕵️ The Missing Labels Mystery",
+        "icon": "📖",
+        "body": "# 🎉 Congratulations!\n\nYou've now built several AI systems using **Supervised Learning**.\n\nAlong the way, you learned how to:\n\n- ✅ Collect Data\n- ✅ Create Labels\n- ✅ Train AI Models\n- ✅ Test AI Models\n- ✅ Improve AI Models\n\n\n\n\n# 🧩 The Secret Behind Supervised Learning\n\nEvery AI model you've built had one important thing in common...\n\nThe AI always knew the **correct answer** while it was learning.\n\n## 📚 Examples\n\n| Input | Label |\n|-------|-------|\n| 🐱 Cat Image | Cat |\n| 🐶 Dog Image | Dog |\n| 😊 \"I love pizza.\" | Positive |\n| 😞 \"This movie is boring.\" | Negative |\n\n\n\n\n# 💡 The Secret\n\nThe **labels** acted like a **teacher**.\n\nThey guided the AI while it learned.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784028700678",
+        "title": "🕵️ But Here's a Mystery...",
+        "icon": "📖",
+        "body": "🤔 **What if nobody provides the labels?**\n\nCan AI still learn?\n\nOr does learning become impossible?\n\nToday, we're going to solve one of the biggest mysteries in **Machine Learning**.\n\n\n\n\n# 💡 Remember\n\n**Supervised Learning** always learns from **labelled data**.\n\nBut not all data comes with labels...\n\n\n```text\n📂 Dataset\n     │\n     ▼\n🏷️ Labels\n     │\n     ▼\n🧠 Train Model\n     │\n     ▼\n🎯 Predictions\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784028943289",
+        "title": "📸 Do We Always Have Labels?",
+        "icon": "📖",
+        "body": "Imagine you go on holiday with your family.\n\nBy the end of the trip, you've taken **more than 500 photos!**\n\nSome of them include:\n\n- 🏖️ Beaches\n- 🏔️ Mountains\n- 🍕 Food\n- 👨‍👩‍👧‍👦 Friends\n- 🐶 Pets\n- 🏢 Buildings\n\n\n\nThen someone says...\n\n> **Please label every single photo.**\n\n- 🏷️ Beach\n- 🏷️ Mountain\n- 🏷️ Cat\n- 🏷️ Ice Cream\n- 🏷️ Hotel\n\n\n\n\n\n# 🤔 Would that be easy?\n\nProbably **not**.\n\nIt could take **hours...**\n\nor even **days**.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784029233887",
+        "title": "🌍 Now Think Even Bigger...",
+        "icon": "📖",
+        "body": "Every day, people create **millions of:**\n\n- 📷 Photos\n- 🎥 Videos\n- 💬 Messages\n- 🎵 Audio Recordings\n- 📄 Documents\n- 🛰️ Satellite Images\n\n\n\nMost of this data has **no labels**.\n\nNobody has written:\n\n- 🏷️ Cat\n- 🏷️ Dog\n- 🏷️ Happy\n- 🏷️ Building\n\nfor every piece of data.\n\n\n\n# ⚪ This Is Called...Unlabelled Data",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784029428022",
+        "title": "🌍 The World Is Full of Unlabelled Data",
+        "icon": "📖",
+        "body": "Let's compare two collections.\n\n\n## 📚 Collection A (Labelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | Cat |\n| 🐶 | Dog |\n| 🐱 | Cat |\n| 🐶 | Dog |\n\nEvery image already has a **label**.\n\nThe AI already knows the **correct answer**.\n\n---\n\n\n## 📚 Collection B (Unlabelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n\nExactly the same images...\n\nbut **no labels**.\n\n---\n\n\n## 🤔 Which collection would be easier to train?\n\n✅ **Collection A**\n\n---\n\n\n## 🌎 Now Here's Something Surprising...\n\nImagine **10 boxes of data**.\n\n- 📦 1 box already has labels.\n- 📦📦📦📦📦📦📦📦📦 9 boxes have **no labels**.\n\nThat's very similar to the **real world**.\n\nMost data begins as **Unlabelled Data**.\n\nBefore using **Supervised Learning**, someone would first have to label everything manually.\n\nThat could take **weeks...**\n\n**months...**\n\nor even **years**.\n\n---\n\n\n## ❓ An Important Question\n\nAI engineers asked:\n\n> **Can AI organise data without anyone telling it the answers?**\n\n---\n\n\n# 💡 Big Idea\n\nNot all AI learns from **teachers**.\n\nSometimes it must **explore the data by itself**.",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784029575157",
+        "title": "🧩 Our Brain Loves Finding Patterns",
+        "icon": "📖",
+        "body": "Imagine someone gives you these fruits:\n\n- 🍎\n- 🍌\n- 🍇\n\n\nNow they get mixed together...\n\n> 🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n\nWithout thinking very much...\n\n\nyou would probably organise them like this:\n\n# 🍎 Group 1\n🍎 🍎 🍎\n\n# 🍌 Group 2\n🍌 🍌 🍌\n\n# 🍇 Group 3\n🍇 🍇 🍇\n\n\n\n\n\n## 🤔 How Did You Decide?\n\nYou noticed things like:\n\n- 🎨 Colour\n- 📏 Size\n- ⭕ Shape\n- 🍃 Appearance\n\nEven without realising it...\n\nyour brain automatically starts **grouping similar things together**.\n\nThese similarities are called...\n\n# 🧩 Patterns\n\n---\n\n\n\n## 🤖 AI Can Do Something Very Similar\n\nInstead of asking:\n\n> **\"What is this?\"**\n\nit asks:\n\n> **\"What looks similar?\"**\n\n\n\n\n\n# 💡 Remember\n\nFinding **patterns** is the first step towards **organising data**.\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n          │\n          ▼\n🧠 Brain Notices Patterns\n          │\n          ▼\n🍎 🍎 🍎    🍌 🍌 🍌    🍇 🍇 🍇\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784029732025",
+        "title": "🔍 AI Looks for Patterns Everywhere",
+        "icon": "📖",
+        "body": "Patterns appear all around us.\n\n\n\n\n# 🖼️ Images\n\n- 🐱 Cats have similar ears.\n- 🐶 Dogs have similar faces.\n- 🐦 Birds have wings.\n\nAI begins noticing these **visual similarities**.\n\n\n\n\n\n# 💬 Text\n\nLook at these sentences:\n\n- 🍎 Apples grow on trees.\n- 🍎 I ate a red apple.\n- 🍎 The apple is sweet.\n\nThe word **apple** appears again and again.\n\nThe AI notices this **repeated pattern**.\n\nIt is more likely to place these sentences into the **same group**.\n\n\n\n\n\n# 🎵 Music\n\nSongs with **similar rhythms** often sound alike.\n\nThe AI can discover those patterns too.\n\n\n\n\n\n# 🤔 How Does AI Decide?\n\nNo one tells the AI what the groups should be.\n\nInstead, it keeps asking:\n\n- 🤔 *\"What looks similar?\"*\n- 🤔 *\"What appears together?\"*\n- 🤔 *\"What shares the same patterns?\"*\n\nThe better the patterns...\n\nthe better the groups.\n\n\n\n\n\n# 💡 Remember\n\nDifferent kinds of data have **different kinds of patterns**.\n\n- 🖼️ Images → Visual patterns\n- 💬 Text → Repeated words\n- 🎵 Music → Sound patterns\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🖼 Images        💬 Text        🎵 Music\n     │              │               │\n     ▼              ▼               ▼\n👂 Features     🔤 Words      🎼 Rhythms\n      ╲           │            ╱\n       ╲          │           ╱\n        ╲         │          ╱\n         ▼────────┼────────▼\n          🧩 Find Patterns\n                 │\n                 ▼\n          📦 Create Groups\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784030083027",
+        "title": "🎓 Meet Unsupervised Learning",
+        "icon": "📖",
+        "body": "So far...\n\nevery AI model you've built learned from **Labelled Data**.\n\nSomeone always gave it the **correct answers**.\n\n\n\n# 🚫 But Today...\n\n- ❌ No answers\n- ❌ No labels\n- ❌ No teacher\n\nThe AI must **explore the data on its own**.\n\n\n\n# 🎓 What Is Unsupervised Learning?\n\nWhen AI learns from **Unlabelled Data**, this type of learning is called:\n\n# Unsupervised Learning\n\n\n\n# 🔍 Instead of Learning Names... In Supervised Learning, the AI learns:\n\n| Input | Label |\n|------|-------|\n| 🐱 | Cat |\n| 🐶 | Dog |\n\n\n\nIn **Unsupervised Learning**, the AI doesn't know the names.\n\nInstead, it notices similarities:\n\n```text\n🐱  🤝  🦁\n\n🐶  🤝  🐺\n```\n\nIt groups them because they share **similar patterns**.\n\n\n\n# 💡 The Big Idea\n\nThe AI doesn't know **what** they are.\n\nIt only knows:\n\n> **\"These examples look similar.\"**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784030372751",
+        "title": "🌟 Supervised Learning vs Unsupervised Learning",
+        "icon": "📖",
+        "body": "\n\n| 🌟 Supervised Learning | 🌟 Unsupervised Learning |\n|------------------------|--------------------------|\n| 🏷️ Learns from **labels** | 🧩 Learns from **patterns** |\n| 👨‍🏫 Someone teaches the AI | 🤖 The AI discovers similarities on its own |\n| 🎯 Predicts the correct answer | 📦 Organises similar data into groups |\n\n\n\n\n\n# 💡 Big Idea\n\n 🌟 **Supervised Learning asks:**\n\n> **\"What is it?\"**\n\n🌟 **Unsupervised Learning asks:**\n\n> **\"What belongs together?\"**\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🌟 Supervised Learning              🌟 Unsupervised Learning\n──────────────────────             ─────────────────────────\n\n🏷️ Labelled Data                   ⚪ Unlabelled Data\n       │                                  │\n       ▼                                  ▼\n🎓 Supervised Learning             🧩 Unsupervised Learning\n       │                                  │\n       ▼                                  ▼\n🎯 Predictions                     📦 Groups (Clusters)\n```",
         "tip": ""
       }
     ]
