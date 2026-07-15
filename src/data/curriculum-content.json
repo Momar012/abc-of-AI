@@ -1009,7 +1009,7 @@
   },
   {
     "id": "ch-1784028436955",
-    "title": "🧩 AI Without a Teacher",
+    "title": "9. 🧩 AI Without a Teacher",
     "subtitle": "Discovering Patterns on Its Own",
     "emoji": "📚",
     "steps": [
@@ -1026,7 +1026,7 @@
         "id": "learn-1784028700678",
         "title": "🕵️ But Here's a Mystery...",
         "icon": "📖",
-        "body": "🤔 **What if nobody provides the labels?**\n\nCan AI still learn?\n\nOr does learning become impossible?\n\nToday, we're going to solve one of the biggest mysteries in **Machine Learning**.\n\n\n\n\n# 💡 Remember\n\n**Supervised Learning** always learns from **labelled data**.\n\nBut not all data comes with labels...\n\n\n```text\n📂 Dataset\n     │\n     ▼\n🏷️ Labels\n     │\n     ▼\n🧠 Train Model\n     │\n     ▼\n🎯 Predictions\n```",
+        "body": "🤔 **What if nobody provides the labels?**\n\nCan AI still learn?\n\nOr does learning become impossible?\n\nToday, we're going to solve one of the biggest mysteries in **Machine Learning**.\n\n\n\n\n# 💡 Remember\n\n**Supervised Learning** always learns from **labelled data**.\n\n\n```text\n📂 Dataset\n     │\n     ▼\n🏷️ Labels\n     │\n     ▼\n🧠 Train Model\n     │\n     ▼\n🎯 Predictions\n```\n\nBut here's the big question---\n\n**🤔What if the labels disappear?**",
         "tip": ""
       },
       {
@@ -1050,7 +1050,7 @@
         "id": "learn-1784029428022",
         "title": "🌍 The World Is Full of Unlabelled Data",
         "icon": "📖",
-        "body": "Let's compare two collections.\n\n\n## 📚 Collection A (Labelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | Cat |\n| 🐶 | Dog |\n| 🐱 | Cat |\n| 🐶 | Dog |\n\nEvery image already has a **label**.\n\nThe AI already knows the **correct answer**.\n\n---\n\n\n## 📚 Collection B (Unlabelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n\nExactly the same images...\n\nbut **no labels**.\n\n---\n\n\n## 🤔 Which collection would be easier to train?\n\n✅ **Collection A**\n\n---\n\n\n## 🌎 Now Here's Something Surprising...\n\nImagine **10 boxes of data**.\n\n- 📦 1 box already has labels.\n- 📦📦📦📦📦📦📦📦📦 9 boxes have **no labels**.\n\nThat's very similar to the **real world**.\n\nMost data begins as **Unlabelled Data**.\n\nBefore using **Supervised Learning**, someone would first have to label everything manually.\n\nThat could take **weeks...**\n\n**months...**\n\nor even **years**.\n\n---\n\n\n## ❓ An Important Question\n\nAI engineers asked:\n\n> **Can AI organise data without anyone telling it the answers?**\n\n---\n\n\n# 💡 Big Idea\n\nNot all AI learns from **teachers**.\n\nSometimes it must **explore the data by itself**.",
+        "body": "Let's compare two collections.\n\n\n## 📚 Collection A (Labelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | Cat |\n| 🐶 | Dog |\n| 🐱 | Cat |\n| 🐶 | Dog |\n\nEvery image already has a **label**.\n\nThe AI already knows the **correct answer**.\n\n\n\n\n## 📚 Collection B (Unlabelled Data)\n\n| Image | Label |\n|-------|-------|\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n| 🐱 | ❓ |\n| 🐶 | ❓ |\n\nExactly the same images...\n\nbut **no labels**.\n\n\n\n\n## 🤔 Which collection would be easier to train?\n\n✅ **Collection A**\n\n\n\n\n## 🌎 Now Here's Something Surprising...\n\nImagine **10 boxes of data**.\n\n- 📦 1 box already has labels.\n- 📦📦📦📦📦📦📦📦📦 9 boxes have **no labels**.\n\nThat's very similar to the **real world**.\n\nMost data begins as **Unlabelled Data**.\n\nBefore using **Supervised Learning**, someone would first have to label everything manually.\n\nThat could take **weeks...**\n\n**months...**\n\nor even **years**.\n\n\n\n\n## ❓ An Important Question\n\nAI engineers asked:\n\n> **Can AI organise data without anyone telling it the answers?**\n\n\n\n\n**💡 Big Idea**\n\nNot all AI learns from **teachers**.\n\nSometimes it must **explore the data by itself**.",
         "tip": ""
       },
       {
@@ -1058,7 +1058,7 @@
         "id": "learn-1784029575157",
         "title": "🧩 Our Brain Loves Finding Patterns",
         "icon": "📖",
-        "body": "Imagine someone gives you these fruits:\n\n- 🍎\n- 🍌\n- 🍇\n\n\nNow they get mixed together...\n\n> 🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n\nWithout thinking very much...\n\n\nyou would probably organise them like this:\n\n# 🍎 Group 1\n🍎 🍎 🍎\n\n# 🍌 Group 2\n🍌 🍌 🍌\n\n# 🍇 Group 3\n🍇 🍇 🍇\n\n\n\n\n\n## 🤔 How Did You Decide?\n\nYou noticed things like:\n\n- 🎨 Colour\n- 📏 Size\n- ⭕ Shape\n- 🍃 Appearance\n\nEven without realising it...\n\nyour brain automatically starts **grouping similar things together**.\n\nThese similarities are called...\n\n# 🧩 Patterns\n\n---\n\n\n\n## 🤖 AI Can Do Something Very Similar\n\nInstead of asking:\n\n> **\"What is this?\"**\n\nit asks:\n\n> **\"What looks similar?\"**\n\n\n\n\n\n# 💡 Remember\n\nFinding **patterns** is the first step towards **organising data**.\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n          │\n          ▼\n🧠 Brain Notices Patterns\n          │\n          ▼\n🍎 🍎 🍎    🍌 🍌 🍌    🍇 🍇 🍇\n```",
+        "body": "Imagine someone gives you these fruits:\n\n- 🍎\n- 🍌\n- 🍇\n\n\nNow they get mixed together...\n\n> 🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n\nWithout thinking very much...\n\n\nyou would probably organise them like this:\n\n# 🍎 Group 1\n🍎 🍎 🍎\n\n# 🍌 Group 2\n🍌 🍌 🍌\n\n# 🍇 Group 3\n🍇 🍇 🍇\n\n\n\n\n\n## 🤔 How Did You Decide?\n\nYou noticed things like:\n\n- 🎨 Colour\n- 📏 Size\n- ⭕ Shape\n- 🍃 Appearance\n\nEven without realising it...\n\nyour brain automatically starts **grouping similar things together**.\n\nThese similarities are called...\n\n# 🧩 Patterns\n\n\n\n\n## 🤖 AI Can Do Something Very Similar\n\nInstead of asking:\n\n> **\"What is this?\"**\n\nit asks:\n\n> **\"What looks similar?\"**\n\n\n\n\n\n# 💡 Remember\n\nFinding **patterns** is the first step towards **organising data**.\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🍎 🍌 🍇 🍎 🍇 🍌 🍎 🍌 🍇\n          │\n          ▼\n🧠 Brain Notices Patterns\n          │\n          ▼\n🍎 🍎 🍎    🍌 🍌 🍌    🍇 🍇 🍇\n```",
         "tip": ""
       },
       {
@@ -1066,7 +1066,7 @@
         "id": "learn-1784029732025",
         "title": "🔍 AI Looks for Patterns Everywhere",
         "icon": "📖",
-        "body": "Patterns appear all around us.\n\n\n\n\n# 🖼️ Images\n\n- 🐱 Cats have similar ears.\n- 🐶 Dogs have similar faces.\n- 🐦 Birds have wings.\n\nAI begins noticing these **visual similarities**.\n\n\n\n\n\n# 💬 Text\n\nLook at these sentences:\n\n- 🍎 Apples grow on trees.\n- 🍎 I ate a red apple.\n- 🍎 The apple is sweet.\n\nThe word **apple** appears again and again.\n\nThe AI notices this **repeated pattern**.\n\nIt is more likely to place these sentences into the **same group**.\n\n\n\n\n\n# 🎵 Music\n\nSongs with **similar rhythms** often sound alike.\n\nThe AI can discover those patterns too.\n\n\n\n\n\n# 🤔 How Does AI Decide?\n\nNo one tells the AI what the groups should be.\n\nInstead, it keeps asking:\n\n- 🤔 *\"What looks similar?\"*\n- 🤔 *\"What appears together?\"*\n- 🤔 *\"What shares the same patterns?\"*\n\nThe better the patterns...\n\nthe better the groups.\n\n\n\n\n\n# 💡 Remember\n\nDifferent kinds of data have **different kinds of patterns**.\n\n- 🖼️ Images → Visual patterns\n- 💬 Text → Repeated words\n- 🎵 Music → Sound patterns\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🖼 Images        💬 Text        🎵 Music\n     │              │               │\n     ▼              ▼               ▼\n👂 Features     🔤 Words      🎼 Rhythms\n      ╲           │            ╱\n       ╲          │           ╱\n        ╲         │          ╱\n         ▼────────┼────────▼\n          🧩 Find Patterns\n                 │\n                 ▼\n          📦 Create Groups\n```",
+        "body": "Patterns appear all around us.\n\n\n\n\n# 🖼️ Images\n\n- 🐱 Cats have similar ears.\n- 🐶 Dogs have similar faces.\n- 🐦 Birds have wings.\n\nAI begins noticing these **visual similarities**.\n\n\n\n\n\n# 💬 Text\n\nLook at these sentences:\n\n- 🍎 Apples grow on trees.\n- 🍎 I ate a red apple.\n- 🍎 The apple is sweet.\n\nThe word **apple** appears again and again.\n\nThe AI notices this **repeated pattern**.\n\nIt is more likely to place these sentences into the **same group**.\n\n\n\n\n\n# 🎵 Music\n\nSongs with **similar rhythms** often sound alike.\n\nThe AI can discover those patterns too.\n\n\n\n\n\n# 🤔 How Does AI Decide?\n\nNo one tells the AI what the groups should be.\n\nInstead, it keeps asking:\n\n- 🤔 **\"What looks similar?\"**\n- 🤔 **\"What appears together?\"**\n- 🤔 **\"What shares the same patterns?\"**\n\nThe better the patterns...\n\nthe better the groups.\n\n\n\n\n\n# 💡 Remember\n\nDifferent kinds of data have **different kinds of patterns**.\n\n- 🖼️ Images → Visual patterns\n- 💬 Text → Repeated words\n- 🎵 Music → Sound patterns\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🖼 Images        💬 Text        🎵 Music\n     │              │               │\n     ▼              ▼               ▼\n👂 Features     🔤 Words      🎼 Rhythms\n      ╲           │            ╱\n       ╲          │           ╱\n        ╲         │          ╱\n         ▼────────┼────────▼\n          🧩 Find Patterns\n                 │\n                 ▼\n          📦 Create Groups\n```",
         "tip": ""
       },
       {
@@ -1074,15 +1074,143 @@
         "id": "learn-1784030083027",
         "title": "🎓 Meet Unsupervised Learning",
         "icon": "📖",
-        "body": "So far...\n\nevery AI model you've built learned from **Labelled Data**.\n\nSomeone always gave it the **correct answers**.\n\n\n\n# 🚫 But Today...\n\n- ❌ No answers\n- ❌ No labels\n- ❌ No teacher\n\nThe AI must **explore the data on its own**.\n\n\n\n# 🎓 What Is Unsupervised Learning?\n\nWhen AI learns from **Unlabelled Data**, this type of learning is called:\n\n# Unsupervised Learning\n\n\n\n# 🔍 Instead of Learning Names... In Supervised Learning, the AI learns:\n\n| Input | Label |\n|------|-------|\n| 🐱 | Cat |\n| 🐶 | Dog |\n\n\n\nIn **Unsupervised Learning**, the AI doesn't know the names.\n\nInstead, it notices similarities:\n\n```text\n🐱  🤝  🦁\n\n🐶  🤝  🐺\n```\n\nIt groups them because they share **similar patterns**.\n\n\n\n# 💡 The Big Idea\n\nThe AI doesn't know **what** they are.\n\nIt only knows:\n\n> **\"These examples look similar.\"**",
+        "body": "So far...\n\nevery AI model you've built learned from **Labelled Data**.\n\nSomeone always gave it the **correct answers**.\n\n\n\n# 🚫 But Today...\n\n- ❌ No answers\n- ❌ No labels\n- ❌ No teacher\n\nThe AI must **explore the data on its own**.\n\n\n\n# 🎓 What Is Unsupervised Learning?\n\nWhen AI learns from **Unlabelled Data**, this type of learning is called:\n\n# Unsupervised Learning\n\n\n\n\n\n\nIn **Unsupervised Learning**, the AI doesn't know the names.\n\nInstead, it notices similarities:\n\n```text\n🐱  🤝  🦁\n\n🐶  🤝  🐺\n```\n\nIt groups them because they share **similar patterns**.\n\n\n\n💡 **The Big Idea**\n\nThe AI doesn't know **what** they are.\n\nIt only knows:\n\n> **\"These examples look similar.\"**",
         "tip": ""
       },
       {
         "type": "learn",
-        "id": "learn-1784030372751",
-        "title": "🌟 Supervised Learning vs Unsupervised Learning",
+        "id": "learn-1784104523954",
+        "title": "🧩 What Is a Cluster?",
         "icon": "📖",
-        "body": "\n\n| 🌟 Supervised Learning | 🌟 Unsupervised Learning |\n|------------------------|--------------------------|\n| 🏷️ Learns from **labels** | 🧩 Learns from **patterns** |\n| 👨‍🏫 Someone teaches the AI | 🤖 The AI discovers similarities on its own |\n| 🎯 Predicts the correct answer | 📦 Organises similar data into groups |\n\n\n\n\n\n# 💡 Big Idea\n\n 🌟 **Supervised Learning asks:**\n\n> **\"What is it?\"**\n\n🌟 **Unsupervised Learning asks:**\n\n> **\"What belongs together?\"**\n\n\n\n\n\n# 🎨 Visual\n\n```text\n🌟 Supervised Learning              🌟 Unsupervised Learning\n──────────────────────             ─────────────────────────\n\n🏷️ Labelled Data                   ⚪ Unlabelled Data\n       │                                  │\n       ▼                                  ▼\n🎓 Supervised Learning             🧩 Unsupervised Learning\n       │                                  │\n       ▼                                  ▼\n🎯 Predictions                     📦 Groups (Clusters)\n```",
+        "body": "Now we know that AI can discover **patterns** without labels.\n\nBut here's the next question...\n\n## 🤔 What does the AI do after it finds those patterns?\n\n\n\nImagine you have a large box of mixed toys.\n\n\n```text\n🧸 🚗 ⚽ 🦕 🚲 🎨 🏀 🚙 🦖\n```\n\n\nIf someone asked you to organise them...\n\nyou would probably create groups like these:\n\n\n| 🧸 Group | Items |\n|----------|-------|\n| 🧸 Soft Toys | 🧸 |\n| 🚗 Vehicles | 🚗 🚙 🚲 |\n| ⚽ Sports Equipment | ⚽ 🏀 |\n| 🦖 Dinosaurs | 🦕 🦖 |\n\n\nEach group contains **similar items**.\n\n\n\n# 🤖 AI Does the Same Thing\n\nAI organises data in exactly the same way.\n\nEach group is called a...\n\n# 🧩 Cluster\n\n> **A Cluster is simply a group of similar items.**\n\n\n\n# 🔍 How Does AI Create Clusters?\n\nNotice something important...\n\nNobody tells the AI:\n\n- ❌ \"These are Vehicles.\"\n- ❌ \"These are Dinosaurs.\"\n- ❌ \"These are Sports.\"\n\nInstead...\n\nthe AI compares everything.\n\nIt notices things like:\n\n- 🎨 Colours\n- 📏 Shapes\n- 📐 Sizes\n- 🖼️ Visual Patterns\n\nThe AI still doesn't know their **names**.\n\nIt only knows:\n\n> **\"These items seem to belong together.\"**\n\n\n\n**💡 Remember**\n\nA **Cluster** is a **group of similar items** discovered by the AI.\n\n\n\n# 🎨 Visual\n\n```text\n🧸 🚗 ⚽ 🦕 🚲 🎨 🏀 🚙 🦖\n              │\n              ▼\n      🔍 Compare Everything\n              │\n              ▼\n      🧩 Find Similarities\n              │\n              ▼\n  🧸     🚗🚙🚲     ⚽🏀     🦕🦖\n Soft    Vehicles   Sports  Dinosaurs\n Toys",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784104806645",
+        "title": "🤔 Think About It",
+        "icon": "📖",
+        "body": "If we removed **every label**...\n\nwould the AI still be able to create groups?\n\n\n\n\n# ✅ Yes!\n\n\n\n\nBy finding **similarities**, the AI can organise items into **clusters**.\n\n\n\n# 🎨 Visual\n\n```text\n🧸  🚗  ⚽  🦖  🚲  🏀  🚙  🦕\n\n                │\n                ▼\n\n      🔍 AI Finds Similarities\n\n                │\n                ▼\n\n   🧩 Cluster 1      🧩 Cluster 2      🧩 Cluster 3\n\n    🚗  🚙  🚲          ⚽  🏀           🧸  🦖  🦕\n```\n\n\n\n\n\n# 💡 Key Idea\n\nThe AI doesn't know the names of these groups.\n\nIt only knows:\n\n> **\"These items look similar, so they belong together.\"**",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784104920272",
+        "title": "💬 How Does AI Group Text?",
+        "icon": "📖",
+        "body": "AI doesn't only organise **images**.\n\nIt can organise **text** too.\n\n\n\n# 📄 Imagine We Have These Sentences\n\n\n## 🍎 Group of Apple Sentences\n\n- 🍎 The apple is sweet.\n- 🍎 I like eating a fresh apple.\n- 🍎 The red apple grows on a tree.\n\n\n\n## 🚗 Group of Car Sentences\n\n- 🚗 My car is blue.\n- 🚗 The car has four wheels.\n- 🚗 Our family bought a new car.\n\n\n\n## 🐶 Group of Dog Sentences\n\n- 🐶 The dog likes bones.\n- 🐶 A happy dog runs outside.\n- 🐶 The brown dog is playful.\n\n\n\n## 🤔 However, the AI doesn't see these labels. It still organises these sentences into groups.\n\nNobody tells the AI:\n\n- ❌ \"These are Apple sentences.\"\n- ❌ \"These are Car sentences.\"\n- ❌ \"These are Dog sentences.\"\n\nInstead...\n\nthe AI starts looking for **repeated patterns**.\n\nIt notices words like:\n\n- 🍎 **apple**\n- 🚗 **car**\n- 🐶 **dog**\n\nBecause these words appear again and again,\n\nthe AI places similar sentences into the **same cluster**.\n\n\n\n\n# 💡 Remember\n\nThe AI isn't reading like a human.\n\n- ❌ It isn't thinking.\n- ❌ It isn't understanding the story.\n\nIt is simply discovering **repeated patterns**.\n\n---\n\n# 🎨 Visual\n\n```text\n🍎 The apple is sweet.\n🚗 My car is blue.\n🐶 The dog likes bones.\n🍎 I like eating a fresh apple.\n🚗 The car has four wheels.\n🐶 A happy dog runs outside.\n🍎 The red apple grows on a tree.\n🚗 Our family bought a new car.\n🐶 The brown dog is playful.\n\n                    │\n                    ▼\n\n        🔍 AI Finds Repeated Words\n\n      🍎 apple   🚗 car   🐶 dog\n\n                    │\n                    ▼\n\n     🧩 Cluster 1   🧩 Cluster 2   🧩 Cluster 3\n\n      🍎 Apple       🚗 Car         🐶 Dog\n     Sentences      Sentences      Sentences\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784105043504",
+        "title": "💡 Remember",
+        "icon": "📖",
+        "body": "For **text**, our AI mainly groups sentences by finding **repeated words** and **patterns**.\n\n\n\n# 🎨 Visual\n\n```text\n💬 Mixed Sentences\n\n🍎 The apple is sweet.\n🚗 My car is blue.\n🐶 The dog likes bones.\n🍎 I like eating a fresh apple.\n🚗 The car has four wheels.\n🐶 A happy dog runs outside.\n\n                │\n                ▼\n\n     🔍 Find Repeated Words\n\n       🍎 apple   🚗 car   🐶 dog\n\n                │\n                ▼\n\n        🧩 Create Clusters\n\n      🍎 Apple     🚗 Car     🐶 Dog\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784105125660",
+        "title": "🔍 How Does AI Build Clusters?",
+        "icon": "📖",
+        "body": "Let's watch what happens **inside the AI**.\n\n\n\n## 1️⃣ Receive Unlabelled Data\n\nThe AI receives lots of **Unlabelled Data**.\n\nIt doesn't know what anything is.\n\n\n\n## 2️⃣ Compare Everything\n\nThe AI begins comparing every example.\n\nIt asks questions like:\n\n- 🤔 Which images look alike?\n- 🤔 Which sentences use similar words?\n- 🤔 Which colours appear together?\n- 🤔 Which sounds are similar?\n\n\n\n## 3️⃣ Discover Hidden Patterns\n\nLittle by little...\n\nthe AI discovers **hidden patterns**.\n\n\n\n## 4️⃣ Create Clusters\n\nThe AI places similar examples into the **same cluster**.\n\nThe better the patterns it discovers...\n\nthe better its clusters become.\n\n\n\n\n# 💡 Big Idea\n\n**Unsupervised Learning** does **not** predict answers.\n\nIt **organises information**.\n\n\n\n\n# 🎨 Visual\n\n```text\n⚪ ⚪ ⚪ ⚪ ⚪ ⚪ ⚪ ⚪ ⚪\n      Unlabelled Data\n\n              │\n              ▼\n\n      🔍 Compare Everything\n\n              │\n              ▼\n\n      🧩 Discover Patterns\n\n              │\n              ▼\n\n        📂 Create Clusters\n\n              │\n              ▼\n\n   🔵 🔵 🔵      🟢 🟢 🟢      🟣 🟣 🟣\n    Cluster 1     Cluster 2     Cluster 3\n\n              │\n              ▼\n\n         ✅ Organised Data\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784105219767",
+        "title": "🤯 Can AI Discover Hidden Patterns?",
+        "icon": "📖",
+        "body": "Imagine scientists collect **thousands of flower photos**.\n\n```text\n🌸 🌼 🌷 🌹 🌺 🌸 🌼 🌷 🌹 🌺 ...\n```\n\nNobody knows **how many different kinds** there are.\n\nSo they ask the AI to organise them.\n\n\n\n## 🤖 The AI Creates Clusters\n\n- 🧩 Cluster 1\n- 🧩 Cluster 2\n- 🧩 Cluster 3\n- 🧩 Cluster 4\n\nAt first...\n\nthe scientists don't understand **why** the AI created these groups.\n\n\n\n# 🔬 Later...\n\nThey discover something amazing.\n\nThose **four clusters** actually match **four different species of flowers!**\n\nThe AI discovered a **hidden pattern** before anyone noticed it.\n\n\n\n# 🌟 Why Is This Powerful?\n\nSometimes...\n\nAI helps people discover things they **didn't even know to look for**.\n\n\n\n\n\n# 💡 Remember\n\n**Unsupervised Learning** can reveal **hidden patterns** inside large amounts of data.\n\n\n\n# 🎨 Visual\n\n```text\n🌸 🌼 🌷 🌹 🌺 🌸 🌼 🌷 🌹 🌺 🌸 🌼 🌷 🌹 🌺\n        Thousands of Mixed Flowers\n\n                    │\n                    ▼\n\n              🤖 AI Finds Patterns\n\n                    │\n                    ▼\n\n      🧩 Cluster 1   🧩 Cluster 2\n      🧩 Cluster 3   🧩 Cluster 4\n\n                    │\n                    ▼\n\n        🔬 Scientists Investigate\n\n                    │\n                    ▼\n\n     🌸 Four Different Flower Species\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784105334315",
+        "title": "⚖️ Supervised vs Unsupervised Learning",
+        "icon": "📖",
+        "body": "You've now explored **two different ways** that AI can learn.\n\nAlthough both are **Machine Learning**...\n\nthey solve **different kinds of problems**.\n\n\n\n\n\n## 📊 Comparison\n\n| 🏷️ Supervised Learning | 🧩 Unsupervised Learning |\n|-------------------------|--------------------------|\n| Uses ''Labelled Data'' | Uses ''Unlabelled Data'' |\n| Learns from ''correct answers'' | Learns by ''discovering patterns'' |\n| 🎯 Predicts labels | 📦 Creates clusters |\n| 👨‍🏫 Needs a teacher | 🤖 No teacher needed |\n| Example: 🐱 Cat vs 🐶 Dog | Example: 🐱🦁🐯 Group similar animals |\n\n\n\n\n\n# 🎓 Think of Two Students\n\n# 👩 Student A\n\n- 👨‍🏫 The teacher gives every answer.\n- 📚 The student learns by following the teacher.\n\n➡️ This is like **Supervised Learning**.\n\n\n\n\n\n# 👦 Student B\n\n- ❓ The teacher gives **no answers**.\n- 🔍 The student explores and discovers patterns alone.\n\n➡️ This is like **Unsupervised Learning**.\n\n\n\n\n# 💡 Big Idea\n\nBoth students **learn**.\n\nThey simply **learn in different ways**.\n\n\n\n\n\n# 🎨 Visual\n\n```text\n👩 Student A                         👦 Student B\n     │                                   │\n     ▼                                   ▼\n👨‍🏫 Teacher Gives Answers          ❓ No Answers Given\n     │                                   │\n     ▼                                   ▼\n📚 Learns from Labels              🔍 Finds Patterns\n     │                                   │\n     ▼                                   ▼\n🎯 Predicts Answers                📦 Creates Clusters\n```",
+        "tip": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1784105711977",
+        "title": "Guided Lab 1: 🐾 Build Your First Image Clustering AI",
+        "icon": "🔬",
+        "instruction": "## 🎯 Goal\n\nLearn how to build an **Image Clustering AI** using an **Unlabelled Dataset**.\n\n\n\n\n\n## 🧩 Problem\n\nA wildlife organisation has collected **hundreds of animal photographs** using cameras placed in forests.\n\nThe photographs have **no labels**.\n\nInstead of identifying every animal manually, the researchers want AI to **automatically organise similar animals into groups**.\n\nYour task is to build the clustering system.\n\n\n\n\n\n# 📋 Instructions\n\n# Step 1\n\nDownload:\n\n- 🐱 10 Cat images\n- 🐶 10 Dog images\n- 🦁 10 Lion images\n\n\n\n# Step 2\nOpen **ABITA**.\n\n\n# Step 3\nOpen the **Data Bank**.\n\n\n# Step 4\nUpload all the images.\n\n\n# Step 5\nFrom **Datasets**, drag an **🗂️ Unlabelled Dataset** onto the canvas.\n\n\n# Step 6\nDouble-click the **Unlabelled Dataset** block.\n\n\n# Step 7\nSelect and paste all the uploaded images into the dataset.\n\n\n# Step 8\nSave the dataset as:\n\n\n**📂 Animal Cluster Dataset**\n\n\n\n# Step 9\nFrom **Models**, drag an:\n\n**🧩 Unsupervised Image Model**\n\nonto the canvas.\n\n\n\n# Step 10\nConnect:\n\n```text\n📂 Animal Cluster Dataset\n            │\n            ▼\n🧩 Unsupervised Image Model\n```\n\n\n\n# Step 11\nSet:\n\n```text\nNumber of Clusters = 3\n```\n\n\n\n# Step 12\nClick:\n\n```text\n🚀 Train Model\n```\n\n\n\n# Step 13\nWait until training completes.\n\n\n\n# Step 14\nOpen **Expanded View** and observe every cluster.\n\n\n\n\n\n# ✅ Success Criteria\n\n- ✅ Images uploaded\n- ✅ Unlabelled Dataset created\n- ✅ Dataset connected to the model\n- ✅ Model trained successfully\n- ✅ Three clusters created\n\n\n\n\n# 💡 Expected Result\n\nThe AI automatically groups **similar animals** together.\n\n- ❌ Nobody labels anything.\n- 🧩 The AI only searches for **visual patterns**.\n- 📦 Similar animals are placed into the same cluster.",
+        "canvasHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1784106080151",
+        "title": "Guided Lab 2: 🍎 Build a Fruit Clustering AI",
+        "icon": "🔬",
+        "instruction": "## 🎯 Goal\n\nBuild another **Image Clustering AI** using a different type of **Unlabelled Dataset**.\n\n\n\n## 🧩 Problem\n\nA fruit warehouse has **thousands of fruit photos**.\n\nNobody has sorted them yet.\n\nInstead of organising them manually, the workers want AI to **group similar fruits together**.\n\nYour task is to build the clustering system.\n\n\n\n# 📋 Instructions\n\n# Step 1\n\nDownload:\n\n- 🍎 10 Apple images\n- 🍌 10 Banana images\n- 🍊 10 Orange images\n\n\n\n# Step 2\n\nOpen **ABITA**.\n\n\n\n# Step 3\n\nOpen the **Data Bank**.\n\n\n\n# Step 4\n\nUpload all the images.\n\n\n\n# Step 5\n\nFrom **Datasets**, drag an **🗂️ Unlabelled Dataset** onto the canvas.\n\n\n\n# Step 6\n\nDouble-click the **Unlabelled Dataset** block.\n\n\n\n# Step 7\n\nSelect and paste all the uploaded images into the dataset.\n\n\n\n# Step 8\n\nSave the dataset as:\n\n**📂 Fruit Cluster Dataset**\n\n\n\n# Step 9\n\nFrom **Models**, drag an:\n\n**🧩 Unsupervised Image Model**\n\nonto the canvas.\n\n\n\n# Step 10\n\nConnect:\n\n```text\n📂 Fruit Cluster Dataset\n           │\n           ▼\n🧩 Unsupervised Image Model\n```\n\n\n\n# Step 11\n\nSet:\n\n```text\nNumber of Clusters = 3\n```\n\n\n\n# Step 12\n\nClick:\n\n```text\n🚀 Train Model\n```\n\n\n\n# Step 13\n\nWait until training completes.\n\n\n\n# Step 14\n\nOpen **Expanded View** and observe every cluster.\n\n\n\n# ✅ Success Criteria\n\n- ✅ Images uploaded\n- ✅ Unlabelled Dataset created\n- ✅ Dataset connected to the model\n- ✅ Model trained successfully\n- ✅ Three clusters displayed\n\n\n\n# 💡 Expected Result\n\nThe AI automatically groups **similar fruits** together.\n\n- ❌ No labels are needed.\n- 🧩 The AI searches for **visual patterns**.\n- 📦 Similar fruits are placed into the same cluster.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1784106220994",
+        "title": "🏆 Challenge Lab 1: 🌸 Nature Explorer",
+        "icon": "🏆",
+        "prompt": "## 🎯 Mission\nHelp a nature museum organise its image collection automatically.\n\n\n \n## 📋 Requirements\nCollect the following 10 images each:\n\n \n- 🌹 Roses\n- 🌻 Sunflowers\n- 🌷 Tulips\n- 🌼 Daisies\n\n \nThen:\n \n- Create an **Unlabelled Dataset**.\n- Train an **Unsupervised Image Model**.\n- Observe the generated clusters.\n\n\n \n## ✅ Success Criteria\n \n- Images uploaded successfully.\n- Unlabelled Dataset created.\n- Model trained successfully.\n- Clusters displayed correctly.\n",
+        "successHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1784106306910",
+        "title": "🏆 Challenge Lab 2: 🚗 Smart Vehicle Organiser",
+        "icon": "🏆",
+        "prompt": "## 🎯 Mission\nBuild an AI that organises different vehicles into groups automatically.\n\n\n \n## 📋 Requirements\n\nCollect the following 10 images each:\n\n \n- 🚗 Cars\n- 🏍️ Motorcycles\n- 🚌 Buses\n- ✈️ Airplanes\n \nThen:\n \n- Upload all images.\n- Create an **Unlabelled Dataset**.\n- Train an **Unsupervised Image Model**.\n- View the generated clusters.\n\n\n \n## ✅ Success Criteria\n \n- Dataset created successfully.\n- Model trained successfully.\n- Clusters generated automatically.\n\n",
+        "successHint": ""
+      },
+      {
+        "type": "lab",
+        "id": "lab-1784106772300",
+        "title": "Guided Lab 3: Build Your First Text Clustering Model",
+        "icon": "🔬",
+        "instruction": "## 🎯 Goal\n\nLearn how AI organises **similar text** without labels.\n\n\n\n## 🧩 Problem\n\n🤖 **Robo** has a big box of mixed-up descriptions.\n\nSome describe **furniture**.\n\nSome describe **musical instruments**.\n\nSome describe **plants**.\n\nSome describe **aircraft**.\n\nSome describe **animals**.\n\nRobo doesn't know which sentences belong together.\n\nCan you train an AI to organise them into similar groups?\n\n\n\n# 📋 Instructions\n\n# Step 1\n\nOpen **ABITA**.\n\n\n# Step 2\n\nFrom **Datasets**, drag a **📝 Text Dataset** onto the canvas.\n\n\n# Step 3\n\nDouble-click the **Text Dataset** block and paste the following data:\n\n```text\nThe chair has four legs.\nA wooden chair is strong.\nEvery chair has a seat.\nThe chair is inside the room.\n\nThe guitar has six strings.\nA guitar makes music.\nEvery guitar has strings.\nThe guitar is made of wood.\n\nThe tree has green leaves.\nA tall tree gives shade.\nEvery tree has branches.\nThe tree grows in the park.\n\nThe airplane flies in the sky.\nAn airplane has two wings.\nEvery airplane carries passengers.\nThe airplane lands safely.\n\nThe fish swims in water.\nA fish has fins.\nEvery fish lives in water.\nThe fish moves with its fins.\n```\n\n\n# Step 4\n\nSave the dataset as:\n\n**📂 Mixed Text Dataset**\n\n\n\n# Step 5\n\nFrom **Models**, drag an:\n\n**🧩 Unsupervised Text Model**\n\nonto the canvas.\n\n\n\n# Step 6\n\nConnect:\n\n```text\n📂 Mixed Text Dataset\n          │\n          ▼\n🧩 Unsupervised Text Model\n```\n\n\n\n# Step 7\n\nSet:\n\n```text\nNumber of Clusters = 5\n```\n\n\n\n# Step 8\n\nClick:\n\n```text\n🚀 Train Model\n```\n\n\n\n# Step 9\n\nOpen **Expanded View** and observe the clusters.\n\nCan you recognise groups such as:\n\n- 🪑 Chairs\n- 🎸 Guitars\n- 🌳 Trees\n- ✈️ Airplanes\n- 🐠 Fish\n\n\n\n# ✅ Success Criteria\n\n- ✅ Text dataset created\n- ✅ Dataset connected to the model\n- ✅ Model trained successfully\n- ✅ Five clusters created\n- ✅ Similar topics identified\n\n\n\n# 💡 Expected Result\n\nThe AI automatically groups **similar sentences** together.\n\n- ❌ Nobody labels the text.\n- 🧩 The AI discovers **repeated words and patterns**.\n- 📦 Similar topics are placed into the same cluster.",
+        "canvasHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1784108965202",
+        "title": "🏆 Challenge Lab 3: 🌍 Build a Real-World Object Organiser",
+        "icon": "🏆",
+        "prompt": "## 🎯 Objective\n\nA large online photo collection contains thousands of short descriptions of different real-world objects.\n \nThe descriptions have no labels.\n \nReading and organising every description manually would take too much time.\n \nInstead, the company wants AI to automatically group similar descriptions together.\n \nYour job is to build a **Text Clustering Model**.\n\n\n\n \n## 📚 Dataset\n\n \n```text\nThe lion has a mane.\n\nA lion lives in the grassland.\n\nThe mane belongs to the lion.\n\nEvery lion walks in the grassland.\n\nThe apple is a fruit.\n\nA banana is a fruit.\n\nThe orange is a fruit.\n\nEvery fruit grows on a tree.\n\nThe car has four wheels.\n\nA bus has four wheels.\n\nThe car drives on the road.\n\nEvery car travels on the road.\n```\n \n\n## 📋 Requirements\n\n \n- Create an **Unlabelled Dataset**.\n- Copy the dataset above into the dataset.\n- Save the dataset as **Real-World Objects Dataset**.\n- Train an **Unsupervised Text Model**.\n- Open the generated clusters.\n \n\n\n## ✅ Success Criteria:\n \n- Unlabelled Dataset created successfully.\n- All sentences added correctly.\n- Text Clustering Model trained successfully.\n- Clusters generated successfully.\n\n\n \n## 💡 Expected Result:\n \nThe AI automatically organises similar object descriptions into different groups.\n \nInstead of predicting labels, it discovers hidden patterns and groups similar descriptions together automatically.\n",
+        "successHint": ""
+      },
+      {
+        "type": "challenge",
+        "id": "challenge-1784109512068",
+        "title": "🏆 Challenge Lab 4: 📚 Build a School Subject Organiser",
+        "icon": "🏆",
+        "prompt": "## 🎯 Objective\n\nBuild an AI model that automatically groups similar school-related sentences using Unsupervised Learning.\n \n- Do not create any labels.\n \n- Use everything you've learned so far.\n \n- Think like an AI Engineer.\n\n\n \n## 📚 Dataset:\n\n\n \n```text\nThe number is part of an equation.\n\nThe equation uses a number.\n\nThe plant grows from a seed.\n\nThe seed grows into a plant.\n\nThe book tells a story.\n\nThe story is inside the book.\n\nThe computer runs a program.\n\nThe program works on the computer.\n\nThe triangle has three sides.\n\nA triangle has equal sides.\n\nThe guitar has strings.\n\nThe strings belong to the guitar.\n```\n\n\n \n## 📋 Requirements\n\n \n- Create an **Unlabelled Dataset**.\n- Copy the dataset above into the dataset.\n- Save the dataset as **School Subjects Dataset**.\n- Train an **Unsupervised Text Model**.\n- Open the generated clusters.\n\n\n \n## ✅ Success Criteria\n \n- Unlabelled Dataset created successfully.\n- All sentences added correctly.\n- Text Clustering Model trained successfully.\n- Clusters generated successfully.\n\n\n \n## 💡 Expected Result\n \nThe AI automatically organises similar school-related sentences into different groups.\n \nWithout using any labels, it discovers patterns and groups related sentences together automatically.\n",
+        "successHint": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784109987189",
+        "title": "🧩 Exploring the AI's Clusters",
+        "icon": "📖",
+        "body": "# 🎉 Congratulations!\n\nYou have now built both **Image Clustering** and **Text Clustering** AI systems.\n\nUnlike **Supervised Learning**, you never told the AI the correct answers.\n\nInstead, the AI:\n\n- 🔍 Discovered similarities\n- 🧩 Found patterns\n- 📂 Organised the data into clusters\n\n\n\n# 🌟 Can We Improve the Clusters?\n\n# ✅ Yes!\n\nAI engineers can improve clustering by:\n\n- ✅ Collecting more data\n- ✅ Removing poor-quality or duplicate data\n- ✅ Using clearer and more varied examples\n- ✅ Choosing a better number of clusters\n- ✅ Training the model again with improved data",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784105419694",
+        "title": "🌟 Chapter Summary",
+        "icon": "📖",
+        "body": "You've learned that...\n\n- ✅ Some data has **labels**.\n- ✅ Some data has **no labels**.\n- ✅ AI can discover **patterns** without a teacher.\n- ✅ Similar items are organised into **Clusters**.\n- ✅ This type of Machine Learning is called...\n\n# 🎓 Unsupervised Learning\n\n\n\n\n\n# 🚀 Coming Next...\n\nUnderstanding the idea is important...\n\nBut **watching AI do it** is even more exciting.\n\nIn the next lesson...\n\nyou'll become an **AI Engineer** once again.\n\nThis time...\n\n- ❌ You won't label a single image.\n- 🤖 You'll build your very first **Image Clustering AI**.\n- 🧩 You'll watch AI organise data **automatically**.\n\n\n\n# 🎨 Visual\n\n```text\n🏷️ Supervised Learning              🧩 Unsupervised Learning\n──────────────────────             ─────────────────────────\n\n🏷️ Labelled Data                   ⚪ Unlabelled Data\n       │                                  │\n       ▼                                  ▼\n🎓 Train AI Model                  🤖 Discover Patterns\n       │                                  │\n       ▼                                  ▼\n🎯 Predictions                     📦 Clusters\n```",
+        "tip": ""
+      },
+      {
+        "type": "learn",
+        "id": "learn-1784110158660",
+        "title": "💡 Remember",
+        "icon": "📖",
+        "body": "\n```text\n🏷️ Supervised Learning\n          ↓\nLearns from Labels\n```\n\n```text\n🧩 Unsupervised Learning\n          ↓\nLearns by Finding Patterns\n```\n\n\nEvery improvement helps the AI create **better clusters** and discover **clearer patterns**.\n\n\n\n# 💡 One More Thing\n\nFor **text**, our AI mainly creates clusters by finding **important words and repeated patterns** in similar sentences.\n\nThat's why using **clear datasets** with **repeated keywords** helps the AI organise text more accurately.",
         "tip": ""
       }
     ]
