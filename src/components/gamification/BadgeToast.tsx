@@ -38,7 +38,7 @@ export default function BadgeToast() {
   const toasts = useUIStore((s) => s.toasts)
 
   return (
-    <div className="fixed bottom-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
+    <div className="fixed top-6 right-6 flex flex-col gap-2 z-50 pointer-events-none">
       <AnimatePresence mode="popLayout">
         {toasts.map((toast) => (
           <div key={toast.id} className="pointer-events-auto">
