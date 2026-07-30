@@ -2138,6 +2138,12 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .cluster-pill.active{background:linear-gradient(90deg,var(--acc)33,var(--acc2)33);border-color:rgba(255,255,255,0.25);color:#fff}
 .waiting{font-size:0.78rem;color:rgba(255,255,255,0.22);font-style:italic}
 .loading-bar{height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:2px;width:0%;transition:width 0.5s}
+.thinking{display:flex;flex-direction:column;align-items:center;gap:0.6rem;padding:1rem 0.5rem;text-align:center}
+.think-emoji{font-size:2rem;animation:think-pulse 1s ease-in-out infinite}
+.think-msg{font-size:0.8rem;color:rgba(255,255,255,0.5);font-weight:600}
+.think-bar-wrap{width:100%;max-width:220px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden}
+.think-bar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width 8s linear}
+@keyframes think-pulse{0%,100%{transform:scale(1);opacity:0.7}50%{transform:scale(1.15);opacity:1}}
 footer{text-align:center;padding:0.875rem;font-size:0.67rem;color:rgba(255,255,255,0.45);border-top:1px solid rgba(255,255,255,0.05);position:relative;z-index:1}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
@@ -2245,6 +2251,46 @@ function showClusterResult(bestIdx, probs) {
   _blip(550, 0.18);
 }
 
+// ── "Thinking" delay so grouping feels like real AI effort, not an instant lookup ──
+var THINK_MESSAGES_CLUSTER_IMG = ['🧠 Looking closely at your photo…', '🔍 Comparing it with what I learned…', '⚡ Crunching the pixels…', '🧩 Sorting it into a group…', '✨ Almost ready…'];
+var THINK_MESSAGES_CLUSTER_TXT = ['🧠 Reading your words…', '📚 Comparing with what I learned…', '⚡ Weighing the evidence…', '🧩 Finding the closest group…', '✨ Almost ready…'];
+
+function runClusterPrediction(computeFn) {
+  var el = document.getElementById('cluster-result');
+  if (!el) return;
+  var controls = document.querySelectorAll('.predict-btn, .upload-btn input');
+  for (var ci = 0; ci < controls.length; ci++) controls[ci].disabled = true;
+
+  var messages = IS_IMAGE ? THINK_MESSAGES_CLUSTER_IMG : THINK_MESSAGES_CLUSTER_TXT;
+  var msgId = 'think-msg-cluster', barId = 'think-bar-cluster';
+  el.innerHTML = '<div class="thinking"><div class="think-emoji">🧠</div>' +
+    '<div class="think-msg" id="' + msgId + '">' + messages[0] + '</div>' +
+    '<div class="think-bar-wrap"><div class="think-bar" id="' + barId + '"></div></div></div>';
+  requestAnimationFrame(function() {
+    var bar = document.getElementById(barId);
+    if (bar) bar.style.width = '100%';
+  });
+  var msgIdx = 0;
+  var msgTimer = setInterval(function() {
+    msgIdx = (msgIdx + 1) % messages.length;
+    var msgEl = document.getElementById(msgId);
+    if (msgEl) msgEl.textContent = messages[msgIdx];
+  }, 1800);
+
+  var THINK_MS = 8000;
+  Promise.all([computeFn(), new Promise(function(r) { setTimeout(r, THINK_MS); })]).then(function(pair) {
+    var res = pair[0];
+    clearInterval(msgTimer);
+    for (var ci2 = 0; ci2 < controls.length; ci2++) controls[ci2].disabled = false;
+    if (!res) { el.innerHTML = '<span class="waiting">Prediction failed — try again</span>'; return; }
+    showClusterResult(res.bestIdx, res.probs);
+  }).catch(function() {
+    clearInterval(msgTimer);
+    for (var ci3 = 0; ci3 < controls.length; ci3++) controls[ci3].disabled = false;
+    el.innerHTML = '<span class="waiting">Prediction failed — try again</span>';
+  });
+}
+
 // ── Text clustering ──────────────────────────────────────────────────────────
 function tokenize(t) { return t.toLowerCase().replace(/[^a-z0-9\\s]/g,' ').split(/\\s+/).filter(function(w){return w.length>1;}); }
 function tfidfVec(text) {
@@ -2260,13 +2306,13 @@ function clusterText() {
   if (!text.trim()) { showToast('⚠ Type something first!'); return; }
   if (!VOCAB.length) { showToast('⚠ No vocabulary data'); return; }
   if (IDF.length !== VOCAB.length) { showToast('⚠ Model data incomplete — please retrain'); return; }
-  var vec = tfidfVec(text);
-  var res = nearestCentroid(vec);
-  showClusterResult(res.bestIdx, res.probs);
+  runClusterPrediction(function() {
+    return Promise.resolve(nearestCentroid(tfidfVec(text)));
+  });
 }
 
 // ── Image clustering ─────────────────────────────────────────────────────────
-async function clusterFrame() {
+function clusterFrame() {
   var canvasEl = document.getElementById('cluster-cap');
   if (!_mobileNet) { showToast('AI engine still loading…'); return; }
   if (!_previewReady) {
@@ -2279,14 +2325,13 @@ async function clusterFrame() {
     canvasEl.getContext('2d').drawImage(videoEl, 0, 0, 224, 224);
   }
   _previewReady = false;
-  try {
+  runClusterPrediction(async function() {
     var imgTensor = tf.browser.fromPixels(canvasEl);
     var features = _mobileNet.infer(imgTensor, true);
     var vec = Array.from(await features.data());
     imgTensor.dispose(); features.dispose();
-    var res = nearestCentroid(vec);
-    showClusterResult(res.bestIdx, res.probs);
-  } catch(e) { showToast('Prediction failed — try again'); }
+    return nearestCentroid(vec);
+  });
 }
 
 function clusterUpload(file) {
