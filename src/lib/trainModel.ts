@@ -258,6 +258,72 @@ function runKMeans(features: number[][], k: number): KMeansResult {
   return { assignments, centroids }
 }
 
+function nearestClusterImagePrediction(
+  trainedModel: TrainedModel,
+  featureValues: number[]
+): Omit<TestResult, 'itemId' | 'actualLabelId' | 'actualLabel'> | null {
+  const { clusterCentroids, labels, labelIds } = trainedModel
+  if (!clusterCentroids || !clusterCentroids.length) return null
+  const dists = clusterCentroids.map((c) => sqDist(featureValues, c))
+  let bestIdx = 0
+  for (let i = 1; i < dists.length; i++) if (dists[i] < dists[bestIdx]) bestIdx = i
+  const maxNeg = Math.max(...dists.map((d) => -d))
+  const expScores = dists.map((d) => Math.exp(-d - maxNeg))
+  const sumExp = expScores.reduce((a, b) => a + b, 0)
+  const allConfidences: Record<string, number> = {}
+  labelIds.forEach((lid, i) => { allConfidences[lid] = expScores[i] / sumExp })
+  return {
+    predictedLabel: labels[bestIdx] ?? `Group ${bestIdx + 1}`,
+    predictedLabelId: labelIds[bestIdx] ?? String(bestIdx),
+    confidence: allConfidences[labelIds[bestIdx]] ?? 0,
+    allConfidences,
+  }
+}
+
+export async function runClusterImageInference(
+  trainedModel: TrainedModel,
+  testItems: DataItem[],
+  onProgress: (step: number, total: number) => void
+): Promise<TestResult[]> {
+  const imageTestItems = testItems.filter((i) => i.type === 'image' && i.content)
+  const total = imageTestItems.length
+  if (!total) return []
+
+  onProgress(0, total + 2)
+  const tf = await import('@tensorflow/tfjs')
+
+  onProgress(1, total + 2)
+  const mobilenetModule = await import('@tensorflow-models/mobilenet')
+
+  const mobileNet = await loadMobileNet(mobilenetModule)
+
+  const results: TestResult[] = []
+  let step = 2
+
+  for (const item of imageTestItems) {
+    let img: HTMLImageElement
+    try {
+      img = await decodeImage(item.content!)
+    } catch {
+      throw new Error(`The image "${item.name}" couldn't be loaded for testing — it may be corrupted or in an unsupported format.`)
+    }
+    const imgTensor = tf.browser.fromPixels(img)
+    const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
+    const featureValues = Array.from(await features.data())
+
+    imgTensor.dispose()
+    features.dispose()
+
+    const r = nearestClusterImagePrediction(trainedModel, featureValues)
+    if (r) results.push({ itemId: item.id, actualLabelId: null, actualLabel: null, ...r })
+
+    step++
+    onProgress(step, total + 2)
+  }
+
+  return results
+}
+
 export interface ClusterImagesResult {
   results: ClusterResult[]
   centroids: number[][]

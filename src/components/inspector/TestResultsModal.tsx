@@ -106,7 +106,7 @@ export default function TestResultsModal() {
             {results.map((result) => {
               const bankItem = bankItems.find((i) => i.id === result.itemId)
               const pct = Math.round(result.confidence * 100)
-              const color = block.modelType === 'text-unsupervised'
+              const color = (block.modelType === 'text-unsupervised' || block.modelType === 'image-unsupervised')
                 ? LABEL_PALETTE[Number(result.predictedLabelId) % LABEL_PALETTE.length]
                 : labelColorMap[result.predictedLabelId] ?? '#8B5CF6'
               const isCorrect = result.actualLabel !== null

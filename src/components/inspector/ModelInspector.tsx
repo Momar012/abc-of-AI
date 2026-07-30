@@ -5,7 +5,7 @@ import { v4 as uuid } from 'uuid'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { trainImageSupervisedModel, runInference, clusterImages, ClusterImagesResult } from '@/lib/trainModel'
+import { trainImageSupervisedModel, runInference, clusterImages, ClusterImagesResult, runClusterImageInference } from '@/lib/trainModel'
 import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts, ClusterTextsResult, runClusterTextInference } from '@/lib/textLearner'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import { TrainedModel, TestResult, ChatMessage } from '@/types/model'
@@ -389,11 +389,14 @@ export default function ModelInspector() {
         ? runTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
         : block.modelType === 'text-unsupervised'
         ? runClusterTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+        : block.modelType === 'image-unsupervised'
+        ? await runClusterImageInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
         : await runInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+      const isClustering = block.modelType === 'text-unsupervised' || block.modelType === 'image-unsupervised'
       const enriched: TestResult[] = raw.map((r) => ({
         ...r,
-        actualLabelId: block.modelType === 'text-unsupervised' ? null : (groundTruthMap[r.itemId]?.labelId ?? null),
-        actualLabel: block.modelType === 'text-unsupervised' ? null : (groundTruthMap[r.itemId]?.labelName ?? null),
+        actualLabelId: isClustering ? null : (groundTruthMap[r.itemId]?.labelId ?? null),
+        actualLabel: isClustering ? null : (groundTruthMap[r.itemId]?.labelName ?? null),
       }))
       updateModelBlock(block.id, { testStatus: 'done', testResults: enriched })
       const hasGT = enriched.some((r) => r.actualLabelId !== null)
@@ -884,10 +887,10 @@ export default function ModelInspector() {
         )}
 
         {/* Step 5: Test with test set */}
-        {block.status === 'trained' && block.modelType !== 'image-unsupervised' && block.modelType !== 'text-corpus' && (
+        {block.status === 'trained' && block.modelType !== 'text-corpus' && (
           <div className="px-4 py-4 flex flex-col gap-2">
             <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">
-              {block.modelType === 'text-unsupervised' ? '5 · Test with New Data' : '4 · Test Model'}
+              {(block.modelType === 'text-unsupervised' || block.modelType === 'image-unsupervised') ? '5 · Test with New Data' : '4 · Test Model'}
             </p>
 
             {!block.testLinkedBlockId ? (

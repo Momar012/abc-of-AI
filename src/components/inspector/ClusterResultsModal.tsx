@@ -1,17 +1,76 @@
 'use client'
 
+import { useState } from 'react'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { LABEL_PALETTE } from '@/lib/constants'
 
+function EditableClusterName({
+  trainedModelId,
+  clusterId,
+  name,
+  color,
+}: {
+  trainedModelId: string
+  clusterId: number
+  name: string
+  color: string
+}) {
+  const renameClusterLabel = useModelStore((s) => s.renameClusterLabel)
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(name)
+
+  const commit = () => {
+    const trimmed = value.trim()
+    if (trimmed) renameClusterLabel(trainedModelId, clusterId, trimmed)
+    else setValue(name)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit()
+          if (e.key === 'Escape') { setValue(name); setEditing(false) }
+        }}
+        onClick={(e) => e.stopPropagation()}
+        maxLength={30}
+        className="bg-transparent border-b outline-none text-sm font-heading font-bold w-28"
+        style={{ color, borderColor: `${color}88` }}
+      />
+    )
+  }
+
+  return (
+    <button
+      onDoubleClick={() => { setValue(name); setEditing(true) }}
+      className="text-sm font-heading font-bold hover:opacity-80 transition-opacity text-left"
+      style={{ color }}
+      title="Double-click to rename"
+    >
+      {name}
+    </button>
+  )
+}
+
 export default function ClusterResultsModal() {
   const blockId = useUIStore((s) => s.clusterResultsModalBlockId)
   const closeClusterResultsModal = useUIStore((s) => s.closeClusterResultsModal)
   const block = useModelStore((s) => s.modelBlocks.find((b) => b.id === blockId))
+  const trainedModels = useModelStore((s) => s.trainedModels)
   const bankItems = useDatasetStore((s) => s.bankItems)
 
   if (!block || !block.clusterResults || block.clusterResults.length === 0) return null
+
+  const trainedModel = block.trainedModelId
+    ? trainedModels.find((m) => m.id === block.trainedModelId)
+    : null
 
   const k = block.clusterCount ?? Math.max(...block.clusterResults.map((r) => r.clusterId)) + 1
 
@@ -77,9 +136,18 @@ export default function ClusterResultsModal() {
                         className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ background: color }}
                       />
-                      <span className="text-sm font-heading font-bold" style={{ color }}>
-                        Cluster {clusterId + 1}
-                      </span>
+                      {trainedModel ? (
+                        <EditableClusterName
+                          trainedModelId={trainedModel.id}
+                          clusterId={clusterId}
+                          name={trainedModel.labels[clusterId] ?? `Cluster ${clusterId + 1}`}
+                          color={color}
+                        />
+                      ) : (
+                        <span className="text-sm font-heading font-bold" style={{ color }}>
+                          Cluster {clusterId + 1}
+                        </span>
+                      )}
                     </div>
                     <span
                       className="text-xs font-body px-2 py-0.5 rounded-full"

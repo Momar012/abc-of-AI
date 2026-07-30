@@ -13,6 +13,7 @@ interface ModelState {
   updateModelBlockPosition: (id: string, pos: { x: number; y: number }) => void
   saveTrainedModel: (model: TrainedModel) => void
   renameTrainedModel: (id: string, name: string) => void
+  renameClusterLabel: (trainedModelId: string, clusterId: number, name: string) => void
   deleteTrainedModel: (id: string) => void
 }
 
@@ -89,6 +90,15 @@ export const useModelStore = create<ModelState>((set) => ({
   renameTrainedModel: (id, name) =>
     set((s) => ({
       trainedModels: s.trainedModels.map((m) => m.id === id ? { ...m, name } : m),
+    })),
+
+  renameClusterLabel: (trainedModelId, clusterId, name) =>
+    set((s) => ({
+      trainedModels: s.trainedModels.map((m) =>
+        m.id === trainedModelId
+          ? { ...m, labels: m.labels.map((l, i) => (i === clusterId ? name : l)) }
+          : m
+      ),
     })),
 
   deleteTrainedModel: (id) =>
