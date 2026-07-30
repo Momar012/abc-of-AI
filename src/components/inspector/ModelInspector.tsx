@@ -904,7 +904,7 @@ export default function ModelInspector() {
                 {/* Test set info */}
                 <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex flex-col gap-1">
                   <p className="text-xs text-amber-300 font-body font-semibold">
-                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} · {testItems.length} {block.modelType === 'text-supervised' ? 'text' : 'image'}{testItems.length !== 1 ? 's' : ''}
+                    {testLabelledBlock ? '🗂️' : '📦'} {(testLabelledBlock ?? testUnlabelledBlock)?.name ?? 'Test block'} · {testItems.length} {(block.modelType === 'text-supervised' || block.modelType === 'text-unsupervised') ? 'text' : 'image'}{testItems.length !== 1 ? 's' : ''}
                   </p>
                   {testLabelledBlock && (
                     <div className="flex flex-wrap gap-1">
