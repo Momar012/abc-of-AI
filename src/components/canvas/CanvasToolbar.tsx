@@ -140,7 +140,7 @@ function DataMenu() {
             className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-36 shadow-xl"
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
-            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🗂️ Data</p>
+            <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🗂️ Datasets</p>
             <DraggableActionItem blockType="labelled" label="🏷️ Labelled" onAdd={() => { addLabelledBlock(); setOpen(false) }} />
             <DraggableActionItem blockType="unlabelled" label="📦 Unlabelled" onAdd={() => { addUnlabelledBlock(); setOpen(false) }} />
           </div>
@@ -148,7 +148,7 @@ function DataMenu() {
         document.body
       )}
       <GlowButton size="xs" variant="primary" onClick={handleToggle}>
-        🗂️ Data {open ? '▴' : '▾'}
+        🗂️ Datasets {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )

@@ -437,14 +437,10 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     const wfStore = require('@/store/useWorkflowStore').useWorkflowStore
     const { doorBlocks, bulbBlocks, updateDoorBlock, updateBulbBlock } = wfStore.getState()
     ;(doorBlocks as { id: string; linkedRuleBlockId: string | null }[]).forEach((d) => {
-      if (d.linkedRuleBlockId) {
-        updateDoorBlock(d.id, { isOpen: resolved.get(d.linkedRuleBlockId) === true })
-      }
+      updateDoorBlock(d.id, { isOpen: d.linkedRuleBlockId ? resolved.get(d.linkedRuleBlockId) === true : false })
     })
     ;(bulbBlocks as { id: string; linkedRuleBlockId: string | null }[]).forEach((b) => {
-      if (b.linkedRuleBlockId) {
-        updateBulbBlock(b.id, { isOn: resolved.get(b.linkedRuleBlockId) === true })
-      }
+      updateBulbBlock(b.id, { isOn: b.linkedRuleBlockId ? resolved.get(b.linkedRuleBlockId) === true : false })
     })
 
     set({

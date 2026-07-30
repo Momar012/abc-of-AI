@@ -622,14 +622,17 @@ export default function DatasetCanvas() {
             updateConditionBlock(target, { linkedSensorId: null, currentOutput: null })
           }
         } else if (targetHandle === 'logic-in-1') {
-          const block = logicBlocks.find((b) => b.id === target)
+          // Read fresh state, not the closure-captured `logicBlocks` — if both of a
+          // 2-input gate's edges are deleted in the same batch, the stale array would
+          // resurrect whichever input this branch didn't touch.
+          const block = useRuleStore.getState().logicBlocks.find((b) => b.id === target)
           if (block) {
             const ids = [...block.linkedInputIds]
             ids[0] = null
             updateLogicBlock(target, { linkedInputIds: ids, currentOutput: null })
           }
         } else if (targetHandle === 'logic-in-2') {
-          const block = logicBlocks.find((b) => b.id === target)
+          const block = useRuleStore.getState().logicBlocks.find((b) => b.id === target)
           if (block) {
             const ids = [...block.linkedInputIds]
             ids[1] = null
@@ -654,7 +657,7 @@ export default function DatasetCanvas() {
       evaluateGraph()
     },
     [
-      logicBlocks, modelBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
+      modelBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
       updateAlarmBlock, updateACBlock, updateTimerBlock, updateDoorBlock, updateBulbBlock, evaluateGraph,
     ]
   )
