@@ -33,6 +33,7 @@ export default function ModelInspector() {
   const [saveName, setSaveName] = useState('')
   const [testProgress, setTestProgress] = useState(0)
   const [testTotal, setTestTotal] = useState(0)
+  const [testThinkingMessage, setTestThinkingMessage] = useState('')
   const [chatInput, setChatInput] = useState('')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
 
@@ -382,15 +383,52 @@ export default function ModelInspector() {
     if (!trainedModel || !testItems.length) return
     setTestProgress(0)
     setTestTotal(testItems.length + 2)
+    setTestThinkingMessage('')
     updateModelBlock(block.id, { testStatus: 'running', testResults: null })
 
     try {
+      const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
       const raw = block.modelType === 'text-supervised'
         ? runTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
         : block.modelType === 'text-unsupervised'
-        ? runClusterTextInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+        ? await (async () => {
+            // Nearest-centroid math is near-instant — compute for real, then reveal
+            // on a short rotating-message timer so it feels like the AI is working.
+            const result = runClusterTextInference(trainedModel, testItems, () => {})
+            const fakeSteps = [
+              { msg: 'Reading each text…',           ms: 600 },
+              { msg: 'Comparing word patterns…',      ms: 700 },
+              { msg: 'Comparing to your groups…',     ms: 700 },
+              { msg: 'Almost done…',                  ms: 500 },
+            ]
+            setTestTotal(fakeSteps.length)
+            for (let i = 0; i < fakeSteps.length; i++) {
+              setTestThinkingMessage(fakeSteps[i].msg)
+              setTestProgress(i + 1)
+              await sleep(fakeSteps[i].ms)
+            }
+            return result
+          })()
         : block.modelType === 'image-unsupervised'
-        ? await runClusterImageInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
+        ? await (async () => {
+            // Nearest-centroid math over cached MobileNet features is near-instant —
+            // compute for real, then reveal on a short rotating-message timer.
+            const result = await runClusterImageInference(trainedModel, testItems, () => {})
+            const fakeSteps = [
+              { msg: 'Looking closely at each image…', ms: 700 },
+              { msg: 'Comparing to your groups…',       ms: 700 },
+              { msg: 'Measuring similarity…',           ms: 700 },
+              { msg: 'Almost done…',                    ms: 500 },
+            ]
+            setTestTotal(fakeSteps.length)
+            for (let i = 0; i < fakeSteps.length; i++) {
+              setTestThinkingMessage(fakeSteps[i].msg)
+              setTestProgress(i + 1)
+              await sleep(fakeSteps[i].ms)
+            }
+            return result
+          })()
         : await runInference(trainedModel, testItems, (step, total) => { setTestProgress(step); setTestTotal(total) })
       const isClustering = block.modelType === 'text-unsupervised' || block.modelType === 'image-unsupervised'
       const enriched: TestResult[] = raw.map((r) => ({
@@ -412,6 +450,8 @@ export default function ModelInspector() {
       const msg = err instanceof Error ? err.message : 'Testing failed'
       updateModelBlock(block.id, { testStatus: 'error' })
       addToast(`❌ ${msg}`, 'warn')
+    } finally {
+      setTestThinkingMessage('')
     }
   }
 
@@ -925,7 +965,7 @@ export default function ModelInspector() {
                 {/* Progress bar when running */}
                 {isTesting && (
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-xs text-white/60 font-body">Running inference…</p>
+                    <p className="text-xs text-white/60 font-body">{testThinkingMessage || 'Running inference…'}</p>
                     <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className="h-2 bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-300"
