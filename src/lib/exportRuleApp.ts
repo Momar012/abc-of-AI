@@ -657,16 +657,32 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     var vid=document.getElementById('imgcam-'+modelId);
     var ov=document.getElementById('imgov-'+modelId);
     var prev=document.getElementById('imgprev-'+modelId);
+    var btn=document.getElementById('imgcambtn-'+modelId);
     if(!vid) return;
     if(prev) prev.style.display='none';
     vid.style.display='block';
     navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-      .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';})
+      .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';if(btn)btn.textContent='⏹ Stop Camera';})
       .catch(function(){
         navigator.mediaDevices.getUserMedia({video:true})
-          .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';})
+          .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';if(btn)btn.textContent='⏹ Stop Camera';})
           .catch(function(){if(ov){ov.style.display='flex';ov.textContent='⚠ Camera blocked — upload a photo';}});
       });
+  }
+  function stopImgCam(modelId){
+    var vid=document.getElementById('imgcam-'+modelId);
+    var ov=document.getElementById('imgov-'+modelId);
+    var btn=document.getElementById('imgcambtn-'+modelId);
+    if(vid&&vid.srcObject){
+      vid.srcObject.getTracks().forEach(function(t){t.stop();});
+      vid.srcObject=null;
+    }
+    if(ov){ov.style.display='flex';ov.textContent='📷 Click Start Camera to begin';}
+    if(btn) btn.textContent='📷 Start Camera';
+  }
+  function toggleImgCam(modelId){
+    var vid=document.getElementById('imgcam-'+modelId);
+    if(vid&&vid.srcObject){ stopImgCam(modelId); } else { startImgCam(modelId); }
   }
   function uploadImgModel(modelId,file){
     var im=APP.imageModels.find(function(m){return m.id===modelId;});
@@ -1138,14 +1154,15 @@ if(APP.imageModels&&APP.imageModels.length){
     var ov=document.createElement('div'); ov.id='imgov-'+im.id; ov.className='img-cam-ov'; ov.textContent='⏳ Loading AI engine…'; wrap.appendChild(ov);
     card.appendChild(wrap);
     var actions=document.createElement('div'); actions.className='img-cam-actions';
-    var startBtn=document.createElement('button'); startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
-    (function(mid){startBtn.onclick=function(){startImgCam(mid);};})(im.id);
+    var startBtn=document.createElement('button'); startBtn.id='imgcambtn-'+im.id; startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
+    (function(mid){startBtn.onclick=function(){toggleImgCam(mid);};})(im.id);
     actions.appendChild(startBtn);
     var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
     var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
     (function(mid){
       fileInp.onchange=function(){
         if(!this.files[0]) return;
+        stopImgCam(mid);
         _pendingFiles[mid]=this.files[0];
         var prev=document.getElementById('imgprev-'+mid);
         var vid=document.getElementById('imgcam-'+mid);
@@ -1182,14 +1199,15 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
     var ov=document.createElement('div'); ov.id='imgov-'+icm.id; ov.className='img-cam-ov'; ov.textContent='⏳ Loading AI engine…'; wrap.appendChild(ov);
     card.appendChild(wrap);
     var actions=document.createElement('div'); actions.className='img-cam-actions';
-    var startBtn=document.createElement('button'); startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
-    (function(mid){startBtn.onclick=function(){startImgCam(mid);};})(icm.id);
+    var startBtn=document.createElement('button'); startBtn.id='imgcambtn-'+icm.id; startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
+    (function(mid){startBtn.onclick=function(){toggleImgCam(mid);};})(icm.id);
     actions.appendChild(startBtn);
     var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
     var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
     (function(mid){
       fileInp.onchange=function(){
         if(!this.files[0]) return;
+        stopImgCam(mid);
         _pendingFiles[mid]=this.files[0];
         var prev=document.getElementById('imgprev-'+mid);
         var vid=document.getElementById('imgcam-'+mid);
