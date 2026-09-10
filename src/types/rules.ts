@@ -100,6 +100,15 @@ export interface TextBlock {
   autoWidth?: boolean
 }
 
+export interface ImageBlock {
+  id: string
+  type: 'image'
+  position: { x: number; y: number }
+  src: string
+  width: number
+  height: number
+}
+
 export type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'

@@ -43,6 +43,7 @@ import AlarmNode from './nodes/AlarmNode'
 import ACNode from './nodes/ACNode'
 import TimerNode from './nodes/TimerNode'
 import TextNode from './nodes/TextNode'
+import ImageNode from './nodes/ImageNode'
 import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
@@ -172,6 +173,7 @@ const nodeTypes = {
   ac: ACNode,
   timer: TimerNode,
   text: TextNode,
+  image: ImageNode,
 }
 
 const edgeTypes = {
@@ -251,6 +253,12 @@ export default function DatasetCanvas() {
   const updateTextBlockPosition = useCanvasStore((s) => s.updateTextBlockPosition)
   const removeTextBlock = useCanvasStore((s) => s.removeTextBlock)
 
+  // Canvas annotations (pasted images)
+  const imageBlocks = useCanvasStore((s) => s.imageBlocks)
+  const addImageBlock = useCanvasStore((s) => s.addImageBlock)
+  const updateImageBlockPosition = useCanvasStore((s) => s.updateImageBlockPosition)
+  const removeImageBlock = useCanvasStore((s) => s.removeImageBlock)
+
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
@@ -261,6 +269,7 @@ export default function DatasetCanvas() {
   const setCanvasInteractive = useUIStore((s) => s.setCanvasInteractive)
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
   const addToast = useUIStore((s) => s.addToast)
+  const flashBlock = useUIStore((s) => s.flashBlock)
 
   const { setNodeRef: setCanvasDropRef, isOver: isModelDragOver } = useDroppable({ id: 'canvas-drop' })
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -325,6 +334,7 @@ export default function DatasetCanvas() {
         ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...textBlocks.map((b) => ({ id: b.id, type: 'text', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...imageBlocks.map((b) => ({ id: b.id, type: 'image', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
       ]
       // Nodes paint in array order (later = on top). Blocks are grouped by
       // type above, so a freshly-added node of an "earlier" type would
@@ -337,7 +347,7 @@ export default function DatasetCanvas() {
       return nodes
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks, imageBlocks,
       justAddedBlockId, setRfNodes])
 
   // Sync linked IDs → RF edges
@@ -461,6 +471,7 @@ export default function DatasetCanvas() {
           else if (acBlocks.some((b) => b.id === id)) updateACBlockPosition(id, p)
           else if (timerBlocks.some((b) => b.id === id)) updateTimerBlockPosition(id, p)
           else if (textBlocks.some((b) => b.id === id)) updateTextBlockPosition(id, p)
+          else if (imageBlocks.some((b) => b.id === id)) updateImageBlockPosition(id, p)
           else {
             const type = labelledBlocks.some((b) => b.id === id) ? 'labelled' : 'unlabelled'
             updateBlockPosition(id, type, p)
@@ -470,11 +481,12 @@ export default function DatasetCanvas() {
     },
     [
       labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks, imageBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
       updateDoorBlockPosition, updateBulbBlockPosition,
       updateSensorBlockPosition, updateConditionBlockPosition, updateSwitchBlockPosition, updateLogicBlockPosition,
-      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, updateTextBlockPosition, setRfNodes,
+      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updateTimerBlockPosition, updateTextBlockPosition,
+      updateImageBlockPosition, setRfNodes,
     ]
   )
 
@@ -649,6 +661,7 @@ export default function DatasetCanvas() {
           case 'ac': removeACBlock(node.id); break
           case 'timer': removeTimerBlock(node.id); break
           case 'text': removeTextBlock(node.id); break
+          case 'image': removeImageBlock(node.id); break
         }
         if (node.id === selectedBlockId) clearSelectedBlock()
       }
@@ -657,7 +670,7 @@ export default function DatasetCanvas() {
     [
       removeLabelledBlock, removeUnlabelledBlock, removeModelBlock, removeRLBlock, removeDoorBlock, removeBulbBlock,
       removeSensorBlock, removeConditionBlock, removeSwitchBlock, removeLogicBlock, removeFanBlock, removeAlarmBlock,
-      removeACBlock, removeTimerBlock, removeTextBlock, evaluateGraph, selectedBlockId, clearSelectedBlock,
+      removeACBlock, removeTimerBlock, removeTextBlock, removeImageBlock, evaluateGraph, selectedBlockId, clearSelectedBlock,
     ]
   )
 
@@ -820,6 +833,53 @@ export default function DatasetCanvas() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setCanvasTool])
+
+  // Paste an image from the OS clipboard (Ctrl+V, Figma-style) straight onto
+  // the canvas — e.g. a cropped screenshot of a question copied from a PDF.
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+
+      const items = e.clipboardData?.items
+      const imageItem = items && Array.from(items).find((item) => item.type.startsWith('image/'))
+      if (!imageItem) return
+      const file = imageItem.getAsFile()
+      if (!file) return
+      e.preventDefault()
+
+      ;(async () => {
+        const bitmap = await createImageBitmap(file)
+        // Cap the stored resolution — clipboard screenshots are often large
+        // uncompressed PNGs, and nothing else in the app compresses images
+        // before persisting them, so this keeps pasted images from being
+        // needlessly huge.
+        const MAX_STORED_DIM = 1400
+        const scale = Math.min(1, MAX_STORED_DIM / Math.max(bitmap.width, bitmap.height))
+        const width = Math.round(bitmap.width * scale)
+        const height = Math.round(bitmap.height * scale)
+        const canvasEl = document.createElement('canvas')
+        canvasEl.width = width
+        canvasEl.height = height
+        const ctx = canvasEl.getContext('2d')
+        if (!ctx) return
+        ctx.drawImage(bitmap, 0, 0, width, height)
+        const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85)
+
+        if (!canvasRef.current || !rfInstanceRef.current) return
+        const bounds = canvasRef.current.getBoundingClientRect()
+        const jitter = () => (Math.random() - 0.5) * 60
+        const centerPos = rfInstanceRef.current.screenToFlowPosition({
+          x: bounds.left + bounds.width / 2 + jitter(),
+          y: bounds.top + bounds.height / 2 + jitter(),
+        })
+        const id = addImageBlock(dataUrl, { width, height }, centerPos)
+        flashBlock(id)
+      })()
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [addImageBlock, flashBlock])
 
   // Hold Space for a temporary "open hand" pan cursor (standard Figma/Photoshop behavior)
   useEffect(() => {
