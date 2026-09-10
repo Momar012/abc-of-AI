@@ -5,7 +5,7 @@ import { SensorBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
-import { useDebouncedSensorValue } from '@/hooks/useDebouncedSensorValue'
+import TextInputSensorControl from '../TextInputSensorControl'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -34,8 +34,6 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
     updateSensorBlock(block.id, { value: newVal })
     evaluateGraph()
   }
-
-  const [localText, onTextChange] = useDebouncedSensorValue(String(block.value), handleValueChange)
 
   return (
     <div
@@ -131,13 +129,10 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         )}
 
         {block.sensorType === 'text-input' && (
-          <textarea
-            value={localText}
-            onPointerDown={(e) => e.stopPropagation()}
-            onChange={(e) => onTextChange(e.target.value)}
-            placeholder="Type a value…"
+          <TextInputSensorControl
+            value={String(block.value)}
+            onSend={handleValueChange}
             rows={2}
-            className="w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-orange-400 bg-transparent resize-none"
           />
         )}
 

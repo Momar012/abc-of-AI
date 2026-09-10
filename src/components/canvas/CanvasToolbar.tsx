@@ -138,7 +138,7 @@ function DataMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="primary" onClick={handleToggle}>
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
         🗂️ Datasets {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -792,8 +792,6 @@ export default function CanvasToolbar() {
         <ActionsMenu />
         <div className="w-px h-5 bg-white/10 self-center" />
         <RuleBasedMenu />
-        <div className="w-px h-5 bg-white/10 self-center" />
-        <span className="hidden xl:inline text-xs text-white/40 font-heading">📋 or paste an image (Ctrl+V)</span>
       </div>
       <SelectionBar />
     </div>

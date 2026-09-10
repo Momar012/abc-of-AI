@@ -2,7 +2,7 @@
 
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
-import { useDebouncedSensorValue } from '@/hooks/useDebouncedSensorValue'
+import TextInputSensorControl from '@/components/canvas/TextInputSensorControl'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -28,15 +28,6 @@ export default function SensorInspector() {
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
 
   const block = sensorBlocks.find((b) => b.id === selectedBlockId)
-
-  const [localText, onTextChange] = useDebouncedSensorValue(
-    block ? String(block.value) : '',
-    (v) => {
-      if (!block) return
-      updateSensorBlock(block.id, { value: v })
-      evaluateGraph()
-    }
-  )
 
   if (!block) return null
 
@@ -122,12 +113,11 @@ export default function SensorInspector() {
         )}
 
         {block.sensorType === 'text-input' && (
-          <textarea
-            value={localText}
-            onChange={(e) => onTextChange(e.target.value)}
-            placeholder="Type a value…"
+          <TextInputSensorControl
+            value={String(block.value)}
+            onSend={setValue}
             rows={3}
-            className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-orange-400 bg-transparent resize-none"
+            textareaClassName="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-orange-400 bg-transparent resize-none"
           />
         )}
       </div>

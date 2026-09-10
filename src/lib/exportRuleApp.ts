@@ -1023,8 +1023,10 @@ for(var si=0;si<state.sensors.length;si++){
     } else if(sensor.sensorType==='text-input'){
       card.innerHTML=
         '<div class="in-lbl">'+icon+' '+sensor.name+'</div>'+
-        '<input class="txt-inp" type="text" placeholder="Type something…" value="'+String(sensor.value||'')+'" '+
-          'oninput="setVal(\\''+sensor.id+'\\',this.value)">';
+        '<input class="txt-inp" type="text" id="txtsv-'+sensor.id+'" placeholder="Type something…" value="'+String(sensor.value||'')+'">';
+      var sendBtn=document.createElement('button'); sendBtn.className='img-cam-btn'; sendBtn.textContent='→ Send'; sendBtn.style.marginTop='0.5rem';
+      sendBtn.onclick=function(){ setVal(sensor.id,document.getElementById('txtsv-'+sensor.id).value); };
+      card.appendChild(sendBtn);
       var linkedModel=(APP.models||[]).concat(APP.textClusterModels||[]).find(function(m){return m.liveSensorId===sensor.id;});
       if(linkedModel){
         var think=document.createElement('span'); think.id='think-'+linkedModel.id; think.className='thinking-badge'; think.style.display='none'; think.textContent='🤔 Thinking…';
