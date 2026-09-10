@@ -9,6 +9,7 @@ import { useUIStore } from '@/store/useUIStore'
 export default function AlarmNode({ data, selected }: NodeProps<{ block: AlarmBlock }>) {
   const { block } = data
   const removeAlarmBlock = useRuleStore((s) => s.removeAlarmBlock)
+  const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
@@ -41,7 +42,7 @@ export default function AlarmNode({ data, selected }: NodeProps<{ block: AlarmBl
           <span className="text-xs font-heading font-bold text-white/70">{block.name}</span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => removeAlarmBlock(block.id)}
+            onClick={() => { removeAlarmBlock(block.id); evaluateGraph() }}
             className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×

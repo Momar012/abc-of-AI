@@ -74,7 +74,7 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
           </div>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => removeSensorBlock(block.id)}
+            onClick={() => { removeSensorBlock(block.id); evaluateGraph() }}
             className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×

@@ -9,6 +9,7 @@ import { useUIStore } from '@/store/useUIStore'
 export default function FanNode({ data, selected }: NodeProps<{ block: FanBlock }>) {
   const { block } = data
   const removeFanBlock = useRuleStore((s) => s.removeFanBlock)
+  const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
@@ -41,7 +42,7 @@ export default function FanNode({ data, selected }: NodeProps<{ block: FanBlock 
           <span className="text-xs font-heading font-bold text-white/70">{block.name}</span>
           <button
             onPointerDown={(e) => e.stopPropagation()}
-            onClick={() => removeFanBlock(block.id)}
+            onClick={() => { removeFanBlock(block.id); evaluateGraph() }}
             className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×
