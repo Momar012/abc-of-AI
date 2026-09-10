@@ -67,6 +67,40 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
   const addACBlock = useRuleStore((s) => s.addACBlock)
   const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
+  const quickAddRequest = useUIStore((s) => s.quickAddRequest)
+  const clearQuickAddRequest = useUIStore((s) => s.clearQuickAddRequest)
+  const flashBlock = useUIStore((s) => s.flashBlock)
+
+  // Shared blockType → store-action dispatch, used by both drag-drop and
+  // click-to-add. Returns the new block's id (read back from the store right
+  // after the synchronous `set`) so the caller can flash/select it.
+  const addBlockByType = (blockType: string, pos: { x: number; y: number }): string | undefined => {
+    if (blockType === 'labelled') { addLabelledBlock(pos); return useDatasetStore.getState().labelledBlocks.at(-1)?.id }
+    if (blockType === 'unlabelled') { addUnlabelledBlock(pos); return useDatasetStore.getState().unlabelledBlocks.at(-1)?.id }
+    if (blockType === 'model-image-supervised') { addModelBlockWithType('image-supervised', pos); return useModelStore.getState().modelBlocks.at(-1)?.id }
+    if (blockType === 'model-image-unsupervised') { addModelBlockWithType('image-unsupervised', pos); return useModelStore.getState().modelBlocks.at(-1)?.id }
+    if (blockType === 'model-text-corpus') { addModelBlockWithType('text-corpus', pos); return useModelStore.getState().modelBlocks.at(-1)?.id }
+    if (blockType === 'model-text-supervised') { addModelBlockWithType('text-supervised', pos); return useModelStore.getState().modelBlocks.at(-1)?.id }
+    if (blockType === 'model-text-unsupervised') { addModelBlockWithType('text-unsupervised', pos); return useModelStore.getState().modelBlocks.at(-1)?.id }
+    if (blockType === 'rl-gridworld') { addRLBlock(pos); return useRLStore.getState().rlBlocks.at(-1)?.id }
+    if (blockType === 'door') { addDoorBlock(pos); return useWorkflowStore.getState().doorBlocks.at(-1)?.id }
+    if (blockType === 'bulb') { addBulbBlock(pos); return useWorkflowStore.getState().bulbBlocks.at(-1)?.id }
+    if (blockType === 'sensor-temperature') { addSensorBlock('temperature', pos); return useRuleStore.getState().sensorBlocks.at(-1)?.id }
+    if (blockType === 'sensor-light') { addSensorBlock('light', pos); return useRuleStore.getState().sensorBlocks.at(-1)?.id }
+    if (blockType === 'sensor-motion') { addSensorBlock('motion', pos); return useRuleStore.getState().sensorBlocks.at(-1)?.id }
+    if (blockType === 'sensor-humidity') { addSensorBlock('humidity', pos); return useRuleStore.getState().sensorBlocks.at(-1)?.id }
+    if (blockType === 'sensor-text') { addSensorBlock('text-input', pos); return useRuleStore.getState().sensorBlocks.at(-1)?.id }
+    if (blockType === 'condition') { addConditionBlock(pos); return useRuleStore.getState().conditionBlocks.at(-1)?.id }
+    if (blockType === 'switch') { addSwitchBlock(pos); return useRuleStore.getState().switchBlocks.at(-1)?.id }
+    if (blockType === 'logic-and') { addLogicBlock('and', pos); return useRuleStore.getState().logicBlocks.at(-1)?.id }
+    if (blockType === 'logic-or') { addLogicBlock('or', pos); return useRuleStore.getState().logicBlocks.at(-1)?.id }
+    if (blockType === 'logic-not') { addLogicBlock('not', pos); return useRuleStore.getState().logicBlocks.at(-1)?.id }
+    if (blockType === 'fan') { addFanBlock(pos); return useRuleStore.getState().fanBlocks.at(-1)?.id }
+    if (blockType === 'alarm') { addAlarmBlock(pos); return useRuleStore.getState().alarmBlocks.at(-1)?.id }
+    if (blockType === 'ac') { addACBlock(pos); return useRuleStore.getState().acBlocks.at(-1)?.id }
+    if (blockType === 'timer') { addTimerBlock(pos); return useRuleStore.getState().timerBlocks.at(-1)?.id }
+    return undefined
+  }
 
   useDndMonitor({
     onDragEnd(event) {
@@ -82,31 +116,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
       })
 
       if (dragType === 'block-palette') {
-        const blockType = event.active.data.current?.blockType
-        if (blockType === 'labelled') addLabelledBlock(flowPos)
-        else if (blockType === 'unlabelled') addUnlabelledBlock(flowPos)
-        else if (blockType === 'model-image-supervised') addModelBlockWithType('image-supervised', flowPos)
-        else if (blockType === 'model-image-unsupervised') addModelBlockWithType('image-unsupervised', flowPos)
-        else if (blockType === 'model-text-corpus') addModelBlockWithType('text-corpus', flowPos)
-        else if (blockType === 'model-text-supervised') addModelBlockWithType('text-supervised', flowPos)
-        else if (blockType === 'model-text-unsupervised') addModelBlockWithType('text-unsupervised', flowPos)
-        else if (blockType === 'rl-gridworld') addRLBlock(flowPos)
-        else if (blockType === 'door') addDoorBlock(flowPos)
-        else if (blockType === 'bulb') addBulbBlock(flowPos)
-        else if (blockType === 'sensor-temperature') addSensorBlock('temperature', flowPos)
-        else if (blockType === 'sensor-light') addSensorBlock('light', flowPos)
-        else if (blockType === 'sensor-motion') addSensorBlock('motion', flowPos)
-        else if (blockType === 'sensor-humidity') addSensorBlock('humidity', flowPos)
-        else if (blockType === 'sensor-text') addSensorBlock('text-input', flowPos)
-        else if (blockType === 'condition') addConditionBlock(flowPos)
-        else if (blockType === 'switch') addSwitchBlock(flowPos)
-        else if (blockType === 'logic-and') addLogicBlock('and', flowPos)
-        else if (blockType === 'logic-or') addLogicBlock('or', flowPos)
-        else if (blockType === 'logic-not') addLogicBlock('not', flowPos)
-        else if (blockType === 'fan') addFanBlock(flowPos)
-        else if (blockType === 'alarm') addAlarmBlock(flowPos)
-        else if (blockType === 'ac') addACBlock(flowPos)
-        else if (blockType === 'timer') addTimerBlock(flowPos)
+        addBlockByType(event.active.data.current?.blockType, flowPos)
         return
       }
 
@@ -126,6 +136,20 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
       }
     },
   })
+
+  // Click-to-add (CanvasToolbar palette items): place the new block at the
+  // center of the currently visible canvas — not a hardcoded canvas-space
+  // default — so it's never off-screen after the user has panned/zoomed.
+  useEffect(() => {
+    if (!quickAddRequest || !canvasRef.current) return
+    const bounds = canvasRef.current.getBoundingClientRect()
+    const jitter = () => (Math.random() - 0.5) * 60
+    const centerPos = project({ x: bounds.width / 2 + jitter(), y: bounds.height / 2 + jitter() })
+    const id = addBlockByType(quickAddRequest.blockType, centerPos)
+    if (id) flashBlock(id)
+    clearQuickAddRequest()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickAddRequest])
 
   return null
 }
@@ -242,6 +266,30 @@ export default function DatasetCanvas() {
   const canvasRef = useRef<HTMLDivElement>(null)
   const rfInstanceRef = useRef<ReactFlowInstance | null>(null)
 
+  // Brief highlight ring over a block just placed via click-to-add, so it's
+  // unmistakable even though it now always lands in the visible viewport.
+  const justAddedBlockId = useUIStore((s) => s.justAddedBlockId)
+  const [flashRect, setFlashRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  useEffect(() => {
+    if (!justAddedBlockId) { setFlashRect(null); return }
+    let raf: number
+    const measure = () => {
+      const node = rfInstanceRef.current?.getNode(justAddedBlockId)
+      if (!node) { raf = requestAnimationFrame(measure); return }
+      const viewport = rfInstanceRef.current!.getViewport()
+      const width = node.width ?? 180
+      const height = node.height ?? 60
+      setFlashRect({
+        left: viewport.x + node.position.x * viewport.zoom,
+        top: viewport.y + node.position.y * viewport.zoom,
+        width: width * viewport.zoom,
+        height: height * viewport.zoom,
+      })
+    }
+    raf = requestAnimationFrame(measure)
+    return () => cancelAnimationFrame(raf)
+  }, [justAddedBlockId])
+
   const isDraggingRef = useRef(false)
   useDndMonitor({
     onDragStart: () => { isDraggingRef.current = true },
@@ -256,26 +304,41 @@ export default function DatasetCanvas() {
   useEffect(() => {
     setRfNodes((current) => {
       const pos = (id: string) => current.find((n) => n.id === id)?.position
-      return [
-        ...labelledBlocks.map((b) => ({ id: b.id, type: 'labelled', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...unlabelledBlocks.map((b) => ({ id: b.id, type: 'unlabelled', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...modelBlocks.map((b) => ({ id: b.id, type: 'model', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...rlBlocks.map((b) => ({ id: b.id, type: 'rl-gridworld', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...doorBlocks.map((b) => ({ id: b.id, type: 'door', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...bulbBlocks.map((b) => ({ id: b.id, type: 'bulb', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...sensorBlocks.map((b) => ({ id: b.id, type: 'sensor', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...conditionBlocks.map((b) => ({ id: b.id, type: 'condition', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...switchBlocks.map((b) => ({ id: b.id, type: 'switch', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...logicBlocks.map((b) => ({ id: b.id, type: 'logic', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...fanBlocks.map((b) => ({ id: b.id, type: 'fan', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
-        ...textBlocks.map((b) => ({ id: b.id, type: 'text', position: pos(b.id) ?? b.position, data: { block: b } } as Node)),
+      // Rebuilding nodes fresh on every block-array change (e.g. editing a
+      // property, not just moving/adding) would otherwise silently drop
+      // React Flow's own click-selection state, deselecting whatever the
+      // user has selected the moment they change any of its data.
+      const isSelected = (id: string) => current.find((n) => n.id === id)?.selected
+      const nodes = [
+        ...labelledBlocks.map((b) => ({ id: b.id, type: 'labelled', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...unlabelledBlocks.map((b) => ({ id: b.id, type: 'unlabelled', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...modelBlocks.map((b) => ({ id: b.id, type: 'model', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...rlBlocks.map((b) => ({ id: b.id, type: 'rl-gridworld', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...doorBlocks.map((b) => ({ id: b.id, type: 'door', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...bulbBlocks.map((b) => ({ id: b.id, type: 'bulb', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...sensorBlocks.map((b) => ({ id: b.id, type: 'sensor', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...conditionBlocks.map((b) => ({ id: b.id, type: 'condition', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...switchBlocks.map((b) => ({ id: b.id, type: 'switch', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...logicBlocks.map((b) => ({ id: b.id, type: 'logic', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...fanBlocks.map((b) => ({ id: b.id, type: 'fan', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...alarmBlocks.map((b) => ({ id: b.id, type: 'alarm', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...textBlocks.map((b) => ({ id: b.id, type: 'text', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
       ]
+      // Nodes paint in array order (later = on top). Blocks are grouped by
+      // type above, so a freshly-added node of an "earlier" type would
+      // otherwise render behind pre-existing nodes of a "later" type — push
+      // the just-added one to the end so it's always visible while it flashes.
+      if (justAddedBlockId) {
+        const i = nodes.findIndex((n) => n.id === justAddedBlockId)
+        if (i !== -1) nodes.push(...nodes.splice(i, 1))
+      }
+      return nodes
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks, setRfNodes])
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, textBlocks,
+      justAddedBlockId, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -858,6 +921,13 @@ export default function DatasetCanvas() {
             border: '2px dashed #8B5CF6',
             background: 'rgba(139,92,246,0.1)',
           }}
+        />
+      )}
+      {flashRect && (
+        <div
+          key={justAddedBlockId}
+          className="absolute pointer-events-none z-40 rounded-lg animate-node-flash"
+          style={{ left: flashRect.left, top: flashRect.top, width: flashRect.width, height: flashRect.height }}
         />
       )}
     </div>

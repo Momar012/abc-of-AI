@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
+import { BlockType } from '@/types/rules'
 
 export interface Toast {
   id: string
@@ -26,6 +27,8 @@ interface UIState {
   canvasTool: 'select' | 'pan' | 'text'
   canvasInteractive: boolean
   canvasSelection: Array<{ id: string; type: string }>
+  quickAddRequest: { blockType: BlockType; nonce: number } | null
+  justAddedBlockId: string | null
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
@@ -50,6 +53,9 @@ interface UIState {
   setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
   setCanvasInteractive: (v: boolean) => void
   setCanvasSelection: (nodes: Array<{ id: string; type: string }>) => void
+  requestQuickAdd: (blockType: BlockType) => void
+  clearQuickAddRequest: () => void
+  flashBlock: (id: string) => void
 }
 
 export const useUIStore = create<UIState>()(persist((set) => ({
@@ -70,6 +76,8 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   canvasTool: 'select',
   canvasInteractive: true,
   canvasSelection: [],
+  quickAddRequest: null,
+  justAddedBlockId: null,
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -121,6 +129,15 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   setCanvasTool: (tool) => set({ canvasTool: tool }),
   setCanvasInteractive: (v) => set({ canvasInteractive: v }),
   setCanvasSelection: (nodes) => set({ canvasSelection: nodes }),
+
+  requestQuickAdd: (blockType) => set({ quickAddRequest: { blockType, nonce: Date.now() } }),
+  clearQuickAddRequest: () => set({ quickAddRequest: null }),
+  flashBlock: (id) => {
+    set({ justAddedBlockId: id })
+    setTimeout(() => {
+      set((s) => (s.justAddedBlockId === id ? { justAddedBlockId: null } : {}))
+    }, 1200)
+  },
 }), {
   name: 'abcai_ui_panels_v2',
   partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed, dataBankWidth: s.dataBankWidth }),

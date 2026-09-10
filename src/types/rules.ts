@@ -97,4 +97,13 @@ export interface TextBlock {
   width: number
   height: number
   fontSize: number
+  autoWidth?: boolean
 }
+
+export type BlockType =
+  | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
+  | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
+  | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
+  | 'fan' | 'alarm' | 'ac' | 'timer'
+  | 'model-image-supervised' | 'model-image-unsupervised' | 'model-image-classifier'
+  | 'model-text-corpus' | 'model-text-supervised' | 'model-text-unsupervised'

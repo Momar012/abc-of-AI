@@ -58,14 +58,36 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
         color="#8B5CF6"
         handleStyle={{ width: 10, height: 10, borderRadius: 3 }}
         onResize={(_, params) => {
-          const ratio = params.height / block.height
           updateTextBlock(block.id, {
             width: params.width,
             height: params.height,
-            fontSize: Math.max(8, Math.round(block.fontSize * ratio)),
+            autoWidth: false,
           })
         }}
       />
+
+      {(selected || isEditing) && (
+        <div className="nodrag nopan absolute -top-9 left-0 flex items-center gap-0.5 bg-slate-900/95 border border-violet-400/40 rounded-lg px-1 py-1 shadow-lg z-10">
+          <button
+            type="button"
+            title="Smaller text"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => updateTextBlock(block.id, { fontSize: Math.max(8, block.fontSize - 2) })}
+            className="w-6 h-6 flex items-center justify-center rounded text-xs font-heading text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            A-
+          </button>
+          <button
+            type="button"
+            title="Bigger text"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => updateTextBlock(block.id, { fontSize: Math.min(96, block.fontSize + 2) })}
+            className="w-6 h-6 flex items-center justify-center rounded text-xs font-heading text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            A+
+          </button>
+        </div>
+      )}
 
       <div
         ref={editableRef}
@@ -85,13 +107,27 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
         className={`text-node-editable outline-none text-white font-body leading-snug whitespace-pre-wrap break-words px-1.5 py-1 border border-transparent rounded ${
           isEditing ? 'nodrag nopan cursor-text' : 'cursor-grab'
         }`}
-        style={{
-          width: block.width,
-          minHeight: block.height,
-          fontSize: block.fontSize,
-          borderColor: isEditing ? 'rgba(139,92,246,0.6)' : undefined,
-          boxShadow: isEditing ? '0 0 0 1px rgba(139,92,246,0.6)' : undefined,
-        }}
+        style={
+          block.autoWidth
+            ? {
+                width: 'max-content',
+                maxWidth: 480,
+                minWidth: 60,
+                minHeight: block.height,
+                fontSize: block.fontSize,
+                background: isEditing ? undefined : 'rgba(255,255,255,0.04)',
+                borderColor: isEditing ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.09)',
+                boxShadow: isEditing ? '0 0 0 1px rgba(139,92,246,0.6)' : undefined,
+              }
+            : {
+                width: block.width,
+                minHeight: block.height,
+                fontSize: block.fontSize,
+                background: isEditing ? undefined : 'rgba(255,255,255,0.04)',
+                borderColor: isEditing ? 'rgba(139,92,246,0.6)' : 'rgba(255,255,255,0.09)',
+                boxShadow: isEditing ? '0 0 0 1px rgba(139,92,246,0.6)' : undefined,
+              }
+        }
       />
     </div>
   )

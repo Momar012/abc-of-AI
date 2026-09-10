@@ -10,18 +10,11 @@ import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useCanvasStore } from '@/store/useCanvasStore'
 import { useUIStore } from '@/store/useUIStore'
-import { SensorType } from '@/types/rules'
+import { BlockType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
 import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport, getExportCards, ExportCardInfo } from '@/lib/exportRuleApp'
-
-type BlockType =
-  | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
-  | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
-  | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
-  | 'fan' | 'alarm' | 'ac' | 'timer'
-  | 'model-image-supervised' | 'model-image-unsupervised' | 'model-text-corpus'
 
 function ToolButton({
   active,
@@ -81,12 +74,13 @@ function DraggableActionItem({
     id: `palette-${blockType}`,
     data: { type: 'block-palette', blockType },
   })
+  const requestQuickAdd = useUIStore((s) => s.requestQuickAdd)
   return (
     <div
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      onClick={onAdd}
+      onClick={() => { requestQuickAdd(blockType); onAdd() }}
       style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
       className="text-left px-3 py-2 rounded-lg text-xs font-heading font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors whitespace-nowrap cursor-grab active:cursor-grabbing select-none"
     >
@@ -115,9 +109,6 @@ function DataMenu() {
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
 
-  const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
-  const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
-
   useDndMonitor({
     onDragStart:  () => setDragging(true),
     onDragEnd:    () => { setDragging(false); setOpen(false) },
@@ -141,8 +132,8 @@ function DataMenu() {
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🗂️ Datasets</p>
-            <DraggableActionItem blockType="labelled" label="🏷️ Labelled" onAdd={() => { addLabelledBlock(); setOpen(false) }} />
-            <DraggableActionItem blockType="unlabelled" label="📦 Unlabelled" onAdd={() => { addUnlabelledBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="labelled" label="🏷️ Labelled" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="unlabelled" label="📦 Unlabelled" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body
@@ -158,11 +149,6 @@ function ActionsMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
-  const addDoorBlock = useWorkflowStore((s) => s.addDoorBlock)
-  const addBulbBlock = useWorkflowStore((s) => s.addBulbBlock)
-  const addFanBlock = useRuleStore((s) => s.addFanBlock)
-  const addAlarmBlock = useRuleStore((s) => s.addAlarmBlock)
-  const addACBlock = useRuleStore((s) => s.addACBlock)
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -187,13 +173,13 @@ function ActionsMenu() {
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/40 font-heading uppercase tracking-wider">ML Actions</p>
-            <DraggableActionItem blockType="door" label="🚪 Door" onAdd={() => { addDoorBlock(); setOpen(false) }} />
-            <DraggableActionItem blockType="bulb" label="💡 Bulb" onAdd={() => { addBulbBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="door" label="🚪 Door" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="bulb" label="💡 Bulb" onAdd={() => setOpen(false)} />
             <div className="my-1 border-t border-white/10" />
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/40 font-heading uppercase tracking-wider">Rule Actions</p>
-            <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => { addFanBlock(); setOpen(false) }} />
-            <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => { addAlarmBlock(); setOpen(false) }} />
-            <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => { addACBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body
@@ -209,9 +195,6 @@ function ModelMenu() {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
-
-  const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
-  const addRLBlock = useRLStore((s) => s.addRLBlock)
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -241,14 +224,14 @@ function ModelMenu() {
                 key={m.type}
                 blockType={`model-${m.type}` as BlockType}
                 label={`${m.icon} ${m.name}`}
-                onAdd={() => { addModelBlockWithType(m.type); setOpen(false) }}
+                onAdd={() => setOpen(false)}
               />
             ))}
 
             <div className="my-1 border-t border-white/10" />
 
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🎮 Reinforcement Learning</p>
-            <DraggableActionItem blockType="rl-gridworld" label="🎮 RL Gridworld" onAdd={() => { addRLBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="rl-gridworld" label="🎮 RL Gridworld" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body
@@ -265,12 +248,6 @@ function RuleBasedMenu() {
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
 
-  const addSensorBlock = useRuleStore((s) => s.addSensorBlock)
-  const addConditionBlock = useRuleStore((s) => s.addConditionBlock)
-  const addSwitchBlock = useRuleStore((s) => s.addSwitchBlock)
-  const addLogicBlock = useRuleStore((s) => s.addLogicBlock)
-  const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
-
   useDndMonitor({
     onDragStart:  () => setDragging(true),
     onDragEnd:    () => { setDragging(false); setOpen(false) },
@@ -281,11 +258,6 @@ function RuleBasedMenu() {
     if (!open) computePos()
     setOpen((o) => !o)
   }
-
-  const addSensor = (type: SensorType) => { addSensorBlock(type); setOpen(false) }
-  const addCond   = () => { addConditionBlock(); setOpen(false) }
-  const addLogic  = (t: 'and' | 'or' | 'not') => { addLogicBlock(t); setOpen(false) }
-  const addTimer  = () => { addTimerBlock(); setOpen(false) }
 
   return (
     <div ref={wrapperRef}>
@@ -300,32 +272,32 @@ function RuleBasedMenu() {
           >
             {/* Sensors */}
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-orange-400/70 font-heading uppercase tracking-wider">📡 Sensors</p>
-            <DraggableActionItem blockType="sensor-temperature" label="🌡️ Temperature" onAdd={() => addSensor('temperature')} />
-            <DraggableActionItem blockType="sensor-light" label="💡 Light Level" onAdd={() => addSensor('light')} />
-            <DraggableActionItem blockType="sensor-motion" label="👁️ Motion" onAdd={() => addSensor('motion')} />
-            <DraggableActionItem blockType="sensor-humidity" label="💧 Humidity" onAdd={() => addSensor('humidity')} />
-            <DraggableActionItem blockType="sensor-text" label="📝 Text Input" onAdd={() => addSensor('text-input')} />
+            <DraggableActionItem blockType="sensor-temperature" label="🌡️ Temperature" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="sensor-light" label="💡 Light Level" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="sensor-motion" label="👁️ Motion" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="sensor-humidity" label="💧 Humidity" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="sensor-text" label="📝 Text Input" onAdd={() => setOpen(false)} />
 
             <div className="my-1 border-t border-white/10" />
 
             {/* Manual Input */}
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-lime-400/70 font-heading uppercase tracking-wider">🎚️ Manual Input</p>
-            <DraggableActionItem blockType="switch" label="🎚️ Switch" onAdd={() => { addSwitchBlock(); setOpen(false) }} />
+            <DraggableActionItem blockType="switch" label="🎚️ Switch" onAdd={() => setOpen(false)} />
 
             <div className="my-1 border-t border-white/10" />
 
             {/* Logic */}
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-yellow-400/70 font-heading uppercase tracking-wider">🔢 Logic</p>
-            <DraggableActionItem blockType="condition" label="📋 IF Condition" onAdd={addCond} />
-            <DraggableActionItem blockType="logic-and" label="∧ AND" onAdd={() => addLogic('and')} />
-            <DraggableActionItem blockType="logic-or" label="∨ OR" onAdd={() => addLogic('or')} />
-            <DraggableActionItem blockType="logic-not" label="¬ NOT" onAdd={() => addLogic('not')} />
+            <DraggableActionItem blockType="condition" label="📋 IF Condition" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="logic-and" label="∧ AND" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="logic-or" label="∨ OR" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="logic-not" label="¬ NOT" onAdd={() => setOpen(false)} />
 
             <div className="my-1 border-t border-white/10" />
 
             {/* Timer */}
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">⏱️ Timer</p>
-            <DraggableActionItem blockType="timer" label="⏱️ Timer" onAdd={addTimer} />
+            <DraggableActionItem blockType="timer" label="⏱️ Timer" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body
