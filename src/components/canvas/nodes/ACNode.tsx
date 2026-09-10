@@ -12,7 +12,7 @@ export default function ACNode({ data, selected }: NodeProps<{ block: ACBlock }>
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'ac')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'ac')}>
       <Handle
         type="target"
         position={Position.Left}

@@ -36,7 +36,7 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
         : '⬛ Idle'
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'timer')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'timer')}>
       {/* Input: trigger from a condition/logic rule output */}
       <Handle
         type="target"

@@ -29,6 +29,7 @@ interface UIState {
   canvasSelection: Array<{ id: string; type: string }>
   quickAddRequest: { blockType: BlockType; nonce: number } | null
   justAddedBlockId: string | null
+  hasAutoCollapsedForCompactView: boolean
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
@@ -56,6 +57,7 @@ interface UIState {
   requestQuickAdd: (blockType: BlockType) => void
   clearQuickAddRequest: () => void
   flashBlock: (id: string) => void
+  setHasAutoCollapsedForCompactView: () => void
 }
 
 export const useUIStore = create<UIState>()(persist((set) => ({
@@ -78,6 +80,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   canvasSelection: [],
   quickAddRequest: null,
   justAddedBlockId: null,
+  hasAutoCollapsedForCompactView: false,
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -138,7 +141,13 @@ export const useUIStore = create<UIState>()(persist((set) => ({
       set((s) => (s.justAddedBlockId === id ? { justAddedBlockId: null } : {}))
     }, 1200)
   },
+
+  setHasAutoCollapsedForCompactView: () => set({ hasAutoCollapsedForCompactView: true }),
 }), {
   name: 'abcai_ui_panels_v2',
-  partialize: (s) => ({ leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed, curriculumCollapsed: s.curriculumCollapsed, dataBankWidth: s.dataBankWidth }),
+  partialize: (s) => ({
+    leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed,
+    curriculumCollapsed: s.curriculumCollapsed, dataBankWidth: s.dataBankWidth,
+    hasAutoCollapsedForCompactView: s.hasAutoCollapsedForCompactView,
+  }),
 }))

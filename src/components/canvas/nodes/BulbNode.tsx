@@ -14,7 +14,7 @@ export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBloc
   const isOn = block.isOn
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'bulb')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'bulb')}>
       <Handle
         type="target"
         position={Position.Left}

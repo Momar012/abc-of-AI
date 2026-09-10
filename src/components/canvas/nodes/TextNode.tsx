@@ -56,7 +56,7 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
         minWidth={60}
         minHeight={24}
         color="#8B5CF6"
-        handleStyle={{ width: 10, height: 10, borderRadius: 3 }}
+        handleStyle={{ width: 16, height: 16, borderRadius: 4 }}
         onResize={(_, params) => {
           updateTextBlock(block.id, {
             width: params.width,

@@ -14,7 +14,7 @@ export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBloc
   const isOpen = block.isOpen
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'door')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'door')}>
       <Handle
         type="target"
         position={Position.Left}

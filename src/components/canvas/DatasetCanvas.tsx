@@ -259,7 +259,6 @@ export default function DatasetCanvas() {
   const updateImageBlockPosition = useCanvasStore((s) => s.updateImageBlockPosition)
   const removeImageBlock = useCanvasStore((s) => s.removeImageBlock)
 
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
@@ -741,13 +740,20 @@ export default function DatasetCanvas() {
   // Hold Space for a temporary "open hand" pan cursor (standard Figma/Photoshop behavior)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
 
+  // On touch devices, a one-finger drag on empty canvas should pan — the
+  // universal touch-canvas convention — rather than draw a rubber-band
+  // selection box, which is what the default Select tool does for a mouse.
+  const [isTouchDevice] = useState(
+    () => typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  )
+
   // Drag-to-draw a text box while the Text tool is active. A simple click
   // (no meaningful drag distance) falls back to placing a default-size box.
   const textDragRef = useRef<{ startX: number; startY: number } | null>(null)
   const [textDragRect, setTextDragRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
 
   const onTextToolMouseDown = useCallback(
-    (event: React.MouseEvent) => {
+    (event: React.PointerEvent) => {
       if (canvasTool !== 'text' || isSpacePressed || event.button !== 0 || !canvasRef.current) return
 
       const bounds = canvasRef.current.getBoundingClientRect()
@@ -756,7 +762,7 @@ export default function DatasetCanvas() {
       textDragRef.current = { startX, startY }
       setTextDragRect({ x: startX, y: startY, width: 0, height: 0 })
 
-      const handleMouseMove = (e: MouseEvent) => {
+      const handlePointerMove = (e: PointerEvent) => {
         if (!textDragRef.current) return
         const x = e.clientX - bounds.left
         const y = e.clientY - bounds.top
@@ -769,9 +775,9 @@ export default function DatasetCanvas() {
         })
       }
 
-      const handleMouseUp = (e: MouseEvent) => {
-        window.removeEventListener('mousemove', handleMouseMove)
-        window.removeEventListener('mouseup', handleMouseUp)
+      const handlePointerUp = (e: PointerEvent) => {
+        window.removeEventListener('pointermove', handlePointerMove)
+        window.removeEventListener('pointerup', handlePointerUp)
 
         const dragInfo = textDragRef.current
         textDragRef.current = null
@@ -803,8 +809,8 @@ export default function DatasetCanvas() {
         setCanvasTool('select')
       }
 
-      window.addEventListener('mousemove', handleMouseMove)
-      window.addEventListener('mouseup', handleMouseUp)
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp)
     },
     [canvasTool, isSpacePressed, addTextBlock, setCanvasTool]
   )
@@ -919,9 +925,9 @@ export default function DatasetCanvas() {
         transition: 'box-shadow 0.15s ease',
       }}
       onPointerDown={(e) => {
-        if (isDraggingRef.current) e.stopPropagation()
+        if (isDraggingRef.current) { e.stopPropagation(); return }
+        onTextToolMouseDown(e)
       }}
-      onMouseDown={onTextToolMouseDown}
     >
       <ReactFlow
         nodes={rfNodes}
@@ -941,18 +947,18 @@ export default function DatasetCanvas() {
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
-        onNodeDoubleClick={(_, node) => {
-          const ruleTypes = ['sensor', 'condition', 'switch', 'logic', 'fan', 'alarm', 'ac', 'timer']
-          if (ruleTypes.includes(node.type ?? '')) {
-            setSelectedBlock(node.id, node.type as 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer')
-          }
-        }}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
         maxZoom={1.5}
-        panOnDrag={canvasTool === 'pan' || isSpacePressed ? true : canvasTool === 'text' ? false : [1, 2]}
-        selectionOnDrag={canvasTool === 'select' && !isSpacePressed}
+        panOnDrag={
+          canvasTool === 'pan' || isSpacePressed || (isTouchDevice && canvasTool === 'select')
+            ? true
+            : canvasTool === 'text'
+            ? false
+            : [1, 2]
+        }
+        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && !isTouchDevice}
         selectionMode={SelectionMode.Partial}
         nodesDraggable={canvasInteractive && canvasTool === 'select' && !isSpacePressed}
         nodesConnectable={canvasInteractive}

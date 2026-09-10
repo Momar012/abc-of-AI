@@ -25,7 +25,7 @@ export default function LogicNode({ data, selected }: NodeProps<{ block: LogicBl
   const botInput = '65%'
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'logic')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'logic')}>
       {/* Input handle(s) */}
       <Handle
         type="target"

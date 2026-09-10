@@ -81,7 +81,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   return (
     <div
       className="flex flex-col"
-      onDoubleClick={() => setSelectedBlock(block.id, 'condition')}
+      onClick={() => setSelectedBlock(block.id, 'condition')}
       title={needsAttention ? attentionMessage : undefined}
     >
       {/* Input: from sensor OR model prediction */}

@@ -16,7 +16,7 @@ export default function ImageNode({ data, selected }: NodeProps<{ block: ImageBl
         minWidth={60}
         minHeight={60}
         color="#8B5CF6"
-        handleStyle={{ width: 10, height: 10, borderRadius: 3 }}
+        handleStyle={{ width: 16, height: 16, borderRadius: 4 }}
         onResize={(_, params) => {
           updateImageBlock(block.id, { width: params.width, height: params.height })
         }}

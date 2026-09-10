@@ -12,7 +12,7 @@ export default function FanNode({ data, selected }: NodeProps<{ block: FanBlock 
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'fan')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'fan')}>
       <Handle
         type="target"
         position={Position.Left}

@@ -19,7 +19,7 @@ export default function SwitchNode({ data, selected }: NodeProps<{ block: Switch
   }
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'switch')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'switch')}>
       <Handle
         type="source"
         position={Position.Right}

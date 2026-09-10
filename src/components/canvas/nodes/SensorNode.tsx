@@ -38,7 +38,7 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
   return (
     <div
       className="flex flex-col"
-      onDoubleClick={() => setSelectedBlock(block.id, 'sensor')}
+      onClick={() => setSelectedBlock(block.id, 'sensor')}
       title={!isConnected ? 'Wire this sensor into an IF block (or a model) to use it.' : undefined}
     >
       <Handle

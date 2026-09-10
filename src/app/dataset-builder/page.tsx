@@ -98,6 +98,8 @@ export default function DatasetBuilderPage() {
   const setDataBankWidth = useUIStore((s) => s.setDataBankWidth)
   const curriculumCollapsed = useUIStore((s) => s.curriculumCollapsed)
   const toggleLeftPanel = useUIStore((s) => s.toggleLeftPanel)
+  const hasAutoCollapsedForCompactView = useUIStore((s) => s.hasAutoCollapsedForCompactView)
+  const setHasAutoCollapsedForCompactView = useUIStore((s) => s.setHasAutoCollapsedForCompactView)
 
   const toggleCurriculumPanel = useUIStore((s) => s.toggleCurriculumPanel)
   const { panelWidth, setPanelWidth } = useCurriculumStore()
@@ -172,6 +174,35 @@ export default function DatasetBuilderPage() {
 
     if (firstVisit) setShowEducationalOverlay(true)
   }, [firstVisit, setShowEducationalOverlay])
+
+  // On a tablet-width window, start with the Curriculum sidebar tucked away
+  // (it already collapses to a 48px icon strip) so the canvas has room —
+  // only ever done once per browser, so a returning user's own choice is
+  // never fought after that first time.
+  useEffect(() => {
+    if (hasAutoCollapsedForCompactView) return
+    setHasAutoCollapsedForCompactView()
+    if (window.innerWidth < 900 && !curriculumCollapsed) {
+      toggleCurriculumPanel()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Panel widths are only clamped against the viewport while actively being
+  // dragged — also re-clamp on window resize so a width picked on a wider
+  // screen (or restored from a previous session) never leaves a Chromebook/
+  // iPad-width window with an overflowing panel.
+  useEffect(() => {
+    function clampPanelWidths() {
+      const maxW = Math.min(380, Math.floor(window.innerWidth * 0.32))
+      const clampedPanel = Math.max(200, Math.min(maxW, panelWidth))
+      if (clampedPanel !== panelWidth) setPanelWidth(clampedPanel)
+      const clampedBank = Math.max(180, Math.min(maxW, dataBankWidth))
+      if (clampedBank !== dataBankWidth) setDataBankWidth(clampedBank)
+    }
+    window.addEventListener('resize', clampPanelWidths)
+    return () => window.removeEventListener('resize', clampPanelWidths)
+  }, [panelWidth, dataBankWidth, setPanelWidth, setDataBankWidth])
 
   // Persist on every change (debounced so rapid typing doesn't serialize the whole app state per keystroke)
   const saveTimer = useRef<ReturnType<typeof setTimeout>>()
@@ -257,38 +288,38 @@ export default function DatasetBuilderPage() {
     }
   }, [bankItems, labelledBlocks, splitConfig])
 
-  function handleResizeStart(e: React.MouseEvent) {
+  function handleResizeStart(e: React.PointerEvent) {
     e.preventDefault()
     const startX = e.clientX
     const startWidth = panelWidth
-    function onMove(ev: MouseEvent) {
+    function onMove(ev: PointerEvent) {
       const maxW = Math.min(380, Math.floor(window.innerWidth * 0.32))
       const next = Math.max(200, Math.min(maxW, startWidth + ev.clientX - startX))
       setPanelWidth(next)
     }
     function onUp() {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
     }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
   }
 
-  function handleDataBankResizeStart(e: React.MouseEvent) {
+  function handleDataBankResizeStart(e: React.PointerEvent) {
     e.preventDefault()
     const startX = e.clientX
     const startWidth = dataBankWidth
-    function onMove(ev: MouseEvent) {
+    function onMove(ev: PointerEvent) {
       const maxW = Math.min(380, Math.floor(window.innerWidth * 0.32))
       const next = Math.max(180, Math.min(maxW, startWidth + ev.clientX - startX))
       setDataBankWidth(next)
     }
     function onUp() {
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
     }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
   }
 
   return (
@@ -404,7 +435,7 @@ export default function DatasetBuilderPage() {
             {!curriculumCollapsed && (
               <div
                 className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
-                onMouseDown={handleResizeStart}
+                onPointerDown={handleResizeStart}
               />
             )}
           </div>
@@ -452,7 +483,7 @@ export default function DatasetBuilderPage() {
                 </button>
                 <div
                   className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
-                  onMouseDown={handleDataBankResizeStart}
+                  onPointerDown={handleDataBankResizeStart}
                 />
                 <DataBank />
               </div>

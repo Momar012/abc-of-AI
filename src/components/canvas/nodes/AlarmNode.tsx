@@ -12,7 +12,7 @@ export default function AlarmNode({ data, selected }: NodeProps<{ block: AlarmBl
   const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onDoubleClick={() => setSelectedBlock(block.id, 'alarm')}>
+    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'alarm')}>
       <Handle
         type="target"
         position={Position.Left}
