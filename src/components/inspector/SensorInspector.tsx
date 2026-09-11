@@ -38,7 +38,10 @@ export default function SensorInspector() {
   const emoji = SENSOR_EMOJI[block.sensorType] ?? '📡'
 
   const setValue = (v: number | boolean | string) => {
-    updateSensorBlock(block.id, { value: v })
+    updateSensorBlock(block.id, {
+      value: v,
+      ...(block.sensorType === 'text-input' ? { hasSent: true } : {}),
+    })
     evaluateGraph()
   }
 

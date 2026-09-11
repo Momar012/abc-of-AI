@@ -256,6 +256,7 @@ export function exportRuleApp(
     sensors: rule.sensorBlocks.filter(s => keep(s.id)).map(s => ({
       id: s.id, name: s.name, sensorType: s.sensorType,
       value: s.value, min: s.min ?? 0, max: s.max ?? 100, unit: s.unit ?? '',
+      hasSent: s.sensorType === 'text-input' ? !!s.hasSent : true,
     })),
     switches: rule.switchBlocks.filter(s => keep(s.id)).map(s => ({
       id: s.id, name: s.name, isOn: s.isOn,
@@ -883,7 +884,7 @@ function evaluate(){
       }
     } else {
       var sen=state.sensors.find(function(s){return s.id===c.linkedSensorId});
-      c._out=(sen&&c.threshold!==null&&c.threshold!=='')?evalCond(sen.value,c.operator,c.threshold):false;
+      c._out=(sen&&c.threshold!==null&&c.threshold!==''&&sen.hasSent)?evalCond(sen.value,c.operator,c.threshold):false;
     }
   }
   for(var pass=0;pass<5;pass++){
@@ -1006,6 +1007,7 @@ function setVal(id,val){
   var s=state.sensors.find(function(x){return x.id===id});
   if(!s) return;
   s.value=val;
+  s.hasSent=true;
   refresh();
   (APP.models||[]).forEach(function(m){ if(m.liveSensorId===id) scheduleTextPrediction(m.id,val,false); });
   (APP.textClusterModels||[]).forEach(function(m){ if(m.liveSensorId===id) scheduleTextPrediction(m.id,val,true); });

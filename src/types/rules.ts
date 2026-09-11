@@ -11,6 +11,10 @@ export interface SensorBlock {
   min?: number
   max?: number
   unit?: string
+  // Only meaningful for 'text-input' sensors: false means the student has
+  // never clicked Send, so `value` is still just its empty-string default,
+  // not a real submitted value. undefined/true means it has a real value.
+  hasSent?: boolean
 }
 
 export interface ConditionBlock {

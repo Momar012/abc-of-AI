@@ -12,7 +12,7 @@ const SENSOR_DEFAULTS: Record<SensorType, Partial<SensorBlock>> = {
   light:       { value: 50,  min: 0,   max: 100, unit: '%'  },
   motion:      { value: false },
   humidity:    { value: 60,  min: 0,   max: 100, unit: '%'  },
-  'text-input':{ value: '' },
+  'text-input':{ value: '', hasSent: false },
 }
 
 const SENSOR_LABELS: Record<SensorType, string> = {
@@ -356,6 +356,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
       const sensor = sensorBlocks.find((s) => s.id === c.linkedSensorId)
       if (!sensor) return { ...c, currentOutput: null }
       if (c.threshold === null || c.threshold === '') return { ...c, currentOutput: null }
+      if (sensor.sensorType === 'text-input' && !sensor.hasSent) return { ...c, currentOutput: null }
       return { ...c, currentOutput: evalCondition(sensor.value, c.operator, c.threshold) }
     })
 

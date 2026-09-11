@@ -31,7 +31,10 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
     modelBlocks.some((m) => m.liveLinkedSensorId === block.id)
 
   const handleValueChange = (newVal: number | boolean | string) => {
-    updateSensorBlock(block.id, { value: newVal })
+    updateSensorBlock(block.id, {
+      value: newVal,
+      ...(block.sensorType === 'text-input' ? { hasSent: true } : {}),
+    })
     evaluateGraph()
   }
 
