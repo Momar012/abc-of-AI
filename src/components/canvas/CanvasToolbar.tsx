@@ -181,6 +181,7 @@ function ActionsMenu() {
             <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => setOpen(false)} />
             <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => setOpen(false)} />
             <DraggableActionItem blockType="phoneunlock" label="📱 Phone Unlock" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="display" label="🪧 Display" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body
@@ -348,6 +349,8 @@ function SelectionBar() {
   const removeFanBlock       = useRuleStore((s) => s.removeFanBlock)
   const removeAlarmBlock     = useRuleStore((s) => s.removeAlarmBlock)
   const removeACBlock        = useRuleStore((s) => s.removeACBlock)
+  const removePhoneUnlockBlock = useRuleStore((s) => s.removePhoneUnlockBlock)
+  const removeDisplayBlock   = useRuleStore((s) => s.removeDisplayBlock)
   const removeTimerBlock     = useRuleStore((s) => s.removeTimerBlock)
   // Workflow store removers
   const removeDoorBlock      = useWorkflowStore((s) => s.removeDoorBlock)
@@ -371,7 +374,7 @@ function SelectionBar() {
   useEffect(() => {
     if (showNaming) {
       const ids = new Set(canvasSelection.map(n => n.id))
-      const hasOutputs = canvasSelection.some(n => ['fan', 'alarm', 'ac', 'door', 'bulb'].includes(n.type))
+      const hasOutputs = canvasSelection.some(n => ['fan', 'alarm', 'ac', 'phoneunlock', 'display', 'door', 'bulb'].includes(n.type))
       if (hasOutputs) setCardOrder(getExportCards(ids))
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,7 +384,7 @@ function SelectionBar() {
 
   const selectedIds = new Set(canvasSelection.map((n) => n.id))
 
-  const OUTPUT_DEVICE_TYPES = new Set(['fan', 'alarm', 'ac', 'door', 'bulb'])
+  const OUTPUT_DEVICE_TYPES = new Set(['fan', 'alarm', 'ac', 'phoneunlock', 'display', 'door', 'bulb'])
   const hasOutputDevices = canvasSelection.some(n => OUTPUT_DEVICE_TYPES.has(n.type))
   const hasModelBlocks   = canvasSelection.some(n => n.type === 'model')
   const derivedMode: 'app' | 'ai-model' =
@@ -438,6 +441,8 @@ function SelectionBar() {
         case 'fan':         removeFanBlock(id);       break
         case 'alarm':       removeAlarmBlock(id);     break
         case 'ac':          removeACBlock(id);        break
+        case 'phoneunlock': removePhoneUnlockBlock(id);break
+        case 'display':     removeDisplayBlock(id);   break
         case 'timer':       removeTimerBlock(id);     break
         case 'door':        removeDoorBlock(id);      break
         case 'bulb':        removeBulbBlock(id);      break

@@ -60,6 +60,9 @@ export function getExportCards(selectedIds: Set<string>): ExportCardInfo[] {
   rule.phoneUnlockBlocks.filter(p => keep(p.id)).forEach(p => {
     cards.push({ id: p.id, name: p.name, icon: '📱', category: 'output' })
   })
+  rule.displayBlocks.filter(d => keep(d.id)).forEach(d => {
+    cards.push({ id: d.id, name: d.name, icon: '🪧', category: 'output' })
+  })
   return cards
 }
 
@@ -88,6 +91,7 @@ export function validateExportSelection(selectedIds: Set<string>): {
     ...rule.alarmBlocks,
     ...rule.acBlocks,
     ...rule.phoneUnlockBlocks,
+    ...rule.displayBlocks,
     ...workflow.doorBlocks,
     ...workflow.bulbBlocks,
   ].filter(d => selectedIds.has(d.id))
@@ -280,6 +284,7 @@ export function exportRuleApp(
     alarms: rule.alarmBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
     acs:    rule.acBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
     phoneUnlocks: rule.phoneUnlockBlocks.filter(p => keep(p.id)).map(p => ({ id: p.id, name: p.name, linkedRuleBlockId: p.linkedRuleBlockId })),
+    displays: rule.displayBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, message: d.message, linkedRuleBlockId: d.linkedRuleBlockId })),
     bulbs:  workflow.bulbBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
     doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
     timers: rule.timerBlocks.filter(t => keep(t.id)).map(t => ({
@@ -310,6 +315,7 @@ export function exportRuleApp(
     ...data.alarms.map((a: {id:string}) => a.id),
     ...data.acs.map((a: {id:string}) => a.id),
     ...data.phoneUnlocks.map((p: {id:string}) => p.id),
+    ...data.displays.map((d: {id:string}) => d.id),
   ]
   const inputIdSet = new Set(defaultInputIds)
   const outputIdSet = new Set(defaultOutputIds)
@@ -484,6 +490,14 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.2)}
 .phone-card.on .phone-lock{animation:phone-pop 0.6s cubic-bezier(0.34,1.56,0.64,1)}
 .phone-card.on .status-pill{background:rgba(52,211,153,0.15);color:#34d399;border-color:rgba(52,211,153,0.28)}
 @keyframes phone-pop{0%{transform:scale(1) rotate(0deg)}40%{transform:scale(1.4) rotate(-18deg)}70%{transform:scale(0.95) rotate(6deg)}100%{transform:scale(1) rotate(0deg)}}
+.out-card.display-card{grid-column:1/-1;padding:1rem 1.25rem}
+.display-card .out-visual{width:100%}
+.display-screen{width:100%;min-height:90px;border-radius:0.75rem;background:#05050d;border:2px solid #232338;display:flex;align-items:center;justify-content:center;padding:0.75rem 1.75rem;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s}
+.display-card.on .display-screen{border-color:rgba(52,211,153,0.5);box-shadow:0 0 28px rgba(52,211,153,0.3),inset 0 0 22px rgba(52,211,153,0.08)}
+.display-text{font-size:clamp(1.15rem,2.4vw,1.85rem);font-weight:800;letter-spacing:0.02em;text-align:center;line-height:1.3;color:rgba(255,255,255,0.15);transition:color 0.4s,text-shadow 0.4s;word-break:break-word;max-width:100%}
+.display-card.on .display-text{color:#6ee7b7;text-shadow:0 0 12px rgba(52,211,153,0.9),0 0 30px rgba(52,211,153,0.4);animation:display-flicker 2.4s ease-in-out infinite}
+.display-card.on .status-pill{background:rgba(52,211,153,0.15);color:#34d399;border-color:rgba(52,211,153,0.28)}
+@keyframes display-flicker{0%,100%{opacity:1}92%{opacity:1}94%{opacity:0.55}96%{opacity:1}}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
 @keyframes star-twinkle{0%,100%{opacity:0.07}50%{opacity:var(--bright,0.55)}}
@@ -562,7 +576,7 @@ function _sweep(f1,f2,dur){var c=_getCtx();if(!c||!_soundOn)return;var o=c.creat
 var _fanNode=null;
 function _startFan(){var c=_getCtx();if(!c||!_soundOn||_fanNode)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.value=65;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.05,c.currentTime+0.4);o.start();_fanNode={o:o,g:g};}
 function _stopFan(){if(!_fanNode)return;var c=_getCtx();if(c){try{_fanNode.g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.5);}catch(e){}}var fn=_fanNode;_fanNode=null;setTimeout(function(){try{fn.o.stop();}catch(e){}},600);}
-function playDeviceSound(type,on){if(!_soundOn)return;if(type==='bulb'){on?_blip(900,0.12):_blip(500,0.08);}else if(type==='fan'){on?_startFan():_stopFan();}else if(type==='alarm'&&on){_blip(880,0.12,'square');setTimeout(function(){_blip(880,0.12,'square');},200);setTimeout(function(){_blip(1100,0.12,'square');},400);}else if(type==='door'){on?_sweep(200,800,0.3):_sweep(800,200,0.3);}else if(type==='ac'&&on){_blip(300,0.4,'sawtooth');}else if(type==='phoneunlock'){on?_sweep(400,900,0.35):_sweep(500,250,0.25);}}
+function playDeviceSound(type,on){if(!_soundOn)return;if(type==='bulb'){on?_blip(900,0.12):_blip(500,0.08);}else if(type==='fan'){on?_startFan():_stopFan();}else if(type==='alarm'&&on){_blip(880,0.12,'square');setTimeout(function(){_blip(880,0.12,'square');},200);setTimeout(function(){_blip(1100,0.12,'square');},400);}else if(type==='door'){on?_sweep(200,800,0.3):_sweep(800,200,0.3);}else if(type==='ac'&&on){_blip(300,0.4,'sawtooth');}else if(type==='phoneunlock'){on?_sweep(400,900,0.35):_sweep(500,250,0.25);}else if(type==='display'){on?_blip(700,0.1):_blip(300,0.08);}}
 var _appReady=false;
 const APP = ${dataJson};
 
@@ -575,6 +589,7 @@ const state = {
   alarms: APP.alarms.map(function(x){return Object.assign({},x,{_on:false})}),
   acs:    APP.acs.map(function(x){return Object.assign({},x,{_on:false})}),
   phoneUnlocks: APP.phoneUnlocks.map(function(x){return Object.assign({},x,{_on:false})}),
+  displays: APP.displays.map(function(x){return Object.assign({},x,{_on:false})}),
   bulbs:  APP.bulbs.map(function(x){return Object.assign({},x,{_on:false})}),
   doors:  APP.doors.map(function(x){return Object.assign({},x,{_open:false})}),
   timers: APP.timers.map(function(x){return Object.assign({},x,{_remaining:null,_on:false,_lastInput:false})}),
@@ -928,6 +943,7 @@ function evaluate(){
   for(var k=0;k<state.alarms.length;k++) state.alarms[k]._on=state.alarms[k].linkedRuleBlockId?getOut(state.alarms[k].linkedRuleBlockId):false;
   for(var k=0;k<state.acs.length;k++)    state.acs[k]._on=state.acs[k].linkedRuleBlockId?getOut(state.acs[k].linkedRuleBlockId):false;
   for(var k=0;k<state.phoneUnlocks.length;k++) state.phoneUnlocks[k]._on=state.phoneUnlocks[k].linkedRuleBlockId?getOut(state.phoneUnlocks[k].linkedRuleBlockId):false;
+  for(var k=0;k<state.displays.length;k++) state.displays[k]._on=state.displays[k].linkedRuleBlockId?getOut(state.displays[k].linkedRuleBlockId):false;
   for(var k=0;k<state.bulbs.length;k++)  state.bulbs[k]._on=state.bulbs[k].linkedRuleBlockId?getOut(state.bulbs[k].linkedRuleBlockId):false;
   for(var k=0;k<state.doors.length;k++)  state.doors[k]._open=state.doors[k].linkedRuleBlockId?getOut(state.doors[k].linkedRuleBlockId):false;
 }
@@ -976,6 +992,14 @@ function updateOutputs(){
     var pl=document.getElementById('pl-'+p.id); if(pl) pl.textContent=p._on?'🔓':'🔒';
     document.getElementById('st-'+p.id).textContent=p._on?'● UNLOCKED':'○ LOCKED';
     if(_appReady&&p._on!==wasOn){showToast((p._on?'📱 ':'🔒 ')+p.name+(p._on?' unlocked!':' locked'));playDeviceSound('phoneunlock',p._on);}
+  }
+  for(var i=0;i<state.displays.length;i++){
+    var d=state.displays[i]; var el=document.getElementById('out-'+d.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
+    el.className='out-card display-card'+(d._on?' on':'');
+    var dt=document.getElementById('dt-'+d.id); if(dt) dt.textContent=d._on?d.message:'···';
+    document.getElementById('st-'+d.id).textContent=d._on?'● ON':'○ OFF';
+    if(_appReady&&d._on!==wasOn){showToast(d._on?('🪧 '+d.name+': '+d.message):('⬛ '+d.name+' cleared'));playDeviceSound('display',d._on);}
   }
 }
 function fmtTime(s){var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
@@ -1263,7 +1287,7 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
 }
 
 var outCont=document.getElementById('output-cards');
-var hasOut=state.bulbs.length||state.fans.length||state.doors.length||state.alarms.length||state.acs.length||state.phoneUnlocks.length;
+var hasOut=state.bulbs.length||state.fans.length||state.doors.length||state.alarms.length||state.acs.length||state.phoneUnlocks.length||state.displays.length;
 if(!hasOut){ outCont.innerHTML='<p class="empty-hint">No outputs connected.</p>'; }
 var _outIdx=0;
 
@@ -1393,6 +1417,21 @@ for(var pi=0;pi<state.phoneUnlocks.length;pi++){
     '<div class="out-footer">'+
       '<span class="out-name">'+p.name+'</span>'+
       '<span class="status-pill" id="st-'+p.id+'">○ LOCKED</span>'+
+    '</div>';
+  outCont.appendChild(el);
+}
+
+for(var di2=0;di2<state.displays.length;di2++){
+  var d=state.displays[di2];
+  var el=document.createElement('div'); el.id='out-'+d.id; el.className='out-card display-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s';_outIdx++;
+  el.innerHTML=
+    '<div class="out-visual">'+
+      '<div class="display-screen"><span class="display-text" id="dt-'+d.id+'">···</span></div>'+
+    '</div>'+
+    '<div class="out-footer">'+
+      '<span class="out-name">'+d.name+'</span>'+
+      '<span class="status-pill" id="st-'+d.id+'">○ OFF</span>'+
     '</div>';
   outCont.appendChild(el);
 }

@@ -19,6 +19,7 @@ export default function RuleEdge({
   const updateAlarmBlock     = useRuleStore((s) => s.updateAlarmBlock)
   const updateACBlock        = useRuleStore((s) => s.updateACBlock)
   const updatePhoneUnlockBlock = useRuleStore((s) => s.updatePhoneUnlockBlock)
+  const updateDisplayBlock   = useRuleStore((s) => s.updateDisplayBlock)
   const updateTimerBlock     = useRuleStore((s) => s.updateTimerBlock)
   const logicBlocks          = useRuleStore((s) => s.logicBlocks)
   const evaluateGraph        = useRuleStore((s) => s.evaluateGraph)
@@ -59,6 +60,8 @@ export default function RuleEdge({
       updateACBlock(target, { linkedRuleBlockId: null, isOn: false })
     } else if (targetHandle === 'phoneunlock-in') {
       updatePhoneUnlockBlock(target, { linkedRuleBlockId: null, isOn: false })
+    } else if (targetHandle === 'display-in') {
+      updateDisplayBlock(target, { linkedRuleBlockId: null, isOn: false })
     } else if (targetHandle === 'timer-in') {
       updateTimerBlock(target, { linkedRuleBlockId: null, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null })
     } else if (targetHandle === 'door-in') {

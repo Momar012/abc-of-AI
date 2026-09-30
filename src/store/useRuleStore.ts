@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import {
   SensorBlock, SensorType, ConditionBlock, RuleOperator, SwitchBlock,
-  LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, TimerBlock,
+  LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, DisplayBlock, TimerBlock,
 } from '@/types/rules'
 import { runTextInference } from '@/lib/textLearner'
 import type { DataItem } from '@/types/dataset'
@@ -50,6 +50,7 @@ interface RuleState {
   alarmBlocks: AlarmBlock[]
   acBlocks: ACBlock[]
   phoneUnlockBlocks: PhoneUnlockBlock[]
+  displayBlocks: DisplayBlock[]
   timerBlocks: TimerBlock[]
 
   addSensorBlock: (sensorType: SensorType, pos?: { x: number; y: number }) => void
@@ -92,6 +93,11 @@ interface RuleState {
   updatePhoneUnlockBlock: (id: string, updates: Partial<PhoneUnlockBlock>) => void
   updatePhoneUnlockBlockPosition: (id: string, pos: { x: number; y: number }) => void
 
+  addDisplayBlock: (pos?: { x: number; y: number }) => void
+  removeDisplayBlock: (id: string) => void
+  updateDisplayBlock: (id: string, updates: Partial<DisplayBlock>) => void
+  updateDisplayBlockPosition: (id: string, pos: { x: number; y: number }) => void
+
   addTimerBlock: (pos?: { x: number; y: number }) => void
   removeTimerBlock: (id: string) => void
   updateTimerBlock: (id: string, updates: Partial<TimerBlock>) => void
@@ -110,6 +116,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   alarmBlocks: [],
   acBlocks: [],
   phoneUnlockBlocks: [],
+  displayBlocks: [],
   timerBlocks: [],
 
   // ── Sensors ──────────────────────────────────────────────────────────────
@@ -297,6 +304,30 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   updatePhoneUnlockBlockPosition: (id, pos) =>
     set((s) => ({ phoneUnlockBlocks: s.phoneUnlockBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
 
+  // ── Display ──────────────────────────────────────────────────────────────
+  addDisplayBlock: (pos?) =>
+    set((s) => ({
+      displayBlocks: [
+        ...s.displayBlocks,
+        {
+          id: uuid(), type: 'display',
+          position: pos ?? { x: 1050 + s.displayBlocks.length * 40, y: 450 + s.displayBlocks.length * 40 },
+          name: `Display ${s.displayBlocks.length + 1}`,
+          message: 'Hello!',
+          linkedRuleBlockId: null, isOn: false,
+        },
+      ],
+    })),
+
+  removeDisplayBlock: (id) =>
+    set((s) => ({ displayBlocks: s.displayBlocks.filter((b) => b.id !== id) })),
+
+  updateDisplayBlock: (id, updates) =>
+    set((s) => ({ displayBlocks: s.displayBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updateDisplayBlockPosition: (id, pos) =>
+    set((s) => ({ displayBlocks: s.displayBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
   // ── Timer ────────────────────────────────────────────────────────────────
   addTimerBlock: (pos?) =>
     set((s) => ({
@@ -346,7 +377,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
   // ── Graph evaluation ──────────────────────────────────────────────────────
   evaluateGraph: () => {
-    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, timerBlocks } = get()
+    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, timerBlocks } = get()
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
@@ -465,6 +496,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     const newPhoneUnlocks = phoneUnlockBlocks.map((p) => ({
       ...p, isOn: p.linkedRuleBlockId ? (resolved.get(p.linkedRuleBlockId) === true) : false,
     }))
+    const newDisplays = displayBlocks.map((d) => ({
+      ...d, isOn: d.linkedRuleBlockId ? (resolved.get(d.linkedRuleBlockId) === true) : false,
+    }))
 
     // 5. Update door/bulb blocks in workflow store
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -479,7 +513,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
     set({
       conditionBlocks: newConditions, logicBlocks: newLogic,
-      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, phoneUnlockBlocks: newPhoneUnlocks, timerBlocks: newTimers,
+      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, phoneUnlockBlocks: newPhoneUnlocks, displayBlocks: newDisplays, timerBlocks: newTimers,
     })
   },
 }))
