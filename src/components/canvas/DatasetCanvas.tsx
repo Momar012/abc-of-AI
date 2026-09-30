@@ -972,8 +972,8 @@ export default function DatasetCanvas() {
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
         fitView
         fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.3}
-        maxZoom={1.5}
+        minZoom={0.05}
+        maxZoom={2}
         panOnDrag={
           canvasTool === 'pan' || isSpacePressed || (isTouchDevice && canvasTool === 'select')
             ? true
