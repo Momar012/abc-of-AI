@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import {
   SensorBlock, SensorType, ConditionBlock, RuleOperator, SwitchBlock,
-  LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock,
+  LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, TimerBlock,
 } from '@/types/rules'
 import { runTextInference } from '@/lib/textLearner'
 import type { DataItem } from '@/types/dataset'
@@ -49,6 +49,7 @@ interface RuleState {
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
   acBlocks: ACBlock[]
+  phoneUnlockBlocks: PhoneUnlockBlock[]
   timerBlocks: TimerBlock[]
 
   addSensorBlock: (sensorType: SensorType, pos?: { x: number; y: number }) => void
@@ -86,6 +87,11 @@ interface RuleState {
   updateACBlock: (id: string, updates: Partial<ACBlock>) => void
   updateACBlockPosition: (id: string, pos: { x: number; y: number }) => void
 
+  addPhoneUnlockBlock: (pos?: { x: number; y: number }) => void
+  removePhoneUnlockBlock: (id: string) => void
+  updatePhoneUnlockBlock: (id: string, updates: Partial<PhoneUnlockBlock>) => void
+  updatePhoneUnlockBlockPosition: (id: string, pos: { x: number; y: number }) => void
+
   addTimerBlock: (pos?: { x: number; y: number }) => void
   removeTimerBlock: (id: string) => void
   updateTimerBlock: (id: string, updates: Partial<TimerBlock>) => void
@@ -103,6 +109,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   fanBlocks: [],
   alarmBlocks: [],
   acBlocks: [],
+  phoneUnlockBlocks: [],
   timerBlocks: [],
 
   // ── Sensors ──────────────────────────────────────────────────────────────
@@ -267,6 +274,29 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   updateACBlockPosition: (id, pos) =>
     set((s) => ({ acBlocks: s.acBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
 
+  // ── Phone Unlock ─────────────────────────────────────────────────────────
+  addPhoneUnlockBlock: (pos?) =>
+    set((s) => ({
+      phoneUnlockBlocks: [
+        ...s.phoneUnlockBlocks,
+        {
+          id: uuid(), type: 'phoneunlock',
+          position: pos ?? { x: 1000 + s.phoneUnlockBlocks.length * 40, y: 400 + s.phoneUnlockBlocks.length * 40 },
+          name: `Phone Unlock ${s.phoneUnlockBlocks.length + 1}`,
+          linkedRuleBlockId: null, isOn: false,
+        },
+      ],
+    })),
+
+  removePhoneUnlockBlock: (id) =>
+    set((s) => ({ phoneUnlockBlocks: s.phoneUnlockBlocks.filter((b) => b.id !== id) })),
+
+  updatePhoneUnlockBlock: (id, updates) =>
+    set((s) => ({ phoneUnlockBlocks: s.phoneUnlockBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updatePhoneUnlockBlockPosition: (id, pos) =>
+    set((s) => ({ phoneUnlockBlocks: s.phoneUnlockBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
   // ── Timer ────────────────────────────────────────────────────────────────
   addTimerBlock: (pos?) =>
     set((s) => ({
@@ -316,7 +346,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
   // ── Graph evaluation ──────────────────────────────────────────────────────
   evaluateGraph: () => {
-    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks } = get()
+    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, timerBlocks } = get()
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
@@ -432,6 +462,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     const newACs = acBlocks.map((a) => ({
       ...a, isOn: a.linkedRuleBlockId ? (resolved.get(a.linkedRuleBlockId) === true) : false,
     }))
+    const newPhoneUnlocks = phoneUnlockBlocks.map((p) => ({
+      ...p, isOn: p.linkedRuleBlockId ? (resolved.get(p.linkedRuleBlockId) === true) : false,
+    }))
 
     // 5. Update door/bulb blocks in workflow store
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -446,7 +479,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
     set({
       conditionBlocks: newConditions, logicBlocks: newLogic,
-      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, timerBlocks: newTimers,
+      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, phoneUnlockBlocks: newPhoneUnlocks, timerBlocks: newTimers,
     })
   },
 }))

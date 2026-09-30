@@ -180,6 +180,7 @@ function ActionsMenu() {
             <DraggableActionItem blockType="fan" label="🌀 Fan" onAdd={() => setOpen(false)} />
             <DraggableActionItem blockType="alarm" label="🚨 Alarm" onAdd={() => setOpen(false)} />
             <DraggableActionItem blockType="ac" label="❄️ AC" onAdd={() => setOpen(false)} />
+            <DraggableActionItem blockType="phoneunlock" label="📱 Phone Unlock" onAdd={() => setOpen(false)} />
           </div>
         </>,
         document.body

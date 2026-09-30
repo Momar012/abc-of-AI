@@ -15,7 +15,7 @@ interface UIState {
   firstVisit: boolean
   showEducationalOverlay: boolean
   selectedBlockId: string | null
-  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer' | 'door' | 'bulb' | null
+  selectedBlockType: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'phoneunlock' | 'timer' | 'door' | 'bulb' | null
   testResultsModalBlockId: string | null
   clusterResultsModalBlockId: string | null
   labellingModalBlockId: string | null
@@ -36,7 +36,7 @@ interface UIState {
   earnBadge: (badgeId: string) => void
   setFirstVisitSeen: () => void
   setShowEducationalOverlay: (show: boolean) => void
-  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'timer' | 'door' | 'bulb') => void
+  setSelectedBlock: (id: string, type: 'labelled' | 'unlabelled' | 'model' | 'rl-gridworld' | 'sensor' | 'condition' | 'switch' | 'logic' | 'fan' | 'alarm' | 'ac' | 'phoneunlock' | 'timer' | 'door' | 'bulb') => void
   clearSelectedBlock: () => void
   openTestResultsModal: (blockId: string) => void
   closeTestResultsModal: () => void

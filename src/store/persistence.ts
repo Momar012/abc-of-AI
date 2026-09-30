@@ -2,7 +2,7 @@ import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, Sa
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
 import { DoorBlock, BulbBlock } from '@/types/workflow'
-import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, TimerBlock } from '@/types/rules'
+import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, TimerBlock } from '@/types/rules'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -38,6 +38,7 @@ interface PersistedState {
   fanBlocks?: FanBlock[]
   alarmBlocks?: AlarmBlock[]
   acBlocks?: ACBlock[]
+  phoneUnlockBlocks?: PhoneUnlockBlock[]
   timerBlocks?: TimerBlock[]
 }
 
@@ -61,6 +62,7 @@ export function saveToLocalStorage(state: {
   fanBlocks: FanBlock[]
   alarmBlocks: AlarmBlock[]
   acBlocks: ACBlock[]
+  phoneUnlockBlocks: PhoneUnlockBlock[]
   timerBlocks: TimerBlock[]
 }): SaveResult {
   try {
@@ -84,6 +86,7 @@ export function saveToLocalStorage(state: {
       fanBlocks: state.fanBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       alarmBlocks: state.alarmBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       acBlocks: state.acBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
+      phoneUnlockBlocks: state.phoneUnlockBlocks.map(({ isOn: _, ...rest }) => ({ ...rest, isOn: false })),
       timerBlocks: state.timerBlocks.map(({ isRunning: _r, remainingSeconds: _s, currentOutput: _o, lastTriggerInput: _l, ...rest }) => ({
         ...rest, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
       })),
@@ -154,6 +157,7 @@ export function loadFromLocalStorage(): PersistedState | null {
       fanBlocks: (parsed.fanBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       alarmBlocks: (parsed.alarmBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       acBlocks: (parsed.acBlocks ?? []).map((b) => ({ ...b, isOn: false })),
+      phoneUnlockBlocks: (parsed.phoneUnlockBlocks ?? []).map((b) => ({ ...b, isOn: false })),
       timerBlocks: (parsed.timerBlocks ?? []).map((b) => ({
         ...b, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
       })),

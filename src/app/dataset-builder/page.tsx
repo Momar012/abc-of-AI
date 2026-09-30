@@ -115,6 +115,7 @@ export default function DatasetBuilderPage() {
   const fanBlocks = useRuleStore((s) => s.fanBlocks)
   const alarmBlocks = useRuleStore((s) => s.alarmBlocks)
   const acBlocks = useRuleStore((s) => s.acBlocks)
+  const phoneUnlockBlocks = useRuleStore((s) => s.phoneUnlockBlocks)
   const timerBlocks = useRuleStore((s) => s.timerBlocks)
 
   // Hydrate from localStorage on mount
@@ -166,6 +167,9 @@ export default function DatasetBuilderPage() {
       }
       if (saved.acBlocks) {
         useRuleStore.setState({ acBlocks: saved.acBlocks })
+      }
+      if (saved.phoneUnlockBlocks) {
+        useRuleStore.setState({ phoneUnlockBlocks: saved.phoneUnlockBlocks })
       }
       if (saved.timerBlocks) {
         useRuleStore.setState({ timerBlocks: saved.timerBlocks })
@@ -233,6 +237,7 @@ export default function DatasetBuilderPage() {
         fanBlocks,
         alarmBlocks,
         acBlocks,
+        phoneUnlockBlocks,
         timerBlocks,
       })
       if (result.ok) {
@@ -248,7 +253,7 @@ export default function DatasetBuilderPage() {
       }
     }, 500)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, timerBlocks, addToast])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, timerBlocks, addToast])
 
   // Clear selection if its block was deleted (e.g. via the node's own × button),
   // so the right panel falls back to the Getting Started view instead of going blank.
@@ -268,13 +273,14 @@ export default function DatasetBuilderPage() {
         case 'fan': return fanBlocks.some((b) => b.id === selectedBlockId)
         case 'alarm': return alarmBlocks.some((b) => b.id === selectedBlockId)
         case 'ac': return acBlocks.some((b) => b.id === selectedBlockId)
+        case 'phoneunlock': return phoneUnlockBlocks.some((b) => b.id === selectedBlockId)
         case 'door': return doorBlocks.some((b) => b.id === selectedBlockId)
         case 'bulb': return bulbBlocks.some((b) => b.id === selectedBlockId)
         default: return false
       }
     })()
     if (!exists) clearSelectedBlock()
-  }, [selectedBlockId, selectedBlockType, labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, sensorBlocks, conditionBlocks, timerBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, doorBlocks, bulbBlocks, clearSelectedBlock])
+  }, [selectedBlockId, selectedBlockType, labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, sensorBlocks, conditionBlocks, timerBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, doorBlocks, bulbBlocks, clearSelectedBlock])
 
   // Check data-scientist badge
   useEffect(() => {
@@ -503,7 +509,7 @@ export default function DatasetBuilderPage() {
                     <ConditionInspector key={selectedBlockId} />
                   ) : selectedBlockType === 'timer' ? (
                     <TimerInspector key={selectedBlockId} />
-                  ) : (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
+                  ) : (selectedBlockType === 'switch' || selectedBlockType === 'logic' || selectedBlockType === 'fan' || selectedBlockType === 'alarm' || selectedBlockType === 'ac' || selectedBlockType === 'phoneunlock' || selectedBlockType === 'door' || selectedBlockType === 'bulb') ? (
                     <LogicInspector key={selectedBlockId} />
                   ) : (
                     <BlockInspector key={selectedBlockId} />

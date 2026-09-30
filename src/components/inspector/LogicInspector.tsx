@@ -245,6 +245,47 @@ function ACBlockView({ id }: { id: string }) {
   )
 }
 
+function PhoneUnlockBlockView({ id }: { id: string }) {
+  const phoneUnlockBlocks = useRuleStore((s) => s.phoneUnlockBlocks)
+  const updatePhoneUnlockBlock = useRuleStore((s) => s.updatePhoneUnlockBlock)
+  const block = phoneUnlockBlocks.find((b) => b.id === id)
+  if (!block) return null
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">📱</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Actuator</p>
+          <p className="text-sm font-heading font-bold text-emerald-300">Phone Unlock</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updatePhoneUnlockBlock(block.id, { name: e.target.value })}
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-emerald-400 bg-transparent"
+        />
+      </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider mb-1">Status</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOn ? 'text-emerald-400' : 'text-white/40'}`}>
+          {block.isOn ? '🔓 Unlocked!' : '🔒 Locked'}
+        </p>
+      </div>
+
+      {!block.linkedRuleBlockId && (
+        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3">
+          <p className="text-xs text-emerald-200/80 font-body">Connect a rule block&apos;s output (or an AI model&apos;s prediction) to unlock this phone.</p>
+        </div>
+      )}
+    </>
+  )
+}
+
 function DoorBlockView({ id }: { id: string }) {
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
@@ -349,6 +390,7 @@ export default function LogicInspector() {
       {selectedBlockType === 'fan'   && <FanBlockView   id={selectedBlockId} />}
       {selectedBlockType === 'alarm' && <AlarmBlockView id={selectedBlockId} />}
       {selectedBlockType === 'ac'    && <ACBlockView    id={selectedBlockId} />}
+      {selectedBlockType === 'phoneunlock' && <PhoneUnlockBlockView id={selectedBlockId} />}
       {selectedBlockType === 'door'  && <DoorBlockView  id={selectedBlockId} />}
       {selectedBlockType === 'bulb'  && <BulbBlockView  id={selectedBlockId} />}
     </div>
