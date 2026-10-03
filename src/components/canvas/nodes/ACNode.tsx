@@ -4,16 +4,14 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { ACBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function ACNode({ data, selected }: NodeProps<{ block: ACBlock }>) {
   const { block } = data
   const removeACBlock = useRuleStore((s) => s.removeACBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'ac')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

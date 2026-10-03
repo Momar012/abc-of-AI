@@ -5,18 +5,16 @@ import { motion } from 'framer-motion'
 import { BulbBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBlock }>) {
   const { block } = data
   const removeBulbBlock = useWorkflowStore((s) => s.removeBulbBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const isOn = block.isOn
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'bulb')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

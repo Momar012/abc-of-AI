@@ -3,7 +3,6 @@
 import { NodeProps, Handle, Position } from 'reactflow'
 import { LogicBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 const LOGIC_EMOJI: Record<string, string> = { and: '∧', or: '∨', not: '¬' }
 const LOGIC_LABEL: Record<string, string> = { and: 'AND', or: 'OR', not: 'NOT' }
@@ -12,7 +11,6 @@ export default function LogicNode({ data, selected }: NodeProps<{ block: LogicBl
   const { block } = data
   const removeLogicBlock = useRuleStore((s) => s.removeLogicBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const outputColor =
     block.currentOutput === null ? 'text-white/40' :
@@ -26,7 +24,7 @@ export default function LogicNode({ data, selected }: NodeProps<{ block: LogicBl
   const botInput = '65%'
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'logic')}>
+    <div className="flex flex-col">
       {/* Input handle(s) */}
       <Handle
         type="target"
@@ -87,7 +85,7 @@ export default function LogicNode({ data, selected }: NodeProps<{ block: LogicBl
           {outputLabel}
         </div>
 
-        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to inspect</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>
       </div>
     </div>
   )

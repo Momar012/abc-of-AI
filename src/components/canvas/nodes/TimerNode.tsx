@@ -4,7 +4,6 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { TimerBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60)
@@ -16,7 +15,6 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
   const { block } = data
   const removeTimerBlock = useRuleStore((s) => s.removeTimerBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const timerMode = block.timerMode ?? 'duration'
 
@@ -37,7 +35,7 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
         : '⬛ Idle'
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'timer')}>
+    <div className="flex flex-col">
       {/* Input: trigger from a condition/logic rule output */}
       <Handle
         type="target"
@@ -102,7 +100,7 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
           <p className="text-xs text-white/35 font-body text-center">Connect a rule</p>
         )}
 
-        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to edit</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>
       </div>
     </div>
   )

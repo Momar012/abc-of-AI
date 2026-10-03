@@ -4,7 +4,6 @@ import { useEffect } from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import { ConditionBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 
 export default function ConditionNode({ data, selected }: NodeProps<{ block: ConditionBlock }>) {
@@ -13,7 +12,6 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   const updateConditionBlock = useRuleStore((s) => s.updateConditionBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const modelBlocks = useModelStore((s) => s.modelBlocks)
   const trainedModels = useModelStore((s) => s.trainedModels)
 
@@ -81,7 +79,6 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
   return (
     <div
       className="flex flex-col"
-      onClick={() => setSelectedBlock(block.id, 'condition')}
       title={needsAttention ? attentionMessage : undefined}
     >
       {/* Input: from sensor OR model prediction */}
@@ -179,7 +176,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
           )}
         </div>
 
-        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to edit</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>
       </div>
     </div>
   )

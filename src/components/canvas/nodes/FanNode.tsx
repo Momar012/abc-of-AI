@@ -4,16 +4,14 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { FanBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function FanNode({ data, selected }: NodeProps<{ block: FanBlock }>) {
   const { block } = data
   const removeFanBlock = useRuleStore((s) => s.removeFanBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'fan')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

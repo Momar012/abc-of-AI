@@ -4,16 +4,14 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { AlarmBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function AlarmNode({ data, selected }: NodeProps<{ block: AlarmBlock }>) {
   const { block } = data
   const removeAlarmBlock = useRuleStore((s) => s.removeAlarmBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'alarm')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

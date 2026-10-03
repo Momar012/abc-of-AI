@@ -188,6 +188,13 @@ const nodeTypes = {
   image: ImageNode,
 }
 
+// Node types that open a Properties panel on double-click (text/image edit inline instead)
+type InspectableType = Parameters<ReturnType<typeof useUIStore.getState>['setSelectedBlock']>[1]
+const INSPECTABLE_TYPES = new Set<string>([
+  'labelled', 'unlabelled', 'model', 'rl-gridworld', 'sensor', 'condition', 'timer', 'logic', 'switch',
+  'fan', 'alarm', 'ac', 'phoneunlock', 'display', 'bin', 'door', 'bulb',
+])
+
 const edgeTypes = {
   dataset: DatasetEdge,
   test: TestEdge,
@@ -285,6 +292,7 @@ export default function DatasetCanvas() {
 
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
+  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const leftPanelCollapsed = useUIStore((s) => s.leftPanelCollapsed)
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
@@ -903,7 +911,13 @@ export default function DatasetCanvas() {
     return () => clearInterval(interval)
   }, [tickTimers])
 
-  // Keyboard shortcuts: H = hand/pan tool, V = selection tool, T = text tool, Escape = back to selection tool
+  // Double-click a block (Select tool) to open its Properties panel
+  const onNodeDoubleClick = useCallback((_: React.MouseEvent, node: Node) => {
+    if (canvasTool !== 'select' || !node.type || !INSPECTABLE_TYPES.has(node.type)) return
+    setSelectedBlock(node.id, node.type as InspectableType)
+  }, [canvasTool, setSelectedBlock])
+
+  // Keyboard shortcuts: H = hand/pan tool, V = selection tool, T = text tool, Escape = back to selection tool + close Properties
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
@@ -916,11 +930,12 @@ export default function DatasetCanvas() {
         setCanvasTool('text')
       } else if (e.key === 'Escape') {
         setCanvasTool('select')
+        clearSelectedBlock()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [setCanvasTool])
+  }, [setCanvasTool, clearSelectedBlock])
 
   // Paste an image from the OS clipboard (Ctrl+V, Figma-style) straight onto
   // the canvas — e.g. a cropped screenshot of a question copied from a PDF.
@@ -1025,6 +1040,9 @@ export default function DatasetCanvas() {
         onSelectionChange={({ nodes }: OnSelectionChangeParams) =>
           setCanvasSelection(nodes.map((n) => ({ id: n.id, type: n.type ?? '' })))
         }
+        onNodeDoubleClick={onNodeDoubleClick}
+        onPaneClick={clearSelectedBlock}
+        zoomOnDoubleClick={false}
         onInit={(instance) => { rfInstanceRef.current = instance }}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}

@@ -363,6 +363,7 @@ function SelectionBar() {
   const removeModelBlock      = useModelStore((s) => s.removeModelBlock)
   const removeRLBlock         = useRLStore((s) => s.removeRLBlock)
   const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
+  const removeImageBlock      = useCanvasStore((s) => s.removeImageBlock)
 
   const count = canvasSelection.length
   const isSingleModel = count === 1 && canvasSelection[0]?.type === 'model'
@@ -459,8 +460,11 @@ function SelectionBar() {
         case 'model':       removeModelBlock(id);     break
         case 'rl-gridworld':removeRLBlock(id);        break
         case 'text':        removeTextBlock(id);      break
+        case 'image':       removeImageBlock(id);     break
       }
     }
+    const { selectedBlockId, clearSelectedBlock } = useUIStore.getState()
+    if (selectedBlockId && canvasSelection.some((n) => n.id === selectedBlockId)) clearSelectedBlock()
     setCanvasSelection([])
   }
 

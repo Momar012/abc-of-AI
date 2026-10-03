@@ -7,7 +7,6 @@ import type { TestResult } from '@/types/model'
 import type { DataItem } from '@/types/dataset'
 import { useModelStore } from '@/store/useModelStore'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 import { runTextInference, predictClusterText } from '@/lib/textLearner'
 
 function HandleTooltip({ color, label, detail }: { color: string; label: string; detail: string }) {
@@ -43,7 +42,6 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
   const updateModelBlock = useModelStore((s) => s.updateModelBlock)
   const trainedModels = useModelStore((s) => s.trainedModels)
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
 
   const trainedModel = trainedModels.find((m) => m.id === block.trainedModelId)
@@ -179,7 +177,6 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
 
       <div
         className="glass-card w-56 flex flex-col gap-2 px-4 py-3"
-        onClick={() => setSelectedBlock(block.id, 'model')}
         style={{
           borderColor: block.status === 'trained' ? 'rgba(52,211,153,0.3)' : undefined,
           boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
@@ -240,7 +237,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
 
         {/* Hint */}
         <p className="text-xs text-white/35 font-body text-center mt-1">
-          Click to inspect
+          Double-click for properties
         </p>
       </div>
     </div>

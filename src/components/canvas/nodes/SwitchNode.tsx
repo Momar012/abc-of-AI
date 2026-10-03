@@ -4,14 +4,12 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion } from 'framer-motion'
 import { SwitchBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function SwitchNode({ data, selected }: NodeProps<{ block: SwitchBlock }>) {
   const { block } = data
   const removeSwitchBlock = useRuleStore((s) => s.removeSwitchBlock)
   const updateSwitchBlock = useRuleStore((s) => s.updateSwitchBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const toggle = () => {
     updateSwitchBlock(block.id, { isOn: !block.isOn })
@@ -19,7 +17,7 @@ export default function SwitchNode({ data, selected }: NodeProps<{ block: Switch
   }
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'switch')}>
+    <div className="flex flex-col">
       <Handle
         type="source"
         position={Position.Right}

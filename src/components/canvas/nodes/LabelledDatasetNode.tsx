@@ -3,16 +3,10 @@
 import { NodeProps, Handle, Position } from 'reactflow'
 import { LabelledDatasetBlock as LabelledBlock } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function LabelledDatasetNode({ data, selected }: NodeProps<{ block: LabelledBlock }>) {
   const removeLabelledBlock = useDatasetStore((s) => s.removeLabelledBlock)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
-
-  const handleClick = () => {
-    setSelectedBlock(block.id, 'labelled')
-  }
 
   const totalItems =
     block.itemIds.length + block.labels.reduce((sum, l) => sum + l.itemIds.length, 0)
@@ -30,7 +24,6 @@ export default function LabelledDatasetNode({ data, selected }: NodeProps<{ bloc
 
       <div
         className="glass-card w-56 flex flex-col gap-2 px-4 py-3"
-        onClick={handleClick}
         style={{
           boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
           transition: 'box-shadow 0.2s ease',
@@ -86,7 +79,7 @@ export default function LabelledDatasetNode({ data, selected }: NodeProps<{ bloc
 
         {/* Hint */}
         <p className="text-xs text-white/35 font-body text-center mt-1">
-          Click to inspect
+          Double-click for properties
         </p>
       </div>
 

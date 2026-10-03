@@ -5,7 +5,6 @@ import { NodeProps, Handle, Position } from 'reactflow'
 import { motion, useAnimationControls } from 'framer-motion'
 import { BinBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 import { BIN_COLORS } from '@/lib/binColors'
 
 const SPARKLES = [
@@ -16,7 +15,6 @@ export default function BinNode({ data, selected }: NodeProps<{ block: BinBlock 
   const { block } = data
   const removeBinBlock = useRuleStore((s) => s.removeBinBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const isOn = block.isOn
   const c = BIN_COLORS[block.color] ?? BIN_COLORS.blue
@@ -41,7 +39,7 @@ export default function BinNode({ data, selected }: NodeProps<{ block: BinBlock 
   }, [isOn, bodyControls])
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'bin')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

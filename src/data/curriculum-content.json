@@ -187,7 +187,7 @@
         "title": "🔬 Guided Lab 4:🚶Motion Light",
         "icon": "🚀",
         "instruction": "## Goal\n\nLearn how to use an **IF Condition** with a **Motion Sensor**.\n\n\n\n\n## Problem\n\nIf **motion** is detected, turn the **bulb** ON.\n\n\n\n\n## Instructions\n\n- Drag **Motion Sensor** from the **Rule-Based menu**.\n- Drag **IF Condition** from the **Rule-Based menu**.\n- Drag **Bulb** from the **Actions** menu.\n- Connect **Motion Sensor** to the **IF Condition**.\n- Connect the **IF Condition** to the **Bulb**.\n- Double-click the **IF Condition**.\n- Set the condition to **Motion Detected**.\n- Double-click the **Motion Sensor**.\n- Click the **No Motion** button to change its state.\n- Observe the result.\n\n\n\n\n## Expected Result\n\n✅ When **Motion** is detected, the **bulb** turns **ON**.\n✅ When **No Motion** is detected, the **bulb** remains **OFF**.\n\n\n\n\n**What You Learned**\n\n1. An **IF Condition** helps computers make decisions.\n2. Sensors provide information that can be used in rules.",
-        "canvasHint": "Click on a block to select it, its settings appear in the Properties panel on the right."
+        "canvasHint": "Double-click a block to open its settings in the Properties panel on the right."
       },
       {
         "id": "challenge-fool-it",

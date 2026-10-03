@@ -3,16 +3,10 @@
 import { NodeProps, Handle, Position } from 'reactflow'
 import { UnlabelledDatasetBlock as UnlabelledBlock } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ block: UnlabelledBlock }>) {
   const removeUnlabelledBlock = useDatasetStore((s) => s.removeUnlabelledBlock)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
-
-  const handleClick = () => {
-    setSelectedBlock(block.id, 'unlabelled')
-  }
 
   return (
     <div className="flex flex-col">
@@ -26,7 +20,6 @@ export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ bl
 
       <div
         className="glass-card w-48 flex flex-col gap-2 px-4 py-3"
-        onClick={handleClick}
         style={{
           boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
           transition: 'box-shadow 0.2s ease',
@@ -54,7 +47,7 @@ export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ bl
 
         {/* Hint */}
         <p className="text-xs text-white/35 font-body text-center mt-1">
-          Click to inspect
+          Double-click for properties
         </p>
       </div>
 

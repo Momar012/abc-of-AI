@@ -5,18 +5,16 @@ import { motion } from 'framer-motion'
 import { DoorBlock } from '@/types/workflow'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 
 export default function DoorNode({ data, selected }: NodeProps<{ block: DoorBlock }>) {
   const { block } = data
   const removeDoorBlock = useWorkflowStore((s) => s.removeDoorBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
 
   const isOpen = block.isOpen
 
   return (
-    <div className="flex flex-col" onClick={() => setSelectedBlock(block.id, 'door')}>
+    <div className="flex flex-col">
       <Handle
         type="target"
         position={Position.Left}

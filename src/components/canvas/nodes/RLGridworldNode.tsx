@@ -3,7 +3,6 @@
 import { NodeProps } from 'reactflow'
 import { RLGridworldBlock } from '@/types/rl'
 import { useRLStore } from '@/store/useRLStore'
-import { useUIStore } from '@/store/useUIStore'
 
 const CELL_SIZE = 26 // px per cell on canvas node
 
@@ -30,7 +29,6 @@ function MiniRewardChart({ history }: { history: number[] }) {
 export default function RLGridworldNode({ data, selected }: NodeProps<{ block: RLGridworldBlock }>) {
   const removeRLBlock = useRLStore((s) => s.removeRLBlock)
   const setCell = useRLStore((s) => s.setCell)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const { block } = data
 
   const isTraining = block.trainingStatus === 'training'
@@ -72,7 +70,6 @@ export default function RLGridworldNode({ data, selected }: NodeProps<{ block: R
           boxShadow: selected ? '0 0 0 2px rgba(139,92,246,0.9), 0 0 20px rgba(139,92,246,0.4)' : undefined,
           transition: 'box-shadow 0.2s ease',
         }}
-        onClick={() => setSelectedBlock(block.id, 'rl-gridworld')}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -185,7 +182,7 @@ export default function RLGridworldNode({ data, selected }: NodeProps<{ block: R
 
         {/* Status / hint */}
         {block.trainingStatus === 'idle' && (
-          <p className="text-xs text-white/35 font-body text-center">Double-click to configure</p>
+          <p className="text-xs text-white/35 font-body text-center">Double-click for properties</p>
         )}
         {block.trainingStatus === 'paused' && (
           <p className="text-xs text-amber-400/70 font-body text-center">⏸ Paused</p>

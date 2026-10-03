@@ -3,7 +3,6 @@
 import { NodeProps, Handle, Position } from 'reactflow'
 import { SensorBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
-import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import TextInputSensorControl from '../TextInputSensorControl'
 
@@ -21,7 +20,6 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
   const removeSensorBlock = useRuleStore((s) => s.removeSensorBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
   const conditionBlocks = useRuleStore((s) => s.conditionBlocks)
-  const setSelectedBlock = useUIStore((s) => s.setSelectedBlock)
   const modelBlocks = useModelStore((s) => s.modelBlocks)
 
   const emoji = SENSOR_EMOJI[block.sensorType] ?? '📡'
@@ -41,7 +39,6 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
   return (
     <div
       className="flex flex-col"
-      onClick={() => setSelectedBlock(block.id, 'sensor')}
       title={!isConnected ? 'Wire this sensor into an IF block (or a model) to use it.' : undefined}
     >
       <Handle
@@ -139,7 +136,7 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
           />
         )}
 
-        <p className="text-[10px] text-white/35 font-body text-center italic">double-click to inspect</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>
       </div>
     </div>
   )
