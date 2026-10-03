@@ -56,6 +56,26 @@ function _loadMobileNet(){
 `
 }
 
+// Freezes the current camera frame into the preview <img> with a shutter flash, so the
+// photo being classified stays on screen even if the scene in front of the camera changes.
+const FREEZE_FRAME_JS = `function freezeFrame(videoEl, previewEl) {
+  var snap = document.createElement('canvas');
+  snap.width = videoEl.videoWidth || 640; snap.height = videoEl.videoHeight || 480;
+  snap.getContext('2d').drawImage(videoEl, 0, 0, snap.width, snap.height);
+  var oldUrl = previewEl._prevUrl || previewEl._url;
+  if (oldUrl) { URL.revokeObjectURL(oldUrl); previewEl._prevUrl = null; previewEl._url = null; }
+  previewEl.src = snap.toDataURL('image/jpeg', 0.85);
+  previewEl.style.objectFit = 'cover';
+  previewEl.style.display = 'block';
+  videoEl.style.display = 'none';
+  var f = document.createElement('div'); f.className = 'cam-flash'; previewEl.parentNode.appendChild(f);
+  setTimeout(function() { if (f.parentNode) f.parentNode.removeChild(f); }, 450);
+  _blip(1500, 0.05, 'square');
+}
+`
+const CAM_FLASH_CSS = `.cam-flash{position:absolute;inset:0;background:#fff;pointer-events:none;animation:cam-flash 0.4s ease-out forwards}
+@keyframes cam-flash{0%{opacity:0.9}100%{opacity:0}}`
+
 /** JS snippet defining `_loadMobileNet()` with the weights inlined. Cached across exports. */
 function getMobileNetLoaderScript(): Promise<string> {
   if (!_mobileNetLoaderCache) {
@@ -1912,6 +1932,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .model-hint{font-size:0.73rem;color:rgba(255,255,255,0.32)}
 .cam-wrap{position:relative;width:100%;max-width:400px;margin:0 auto;border-radius:1rem;overflow:hidden;background:#000;aspect-ratio:4/3}
 .cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+${CAM_FLASH_CSS}
 .cam-wrap canvas{display:none}
 .cam-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#111}
 .cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;padding:1rem}
@@ -2006,8 +2027,14 @@ function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAu
 function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
 
 ${mobileNetLoader}
+${FREEZE_FRAME_JS}
 var MODELS = ${modelsJson};
 var _mobileNet = null;
+var _frozen = {};
+function setCamBtnLabel(mi, retake) {
+  var b = document.getElementById('cambtn-' + mi);
+  if (b) b.textContent = retake ? '🔄 Retake' : '📷 Start Camera';
+}
 
 // KNN inference — pure JS, no extra deps
 function knnPredict(queryVec, knnData, labels, labelIds, k) {
@@ -2123,10 +2150,13 @@ function handleUploadChange(modelIdx, file) {
   var ovEl = document.getElementById('ov-' + modelIdx);
   var resultsId = 'res-' + modelIdx;
   if (!file) return;
+  _frozen[modelIdx] = false;
+  setCamBtnLabel(modelIdx, false);
   if (previewEl._prevUrl) { URL.revokeObjectURL(previewEl._prevUrl); }
   var url = URL.createObjectURL(file);
   previewEl._prevUrl = url;
   previewEl.src = url;
+  previewEl.style.objectFit = '';
   previewEl.style.display = 'block';
   if (videoEl) videoEl.style.display = 'none';
   if (ovEl) ovEl.style.display = 'none';
@@ -2147,21 +2177,28 @@ function predictClick(modelIdx) {
   var overlayEl = document.getElementById('ov-' + modelIdx);
   if (!_mobileNet) { showToast('AI engine still loading — please wait'); return; }
 
-  var usingUpload = previewEl && previewEl.style.display === 'block' && _lastUploadImg[modelIdx];
-  if (!usingUpload && (!videoEl || !videoEl.srcObject)) {
-    showToast('Start the camera or upload a photo first 📸');
-    return;
+  // A frozen camera photo is re-used as-is; otherwise an uploaded photo; otherwise snap the live camera.
+  var frozen = _frozen[modelIdx];
+  var usingUpload = !frozen && previewEl && previewEl.style.display === 'block' && _lastUploadImg[modelIdx];
+  if (!frozen && !usingUpload) {
+    if (!videoEl || !videoEl.srcObject) { showToast('Start the camera or upload a photo first 📸'); return; }
+    if (videoEl.readyState < 2) { showToast('Camera is still warming up — try again in a second'); return; }
   }
   if (overlayEl) overlayEl.style.display = 'none';
 
-  runPrediction(modelIdx, async function() {
-    var ctx2d = canvasEl.getContext('2d');
+  var ctx2d = canvasEl.getContext('2d');
+  if (usingUpload) {
     canvasEl.width = 224; canvasEl.height = 224;
-    if (usingUpload) {
-      ctx2d.drawImage(_lastUploadImg[modelIdx], 0, 0, 224, 224);
-    } else {
-      ctx2d.drawImage(videoEl, 0, 0, 224, 224);
-    }
+    ctx2d.drawImage(_lastUploadImg[modelIdx], 0, 0, 224, 224);
+  } else if (!frozen) {
+    canvasEl.width = 224; canvasEl.height = 224;
+    ctx2d.drawImage(videoEl, 0, 0, 224, 224);
+    freezeFrame(videoEl, previewEl);
+    _frozen[modelIdx] = true;
+    setCamBtnLabel(modelIdx, true);
+  }
+
+  runPrediction(modelIdx, async function() {
     var imgTensor = tf.browser.fromPixels(canvasEl);
     var features = _mobileNet.infer(imgTensor, true);
     var featureValues = Array.from(await features.data());
@@ -2205,7 +2242,7 @@ _loadMobileNet().then(function(net) {
         '<div class="cam-overlay" id="ov-' + mi + '">📷 Click "Start Camera" to begin</div>' +
       '</div>' +
       '<div class="cam-actions">' +
-        '<button class="predict-btn" onclick="startCam(' + mi + ')">📷 Start Camera</button>' +
+        '<button class="predict-btn" id="cambtn-' + mi + '" onclick="startCam(' + mi + ')">📷 Start Camera</button>' +
         '<button class="predict-btn" onclick="predictClick(' + mi + ')">Predict ✨</button>' +
         '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="handleUploadChange(' + mi + ',this.files[0])"></label>' +
       '</div>' +
@@ -2221,8 +2258,11 @@ function startCam(mi) {
   var videoEl = document.getElementById('cam-' + mi);
   var ovEl = document.getElementById('ov-' + mi);
   var previewEl = document.getElementById('prev-' + mi);
-  if (previewEl) { previewEl.style.display = 'none'; }
+  _frozen[mi] = false;
+  setCamBtnLabel(mi, false);
+  if (previewEl) { previewEl.style.display = 'none'; previewEl.style.objectFit = ''; }
   if (videoEl) videoEl.style.display = 'block';
+  if (videoEl && videoEl.srcObject) return; // Retake: camera already running, just go back to live view
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
     .catch(function() {
@@ -2274,7 +2314,7 @@ function buildClusterHTML(
         '<div class="cam-overlay" id="cluster-ov">📷 Click Start Camera to begin</div>' +
       '</div>' +
       '<div class="cam-actions">' +
-        '<button class="predict-btn" onclick="startClusterCam()">📷 Start Camera</button>' +
+        '<button class="predict-btn" id="cluster-cambtn" onclick="startClusterCam()">📷 Start Camera</button>' +
         '<button class="predict-btn" onclick="clusterFrame()">Find My Group ✨</button>' +
         '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="clusterUpload(this.files[0])"></label>' +
       '</div>' +` : `
@@ -2320,6 +2360,7 @@ main{flex:1;display:flex;flex-direction:column;align-items:center;gap:1.5rem;pad
 .predict-btn:active{transform:scale(0.97)}
 .cam-wrap{position:relative;width:100%;max-width:400px;margin:0 auto;border-radius:1rem;overflow:hidden;background:#000;aspect-ratio:4/3}
 .cam-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+${CAM_FLASH_CSS}
 .cam-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55);font-size:0.85rem;color:rgba(255,255,255,0.6);text-align:center;padding:1rem}
 .cam-actions{display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center}
 .upload-btn{padding:0.55rem 1.25rem;border-radius:0.625rem;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.75);font-size:0.82rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all 0.15s}
@@ -2402,6 +2443,12 @@ var VOCAB = ${vocabJson};
 var IDF = ${idfJson};
 var IS_IMAGE = ${isImage ? 'true' : 'false'};
 ${mobileNetLoader}
+${isImage ? FREEZE_FRAME_JS : ''}
+var _clusterFrozen = false;
+function setClusterCamBtnLabel(retake) {
+  var b = document.getElementById('cluster-cambtn');
+  if (b) b.textContent = retake ? '🔄 Retake' : '📷 Start Camera';
+}
 var _mobileNet = null;
 var _previewReady = false;
 
@@ -2510,14 +2557,18 @@ function clusterText() {
 function clusterFrame() {
   var canvasEl = document.getElementById('cluster-cap');
   if (!_mobileNet) { showToast('AI engine still loading…'); return; }
-  if (!_previewReady) {
-    // Live camera capture
+  if (!_previewReady && !_clusterFrozen) {
+    // Live camera capture — snap the frame and freeze it on screen
     var videoEl = document.getElementById('cluster-cam');
     var ovEl = document.getElementById('cluster-ov');
     if (!videoEl || !videoEl.srcObject) { showToast('Start the camera first!'); return; }
+    if (videoEl.readyState < 2) { showToast('Camera is still warming up — try again in a second'); return; }
     if (ovEl) ovEl.style.display = 'none';
     canvasEl.width = 224; canvasEl.height = 224;
     canvasEl.getContext('2d').drawImage(videoEl, 0, 0, 224, 224);
+    freezeFrame(videoEl, document.getElementById('cluster-prev'));
+    _clusterFrozen = true;
+    setClusterCamBtnLabel(true);
   }
   _previewReady = false;
   runClusterPrediction(async function() {
@@ -2541,7 +2592,9 @@ function clusterUpload(file) {
   img.onload = function() {
     canEl.width = 224; canEl.height = 224;
     canEl.getContext('2d').drawImage(img, 0, 0, 224, 224);
-    if (prevEl) { prevEl._url = url; prevEl.src = url; prevEl.style.display = 'block'; }
+    _clusterFrozen = false;
+    setClusterCamBtnLabel(false);
+    if (prevEl) { prevEl._url = url; prevEl.src = url; prevEl.style.objectFit = ''; prevEl.style.display = 'block'; }
     if (vidEl) vidEl.style.display = 'none';
     if (ovEl) ovEl.style.display = 'none';
     _previewReady = true;
@@ -2553,11 +2606,14 @@ function clusterUpload(file) {
 
 function startClusterCam() {
   _previewReady = false;
+  _clusterFrozen = false;
+  setClusterCamBtnLabel(false);
   var prevEl = document.getElementById('cluster-prev');
   var videoEl = document.getElementById('cluster-cam');
   var ovEl = document.getElementById('cluster-ov');
-  if (prevEl) prevEl.style.display = 'none';
+  if (prevEl) { prevEl.style.display = 'none'; prevEl.style.objectFit = ''; }
   if (videoEl) videoEl.style.display = 'block';
+  if (videoEl && videoEl.srcObject) return; // Retake: camera already running, just go back to live view
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(function(stream) { videoEl.srcObject = stream; if (ovEl) ovEl.style.display = 'none'; })
     .catch(function() {
@@ -2592,7 +2648,7 @@ function buildUI() {
       '<div class="cam-overlay" id="cluster-ov">📷 Click Start Camera to begin</div>' +
     '</div>' +
     '<div class="cam-actions">' +
-      '<button class="predict-btn" onclick="startClusterCam()">📷 Start Camera</button>' +
+      '<button class="predict-btn" id="cluster-cambtn" onclick="startClusterCam()">📷 Start Camera</button>' +
       '<button class="predict-btn" onclick="clusterFrame()">Find My Group ✨</button>' +
       '<label class="upload-btn">📁 Upload Photo<input type="file" accept="image/*" style="display:none" onchange="clusterUpload(this.files[0])"></label>' +
     '</div>'

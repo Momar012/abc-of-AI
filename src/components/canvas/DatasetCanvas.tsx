@@ -786,12 +786,25 @@ export default function DatasetCanvas() {
   // Hold Space for a temporary "open hand" pan cursor (standard Figma/Photoshop behavior)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
 
-  // On touch devices, a one-finger drag on empty canvas should pan — the
-  // universal touch-canvas convention — rather than draw a rubber-band
-  // selection box, which is what the default Select tool does for a mouse.
-  const [isTouchDevice] = useState(
-    () => typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  // A one-finger drag on empty canvas should pan — the universal touch-canvas
+  // convention — rather than draw a rubber-band selection box, which is what the
+  // Select tool does for a mouse. Decide by the pointer actually in use, not by
+  // whether the device supports touch: touchscreen laptops report touch support
+  // (maxTouchPoints > 0) but are mostly driven by a mouse/touchpad, and treating
+  // them as touch-only made box selection impossible there.
+  const [isTouchInput, setIsTouchInput] = useState(
+    () => typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
   )
+  useEffect(() => {
+    // pointermove lets a hovering mouse switch back to selection mode before the press.
+    const onPointer = (e: PointerEvent) => setIsTouchInput(e.pointerType === 'touch')
+    window.addEventListener('pointerdown', onPointer, true)
+    window.addEventListener('pointermove', onPointer, true)
+    return () => {
+      window.removeEventListener('pointerdown', onPointer, true)
+      window.removeEventListener('pointermove', onPointer, true)
+    }
+  }, [])
 
   // Drag-to-draw a text box while the Text tool is active. A simple click
   // (no meaningful drag distance) falls back to placing a default-size box.
@@ -998,13 +1011,13 @@ export default function DatasetCanvas() {
         minZoom={0.05}
         maxZoom={2}
         panOnDrag={
-          canvasTool === 'pan' || isSpacePressed || (isTouchDevice && canvasTool === 'select')
+          canvasTool === 'pan' || isSpacePressed || (isTouchInput && canvasTool === 'select')
             ? true
             : canvasTool === 'text'
             ? false
             : [1, 2]
         }
-        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && !isTouchDevice}
+        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && !isTouchInput}
         selectionMode={SelectionMode.Partial}
         nodesDraggable={canvasInteractive && canvasTool === 'select' && !isSpacePressed}
         nodesConnectable={canvasInteractive}
