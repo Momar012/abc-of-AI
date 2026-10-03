@@ -145,7 +145,7 @@ export default function ConditionNode({ data, selected }: NodeProps<{ block: Con
                   evaluateGraph()
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-yellow-400 cursor-pointer"
+                className="nodrag w-full px-2 py-1.5 rounded-lg border border-white/15 text-white text-xs font-body outline-none focus:border-yellow-400 cursor-pointer"
                 style={{ backgroundColor: '#1e1b4b' }}
               >
                 <option value="" style={{ backgroundColor: '#1e1b4b' }}>Pick a label…</option>

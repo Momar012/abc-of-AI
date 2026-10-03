@@ -5,6 +5,7 @@ import { SensorBlock } from '@/types/rules'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useModelStore } from '@/store/useModelStore'
 import TextInputSensorControl from '../TextInputSensorControl'
+import SensorValueControl from '../SensorValueControl'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -86,39 +87,22 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         )}
 
         {/* Inline value control */}
-        {isNumeric && (() => {
-          const min = block.min ?? 0
-          const max = block.max ?? 100
-          const pct = Math.round(((Number(block.value) - min) / (max - min)) * 100)
-          return (
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-white/40 font-body">{min}</span>
-                <span className="font-heading font-bold text-orange-300">
-                  {String(block.value)}{block.unit}
-                </span>
-                <span className="text-white/40 font-body">{max}</span>
-              </div>
-              <input
-                type="range"
-                min={min}
-                max={max}
-                step={1}
-                value={Number(block.value)}
-                onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => handleValueChange(Number(e.target.value))}
-                className="sensor-slider w-full"
-                style={{ background: `linear-gradient(to right, #fb923c ${pct}%, rgba(255,255,255,0.15) ${pct}%)` }}
-              />
-            </div>
-          )
-        })()}
+        {isNumeric && (
+          <SensorValueControl
+            size="sm"
+            value={Number(block.value)}
+            min={block.min ?? 0}
+            max={block.max ?? 100}
+            unit={block.unit}
+            onChange={handleValueChange}
+          />
+        )}
 
         {block.sensorType === 'motion' && (
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => handleValueChange(!block.value)}
-            className={`w-full py-1.5 rounded-lg text-xs font-heading font-bold transition-all ${
+            className={`nodrag w-full py-1.5 rounded-lg text-xs font-heading font-bold transition-all ${
               block.value
                 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50'
                 : 'bg-white/5 text-white/40 border border-white/10'
@@ -129,11 +113,13 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         )}
 
         {block.sensorType === 'text-input' && (
-          <TextInputSensorControl
-            value={String(block.value)}
-            onSend={handleValueChange}
-            rows={2}
-          />
+          <div className="nodrag nopan">
+            <TextInputSensorControl
+              value={String(block.value)}
+              onSend={handleValueChange}
+              rows={2}
+            />
+          </div>
         )}
 
         <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>

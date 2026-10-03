@@ -56,7 +56,7 @@ export default function SwitchNode({ data, selected }: NodeProps<{ block: Switch
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={toggle}
-          className={`relative w-16 h-8 rounded-full border-2 transition-colors ${
+          className={`nodrag relative w-16 h-8 rounded-full border-2 transition-colors ${
             block.isOn ? 'bg-lime-500/30 border-lime-400' : 'bg-white/10 border-white/20'
           }`}
         >

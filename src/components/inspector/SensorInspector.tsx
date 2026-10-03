@@ -3,6 +3,7 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
 import TextInputSensorControl from '@/components/canvas/TextInputSensorControl'
+import SensorValueControl from '@/components/canvas/SensorValueControl'
 
 const SENSOR_EMOJI: Record<string, string> = {
   temperature: '🌡️',
@@ -32,9 +33,6 @@ export default function SensorInspector() {
   if (!block) return null
 
   const isNumeric = block.sensorType !== 'motion' && block.sensorType !== 'text-input'
-  const pct = isNumeric
-    ? Math.round(((Number(block.value) - (block.min ?? 0)) / ((block.max ?? 100) - (block.min ?? 0))) * 100)
-    : 0
   const emoji = SENSOR_EMOJI[block.sensorType] ?? '📡'
 
   const setValue = (v: number | boolean | string) => {
@@ -81,25 +79,14 @@ export default function SensorInspector() {
         <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Current Value</label>
 
         {isNumeric && (
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-white/40 font-body">{block.min ?? 0}{block.unit}</span>
-              <span className="text-lg font-heading font-extrabold text-orange-300">
-                {String(block.value)}<span className="text-sm text-white/60 ml-0.5">{block.unit}</span>
-              </span>
-              <span className="text-xs text-white/40 font-body">{block.max ?? 100}{block.unit}</span>
-            </div>
-            <input
-              type="range"
-              min={block.min ?? 0}
-              max={block.max ?? 100}
-              step={1}
-              value={Number(block.value)}
-              onChange={(e) => setValue(Number(e.target.value))}
-              className="sensor-slider w-full"
-              style={{ background: `linear-gradient(to right, #fb923c ${pct}%, rgba(255,255,255,0.15) ${pct}%)` }}
-            />
-          </div>
+          <SensorValueControl
+            size="lg"
+            value={Number(block.value)}
+            min={block.min ?? 0}
+            max={block.max ?? 100}
+            unit={block.unit}
+            onChange={setValue}
+          />
         )}
 
         {block.sensorType === 'motion' && (
