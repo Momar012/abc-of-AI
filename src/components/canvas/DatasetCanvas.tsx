@@ -43,6 +43,7 @@ import AlarmNode from './nodes/AlarmNode'
 import ACNode from './nodes/ACNode'
 import PhoneUnlockNode from './nodes/PhoneUnlockNode'
 import DisplayNode from './nodes/DisplayNode'
+import BinNode from './nodes/BinNode'
 import TimerNode from './nodes/TimerNode'
 import TextNode from './nodes/TextNode'
 import ImageNode from './nodes/ImageNode'
@@ -71,6 +72,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
   const addACBlock = useRuleStore((s) => s.addACBlock)
   const addPhoneUnlockBlock = useRuleStore((s) => s.addPhoneUnlockBlock)
   const addDisplayBlock = useRuleStore((s) => s.addDisplayBlock)
+  const addBinBlock = useRuleStore((s) => s.addBinBlock)
   const addTimerBlock = useRuleStore((s) => s.addTimerBlock)
   const quickAddRequest = useUIStore((s) => s.quickAddRequest)
   const clearQuickAddRequest = useUIStore((s) => s.clearQuickAddRequest)
@@ -105,6 +107,7 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
     if (blockType === 'ac') { addACBlock(pos); return useRuleStore.getState().acBlocks.at(-1)?.id }
     if (blockType === 'phoneunlock') { addPhoneUnlockBlock(pos); return useRuleStore.getState().phoneUnlockBlocks.at(-1)?.id }
     if (blockType === 'display') { addDisplayBlock(pos); return useRuleStore.getState().displayBlocks.at(-1)?.id }
+    if (blockType === 'bin') { addBinBlock(pos); return useRuleStore.getState().binBlocks.at(-1)?.id }
     if (blockType === 'timer') { addTimerBlock(pos); return useRuleStore.getState().timerBlocks.at(-1)?.id }
     return undefined
   }
@@ -179,6 +182,7 @@ const nodeTypes = {
   ac: ACNode,
   phoneunlock: PhoneUnlockNode,
   display: DisplayNode,
+  bin: BinNode,
   timer: TimerNode,
   text: TextNode,
   image: ImageNode,
@@ -196,7 +200,7 @@ const edgeTypes = {
 const SENSOR_BLOCKED_HANDLES: Record<string, string> = {
   'logic-in-1': 'a Logic gate', 'logic-in-2': 'a Logic gate', 'logic-in': 'a Logic gate',
   'timer-in': 'a Timer',
-  'door-in': 'a Door', 'bulb-in': 'a Bulb', 'fan-in': 'a Fan', 'alarm-in': 'an Alarm', 'ac-in': 'an AC', 'phoneunlock-in': 'a Phone Unlock', 'display-in': 'a Display',
+  'door-in': 'a Door', 'bulb-in': 'a Bulb', 'fan-in': 'a Fan', 'alarm-in': 'an Alarm', 'ac-in': 'an AC', 'phoneunlock-in': 'a Phone Unlock', 'display-in': 'a Display', 'bin-in': 'a Waste Bin',
 }
 
 export default function DatasetCanvas() {
@@ -231,6 +235,7 @@ export default function DatasetCanvas() {
   const acBlocks = useRuleStore((s) => s.acBlocks)
   const phoneUnlockBlocks = useRuleStore((s) => s.phoneUnlockBlocks)
   const displayBlocks = useRuleStore((s) => s.displayBlocks)
+  const binBlocks = useRuleStore((s) => s.binBlocks)
   const timerBlocks = useRuleStore((s) => s.timerBlocks)
   const updateSensorBlockPosition = useRuleStore((s) => s.updateSensorBlockPosition)
   const removeSensorBlock = useRuleStore((s) => s.removeSensorBlock)
@@ -257,6 +262,9 @@ export default function DatasetCanvas() {
   const updateDisplayBlockPosition = useRuleStore((s) => s.updateDisplayBlockPosition)
   const updateDisplayBlock = useRuleStore((s) => s.updateDisplayBlock)
   const removeDisplayBlock = useRuleStore((s) => s.removeDisplayBlock)
+  const updateBinBlockPosition = useRuleStore((s) => s.updateBinBlockPosition)
+  const updateBinBlock = useRuleStore((s) => s.updateBinBlock)
+  const removeBinBlock = useRuleStore((s) => s.removeBinBlock)
   const updateTimerBlockPosition = useRuleStore((s) => s.updateTimerBlockPosition)
   const updateTimerBlock = useRuleStore((s) => s.updateTimerBlock)
   const removeTimerBlock = useRuleStore((s) => s.removeTimerBlock)
@@ -349,6 +357,7 @@ export default function DatasetCanvas() {
         ...acBlocks.map((b) => ({ id: b.id, type: 'ac', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...phoneUnlockBlocks.map((b) => ({ id: b.id, type: 'phoneunlock', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...displayBlocks.map((b) => ({ id: b.id, type: 'display', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
+        ...binBlocks.map((b) => ({ id: b.id, type: 'bin', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...timerBlocks.map((b) => ({ id: b.id, type: 'timer', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...textBlocks.map((b) => ({ id: b.id, type: 'text', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
         ...imageBlocks.map((b) => ({ id: b.id, type: 'image', position: pos(b.id) ?? b.position, selected: isSelected(b.id), data: { block: b } } as Node)),
@@ -364,7 +373,7 @@ export default function DatasetCanvas() {
       return nodes
     })
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, timerBlocks, textBlocks, imageBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, textBlocks, imageBlocks,
       justAddedBlockId, setRfNodes])
 
   // Sync linked IDs → RF edges
@@ -465,6 +474,13 @@ export default function DatasetCanvas() {
         target: b.id, targetHandle: 'display-in',
         type: 'rule',
       } as Edge)),
+      // rule/timer/model → waste bin
+      ...binBlocks.filter((b) => b.linkedRuleBlockId !== null).map((b) => ({
+        id: `rule-bin-${b.linkedRuleBlockId}-${b.id}`,
+        source: b.linkedRuleBlockId!, sourceHandle: 'rule-out',
+        target: b.id, targetHandle: 'bin-in',
+        type: 'rule',
+      } as Edge)),
       // rule → door (rule-based)
       ...doorBlocks.filter((b) => b.linkedRuleBlockId != null).map((b) => ({
         id: `rule-door-${b.linkedRuleBlockId}-${b.id}`,
@@ -481,7 +497,7 @@ export default function DatasetCanvas() {
       } as Edge)),
     ])
   }, [modelBlocks, doorBlocks, bulbBlocks,
-      conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, timerBlocks, setRfEdges])
+      conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, setRfEdges])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -502,6 +518,7 @@ export default function DatasetCanvas() {
           else if (acBlocks.some((b) => b.id === id)) updateACBlockPosition(id, p)
           else if (phoneUnlockBlocks.some((b) => b.id === id)) updatePhoneUnlockBlockPosition(id, p)
           else if (displayBlocks.some((b) => b.id === id)) updateDisplayBlockPosition(id, p)
+          else if (binBlocks.some((b) => b.id === id)) updateBinBlockPosition(id, p)
           else if (timerBlocks.some((b) => b.id === id)) updateTimerBlockPosition(id, p)
           else if (textBlocks.some((b) => b.id === id)) updateTextBlockPosition(id, p)
           else if (imageBlocks.some((b) => b.id === id)) updateImageBlockPosition(id, p)
@@ -514,11 +531,11 @@ export default function DatasetCanvas() {
     },
     [
       labelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
-      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, timerBlocks, textBlocks, imageBlocks,
+      sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, textBlocks, imageBlocks,
       updateBlockPosition, updateModelBlockPosition, updateRLBlockPosition,
       updateDoorBlockPosition, updateBulbBlockPosition,
       updateSensorBlockPosition, updateConditionBlockPosition, updateSwitchBlockPosition, updateLogicBlockPosition,
-      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updatePhoneUnlockBlockPosition, updateDisplayBlockPosition, updateTimerBlockPosition, updateTextBlockPosition,
+      updateFanBlockPosition, updateAlarmBlockPosition, updateACBlockPosition, updatePhoneUnlockBlockPosition, updateDisplayBlockPosition, updateBinBlockPosition, updateTimerBlockPosition, updateTextBlockPosition,
       updateImageBlockPosition, setRfNodes,
     ]
   )
@@ -597,6 +614,9 @@ export default function DatasetCanvas() {
       } else if (targetHandle === 'display-in') {
         updateDisplayBlock(target, { linkedRuleBlockId: source, isOn: false })
         evaluateGraph()
+      } else if (targetHandle === 'bin-in') {
+        updateBinBlock(target, { linkedRuleBlockId: source, isOn: false })
+        evaluateGraph()
       } else if (targetHandle === 'timer-in') {
         updateTimerBlock(target, { linkedRuleBlockId: source, isRunning: false, currentOutput: null, lastTriggerInput: null })
         evaluateGraph()
@@ -611,7 +631,7 @@ export default function DatasetCanvas() {
     [
       updateModelBlock, updateDoorBlock, updateBulbBlock,
       updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
-      updateACBlock, updatePhoneUnlockBlock, updateDisplayBlock, updateTimerBlock,
+      updateACBlock, updatePhoneUnlockBlock, updateDisplayBlock, updateBinBlock, updateTimerBlock,
       logicBlocks, sensorBlocks, evaluateGraph, modelBlocks,
     ]
   )
@@ -700,6 +720,7 @@ export default function DatasetCanvas() {
           case 'ac': removeACBlock(node.id); break
           case 'phoneunlock': removePhoneUnlockBlock(node.id); break
           case 'display': removeDisplayBlock(node.id); break
+          case 'bin': removeBinBlock(node.id); break
           case 'timer': removeTimerBlock(node.id); break
           case 'text': removeTextBlock(node.id); break
           case 'image': removeImageBlock(node.id); break
@@ -711,7 +732,7 @@ export default function DatasetCanvas() {
     [
       removeLabelledBlock, removeUnlabelledBlock, removeModelBlock, removeRLBlock, removeDoorBlock, removeBulbBlock,
       removeSensorBlock, removeConditionBlock, removeSwitchBlock, removeLogicBlock, removeFanBlock, removeAlarmBlock,
-      removeACBlock, removePhoneUnlockBlock, removeDisplayBlock, removeTimerBlock, removeTextBlock, removeImageBlock, evaluateGraph, selectedBlockId, clearSelectedBlock,
+      removeACBlock, removePhoneUnlockBlock, removeDisplayBlock, removeBinBlock, removeTimerBlock, removeTextBlock, removeImageBlock, evaluateGraph, selectedBlockId, clearSelectedBlock,
     ]
   )
 
@@ -767,6 +788,8 @@ export default function DatasetCanvas() {
           updatePhoneUnlockBlock(target, { linkedRuleBlockId: null, isOn: false })
         } else if (targetHandle === 'display-in') {
           updateDisplayBlock(target, { linkedRuleBlockId: null, isOn: false })
+        } else if (targetHandle === 'bin-in') {
+          updateBinBlock(target, { linkedRuleBlockId: null, isOn: false })
         } else if (targetHandle === 'timer-in') {
           updateTimerBlock(target, { linkedRuleBlockId: null, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null })
         } else if (targetHandle === 'door-in') {
@@ -779,7 +802,7 @@ export default function DatasetCanvas() {
     },
     [
       modelBlocks, updateModelBlock, updateConditionBlock, updateLogicBlock, updateFanBlock,
-      updateAlarmBlock, updateACBlock, updatePhoneUnlockBlock, updateDisplayBlock, updateTimerBlock, updateDoorBlock, updateBulbBlock, evaluateGraph,
+      updateAlarmBlock, updateACBlock, updatePhoneUnlockBlock, updateDisplayBlock, updateBinBlock, updateTimerBlock, updateDoorBlock, updateBulbBlock, evaluateGraph,
     ]
   )
 

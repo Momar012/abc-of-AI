@@ -3,6 +3,7 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useUIStore } from '@/store/useUIStore'
+import { BIN_COLORS, BIN_COLOR_ORDER } from '@/lib/binColors'
 
 const LOGIC_INFO = {
   and: { emoji: '∧', label: 'AND Gate', desc: 'Output is TRUE only when BOTH inputs are TRUE.' },
@@ -337,6 +338,77 @@ function DisplayBlockView({ id }: { id: string }) {
   )
 }
 
+function BinBlockView({ id }: { id: string }) {
+  const binBlocks = useRuleStore((s) => s.binBlocks)
+  const updateBinBlock = useRuleStore((s) => s.updateBinBlock)
+  const block = binBlocks.find((b) => b.id === id)
+  if (!block) return null
+  const current = BIN_COLORS[block.color] ?? BIN_COLORS.blue
+
+  return (
+    <>
+      <div className="flex items-center gap-3">
+        <span className="text-3xl">🗑️</span>
+        <div>
+          <p className="text-[10px] text-white/40 font-body uppercase tracking-wider">Actuator</p>
+          <p className="text-sm font-heading font-bold text-emerald-300">Waste Bin</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Name</label>
+        <input
+          value={block.name}
+          onChange={(e) => updateBinBlock(block.id, { name: e.target.value })}
+          placeholder="e.g. Paper"
+          className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-emerald-400 bg-transparent"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Bin colour</label>
+        <div className="grid grid-cols-3 gap-2">
+          {BIN_COLOR_ORDER.map((key) => {
+            const c = BIN_COLORS[key]
+            const active = block.color === key
+            return (
+              <button
+                key={key}
+                onClick={() => updateBinBlock(block.id, { color: key })}
+                className={`flex flex-col items-center gap-1 rounded-lg py-2 border transition-all ${
+                  active ? 'border-white/60 bg-white/10' : 'border-white/10 hover:border-white/30'
+                }`}
+              >
+                <span
+                  className="w-7 h-7 rounded-full"
+                  style={{
+                    background: c.fill,
+                    boxShadow: active ? `0 0 0 2px #0f0c29, 0 0 0 4px ${c.fill}, 0 0 12px ${c.glow}` : `inset 0 -3px 0 ${c.dark}`,
+                  }}
+                />
+                <span className={`text-[10px] font-body ${active ? 'text-white' : 'text-white/50'}`}>{c.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+        <p className="text-[10px] text-white/40 font-body uppercase tracking-wider mb-1">Status</p>
+        <p className={`text-lg font-heading font-extrabold ${block.isOn ? 'text-emerald-400' : 'text-white/40'}`}>
+          {block.isOn ? `♻️ Sorting into ${current.label.toLowerCase()} bin!` : '🗑️ Waiting…'}
+        </p>
+      </div>
+
+      {!block.linkedRuleBlockId && (
+        <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3">
+          <p className="text-xs text-emerald-200/80 font-body">Connect an IF block (e.g. <i>prediction == paper</i>) to this bin. When it&apos;s true, the bin opens and catches the item!</p>
+        </div>
+      )}
+    </>
+  )
+}
+
 function DoorBlockView({ id }: { id: string }) {
   const doorBlocks = useWorkflowStore((s) => s.doorBlocks)
   const updateDoorBlock = useWorkflowStore((s) => s.updateDoorBlock)
@@ -443,6 +515,7 @@ export default function LogicInspector() {
       {selectedBlockType === 'ac'    && <ACBlockView    id={selectedBlockId} />}
       {selectedBlockType === 'phoneunlock' && <PhoneUnlockBlockView id={selectedBlockId} />}
       {selectedBlockType === 'display' && <DisplayBlockView id={selectedBlockId} />}
+      {selectedBlockType === 'bin' && <BinBlockView id={selectedBlockId} />}
       {selectedBlockType === 'door'  && <DoorBlockView  id={selectedBlockId} />}
       {selectedBlockType === 'bulb'  && <BulbBlockView  id={selectedBlockId} />}
     </div>

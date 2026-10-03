@@ -1,6 +1,7 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useModelStore } from '@/store/useModelStore'
+import { BIN_COLORS } from '@/lib/binColors'
 
 // ── Embedded MobileNet ──────────────────────────────────────────────────────
 // Exported apps can't load MobileNet's default weights — the tfhub.dev URL the
@@ -148,6 +149,9 @@ export function getExportCards(selectedIds: Set<string>): ExportCardInfo[] {
   rule.displayBlocks.filter(d => keep(d.id)).forEach(d => {
     cards.push({ id: d.id, name: d.name, icon: '🪧', category: 'output' })
   })
+  rule.binBlocks.filter(b => keep(b.id)).forEach(b => {
+    cards.push({ id: b.id, name: b.name, icon: '🗑️', category: 'output' })
+  })
   return cards
 }
 
@@ -177,6 +181,7 @@ export function validateExportSelection(selectedIds: Set<string>): {
     ...rule.acBlocks,
     ...rule.phoneUnlockBlocks,
     ...rule.displayBlocks,
+    ...rule.binBlocks,
     ...workflow.doorBlocks,
     ...workflow.bulbBlocks,
   ].filter(d => selectedIds.has(d.id))
@@ -370,6 +375,7 @@ export async function exportRuleApp(
     acs:    rule.acBlocks.filter(a => keep(a.id)).map(a => ({ id: a.id, name: a.name, linkedRuleBlockId: a.linkedRuleBlockId })),
     phoneUnlocks: rule.phoneUnlockBlocks.filter(p => keep(p.id)).map(p => ({ id: p.id, name: p.name, linkedRuleBlockId: p.linkedRuleBlockId })),
     displays: rule.displayBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, message: d.message, linkedRuleBlockId: d.linkedRuleBlockId })),
+    bins: rule.binBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, color: b.color, linkedRuleBlockId: b.linkedRuleBlockId })),
     bulbs:  workflow.bulbBlocks.filter(b => keep(b.id)).map(b => ({ id: b.id, name: b.name, linkedRuleBlockId: b.linkedRuleBlockId })),
     doors:  workflow.doorBlocks.filter(d => keep(d.id)).map(d => ({ id: d.id, name: d.name, linkedRuleBlockId: d.linkedRuleBlockId })),
     timers: rule.timerBlocks.filter(t => keep(t.id)).map(t => ({
@@ -401,6 +407,7 @@ export async function exportRuleApp(
     ...data.acs.map((a: {id:string}) => a.id),
     ...data.phoneUnlocks.map((p: {id:string}) => p.id),
     ...data.displays.map((d: {id:string}) => d.id),
+    ...data.bins.map((b: {id:string}) => b.id),
   ]
   const inputIdSet = new Set(defaultInputIds)
   const outputIdSet = new Set(defaultOutputIds)
@@ -587,6 +594,25 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.2)}
 .display-text{font-size:clamp(1.15rem,2.4vw,1.85rem);font-weight:800;letter-spacing:0.02em;text-align:center;line-height:1.3;color:rgba(255,255,255,0.15);transition:color 0.4s,text-shadow 0.4s;word-break:break-word;max-width:100%}
 .display-card.on .display-text{color:#6ee7b7;text-shadow:0 0 12px rgba(52,211,153,0.9),0 0 30px rgba(52,211,153,0.4);animation:display-flicker 2.4s ease-in-out infinite}
 .display-card.on .status-pill{background:rgba(52,211,153,0.15);color:#34d399;border-color:rgba(52,211,153,0.28)}
+.bin-card .out-visual{overflow:visible}
+.bin-wrap{position:relative;width:84px;height:104px;display:flex;align-items:flex-end;justify-content:center}
+.bin-glow{position:absolute;left:6px;right:6px;bottom:0;height:64px;border-radius:50%;background:var(--bin-glow);filter:blur(18px);opacity:0;transition:opacity 0.4s}
+.bin-card.on .bin-glow{animation:glow-pulse 1.8s ease-in-out infinite;opacity:0.8}
+.bin-card.on{border-color:var(--bin-glow);box-shadow:0 0 26px -6px var(--bin-glow)}
+.bin-body{position:relative;transform-origin:50% 100%}
+.bin-lid{transform-box:fill-box;transform-origin:0% 100%;transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1)}
+.bin-card.on .bin-lid{transform:rotate(-38deg)}
+.bin-item{position:absolute;left:50%;top:0;font-size:1.6rem;opacity:0;pointer-events:none;z-index:2;transform:translate(-50%,-30px)}
+.bin-spark{position:absolute;left:50%;top:45%;font-size:0.85rem;opacity:0;pointer-events:none;z-index:2}
+.bin-wrap.drop .bin-item{animation:bin-drop 0.75s ease-in forwards}
+.bin-wrap.drop .bin-body{animation:bin-bounce 0.9s ease-out}
+.bin-wrap.drop .bin-spark{animation:bin-sparkle 0.7s ease-out 0.6s forwards}
+.bin-spark.s1{--sx:-40px;--sy:-22px}.bin-spark.s2{--sx:40px;--sy:-26px}.bin-spark.s3{--sx:-32px;--sy:16px}.bin-spark.s4{--sx:34px;--sy:12px}
+.bin-count{font-size:0.68rem;color:rgba(255,255,255,0.45);font-weight:600;min-height:0.9rem}
+.bin-card.on .status-pill{background:rgba(52,211,153,0.15);color:#34d399;border-color:rgba(52,211,153,0.28)}
+@keyframes bin-drop{0%{opacity:0;transform:translate(-50%,-30px) rotate(-20deg)}35%{opacity:1;transform:translate(-50%,-6px) rotate(10deg)}100%{opacity:0;transform:translate(-50%,44px) rotate(40deg)}}
+@keyframes bin-bounce{0%,45%{transform:scale(1,1)}60%{transform:scale(1.1,0.86)}80%{transform:scale(0.95,1.05)}100%{transform:scale(1,1)}}
+@keyframes bin-sparkle{0%{opacity:0;transform:translate(0,0) scale(0.4)}50%{opacity:1;transform:translate(var(--sx),var(--sy)) scale(1.2)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0.6)}}
 @keyframes display-flicker{0%,100%{opacity:1}92%{opacity:1}94%{opacity:0.55}96%{opacity:1}}
 @keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
@@ -666,9 +692,10 @@ function _sweep(f1,f2,dur){var c=_getCtx();if(!c||!_soundOn)return;var o=c.creat
 var _fanNode=null;
 function _startFan(){var c=_getCtx();if(!c||!_soundOn||_fanNode)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='sawtooth';o.frequency.value=65;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.05,c.currentTime+0.4);o.start();_fanNode={o:o,g:g};}
 function _stopFan(){if(!_fanNode)return;var c=_getCtx();if(c){try{_fanNode.g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.5);}catch(e){}}var fn=_fanNode;_fanNode=null;setTimeout(function(){try{fn.o.stop();}catch(e){}},600);}
-function playDeviceSound(type,on){if(!_soundOn)return;if(type==='bulb'){on?_blip(900,0.12):_blip(500,0.08);}else if(type==='fan'){on?_startFan():_stopFan();}else if(type==='alarm'&&on){_blip(880,0.12,'square');setTimeout(function(){_blip(880,0.12,'square');},200);setTimeout(function(){_blip(1100,0.12,'square');},400);}else if(type==='door'){on?_sweep(200,800,0.3):_sweep(800,200,0.3);}else if(type==='ac'&&on){_blip(300,0.4,'sawtooth');}else if(type==='phoneunlock'){on?_sweep(400,900,0.35):_sweep(500,250,0.25);}else if(type==='display'){on?_blip(700,0.1):_blip(300,0.08);}}
+function playDeviceSound(type,on){if(!_soundOn)return;if(type==='bulb'){on?_blip(900,0.12):_blip(500,0.08);}else if(type==='fan'){on?_startFan():_stopFan();}else if(type==='alarm'&&on){_blip(880,0.12,'square');setTimeout(function(){_blip(880,0.12,'square');},200);setTimeout(function(){_blip(1100,0.12,'square');},400);}else if(type==='door'){on?_sweep(200,800,0.3):_sweep(800,200,0.3);}else if(type==='ac'&&on){_blip(300,0.4,'sawtooth');}else if(type==='phoneunlock'){on?_sweep(400,900,0.35):_sweep(500,250,0.25);}else if(type==='display'){on?_blip(700,0.1):_blip(300,0.08);}else if(type==='bin'&&on){_sweep(900,250,0.35);setTimeout(function(){_blip(160,0.14,'square');},380);setTimeout(function(){_blip(1320,0.1);},650);}}
 var _appReady=false;
 const APP = ${dataJson};
+var BIN_COLORS=${JSON.stringify(BIN_COLORS)};
 
 const state = {
   sensors:    APP.sensors.map(function(s){return Object.assign({},s)}),
@@ -680,6 +707,7 @@ const state = {
   acs:    APP.acs.map(function(x){return Object.assign({},x,{_on:false})}),
   phoneUnlocks: APP.phoneUnlocks.map(function(x){return Object.assign({},x,{_on:false})}),
   displays: APP.displays.map(function(x){return Object.assign({},x,{_on:false})}),
+  bins:   (APP.bins||[]).map(function(x){return Object.assign({},x,{_on:false,_count:0})}),
   bulbs:  APP.bulbs.map(function(x){return Object.assign({},x,{_on:false})}),
   doors:  APP.doors.map(function(x){return Object.assign({},x,{_open:false})}),
   timers: APP.timers.map(function(x){return Object.assign({},x,{_remaining:null,_on:false,_lastInput:false})}),
@@ -1051,6 +1079,7 @@ function evaluate(){
   for(var k=0;k<state.acs.length;k++)    state.acs[k]._on=state.acs[k].linkedRuleBlockId?getOut(state.acs[k].linkedRuleBlockId):false;
   for(var k=0;k<state.phoneUnlocks.length;k++) state.phoneUnlocks[k]._on=state.phoneUnlocks[k].linkedRuleBlockId?getOut(state.phoneUnlocks[k].linkedRuleBlockId):false;
   for(var k=0;k<state.displays.length;k++) state.displays[k]._on=state.displays[k].linkedRuleBlockId?getOut(state.displays[k].linkedRuleBlockId):false;
+  for(var k=0;k<state.bins.length;k++)   state.bins[k]._on=state.bins[k].linkedRuleBlockId?getOut(state.bins[k].linkedRuleBlockId):false;
   for(var k=0;k<state.bulbs.length;k++)  state.bulbs[k]._on=state.bulbs[k].linkedRuleBlockId?getOut(state.bulbs[k].linkedRuleBlockId):false;
   for(var k=0;k<state.doors.length;k++)  state.doors[k]._open=state.doors[k].linkedRuleBlockId?getOut(state.doors[k].linkedRuleBlockId):false;
 }
@@ -1107,6 +1136,22 @@ function updateOutputs(){
     var dt=document.getElementById('dt-'+d.id); if(dt) dt.textContent=d._on?d.message:'···';
     document.getElementById('st-'+d.id).textContent=d._on?'● ON':'○ OFF';
     if(_appReady&&d._on!==wasOn){showToast(d._on?('🪧 '+d.name+': '+d.message):('⬛ '+d.name+' cleared'));playDeviceSound('display',d._on);}
+  }
+  for(var i=0;i<state.bins.length;i++){
+    var bn=state.bins[i]; var el=document.getElementById('out-'+bn.id); if(!el) continue;
+    wasOn=el.classList.contains('on');
+    el.className='out-card bin-card'+(bn._on?' on':'');
+    document.getElementById('st-'+bn.id).textContent=bn._on?'● SORTING':'○ WAITING';
+    if(_appReady&&bn._on&&!wasOn){
+      // Rising edge: drop an item in, bounce, sparkle, count it.
+      var bw=document.getElementById('bw-'+bn.id);
+      if(bw){bw.classList.remove('drop');void bw.offsetWidth;bw.classList.add('drop');
+        (function(w){clearTimeout(w._dropT);w._dropT=setTimeout(function(){w.classList.remove('drop');},1500);})(bw);}
+      bn._count++;
+      var bc=document.getElementById('bc-'+bn.id); if(bc) bc.textContent=bn._count+' item'+(bn._count===1?'':'s')+' sorted';
+      showToast('♻️ '+bn.name+': item sorted!');
+      playDeviceSound('bin',true);
+    }
   }
 }
 function fmtTime(s){var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
@@ -1390,7 +1435,7 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
 }
 
 var outCont=document.getElementById('output-cards');
-var hasOut=state.bulbs.length||state.fans.length||state.doors.length||state.alarms.length||state.acs.length||state.phoneUnlocks.length||state.displays.length;
+var hasOut=state.bulbs.length||state.fans.length||state.doors.length||state.alarms.length||state.acs.length||state.phoneUnlocks.length||state.displays.length||state.bins.length;
 if(!hasOut){ outCont.innerHTML='<p class="empty-hint">No outputs connected.</p>'; }
 var _outIdx=0;
 
@@ -1535,6 +1580,40 @@ for(var di2=0;di2<state.displays.length;di2++){
     '<div class="out-footer">'+
       '<span class="out-name">'+d.name+'</span>'+
       '<span class="status-pill" id="st-'+d.id+'">○ OFF</span>'+
+    '</div>';
+  outCont.appendChild(el);
+}
+
+function binSvg(c){
+  return '<svg width="64" height="80" viewBox="0 0 64 80" aria-hidden="true">'+
+    '<path d="M8 22 L56 22 L51 76 Q50.5 79 47 79 L17 79 Q13.5 79 13 76 Z" fill="'+c.fill+'" stroke="'+c.dark+'" stroke-width="2"/>'+
+    '<line x1="22" y1="30" x2="21.2" y2="70" stroke="'+c.dark+'" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>'+
+    '<line x1="32" y1="30" x2="32" y2="70" stroke="'+c.dark+'" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>'+
+    '<line x1="42" y1="30" x2="42.8" y2="70" stroke="'+c.dark+'" stroke-opacity="0.45" stroke-width="2" stroke-linecap="round"/>'+
+    '<text x="32" y="58" text-anchor="middle" font-size="18" fill="#fff" fill-opacity="0.9">♻</text>'+
+    '<g class="bin-lid">'+
+      '<rect x="4" y="14" width="56" height="8" rx="3" fill="'+c.fill+'" stroke="'+c.dark+'" stroke-width="2"/>'+
+      '<rect x="25" y="9" width="14" height="6" rx="2" fill="'+c.dark+'"/>'+
+    '</g>'+
+  '</svg>';
+}
+for(var bi2=0;bi2<state.bins.length;bi2++){
+  var bn=state.bins[bi2]; var bcol=BIN_COLORS[bn.color]||BIN_COLORS.blue;
+  var el=document.createElement('div'); el.id='out-'+bn.id; el.className='out-card bin-card';
+  el.style.cssText='animation:card-in 0.45s cubic-bezier(0.34,1.56,0.64,1) both;animation-delay:'+(_outIdx*0.08)+'s;--bin-glow:'+bcol.glow;_outIdx++;
+  el.innerHTML=
+    '<div class="out-visual">'+
+      '<div class="bin-wrap" id="bw-'+bn.id+'">'+
+        '<div class="bin-glow"></div>'+
+        '<span class="bin-item">'+bcol.item+'</span>'+
+        '<span class="bin-spark s1">✨</span><span class="bin-spark s2">✨</span><span class="bin-spark s3">✨</span><span class="bin-spark s4">✨</span>'+
+        '<div class="bin-body">'+binSvg(bcol)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="bin-count" id="bc-'+bn.id+'"></div>'+
+    '<div class="out-footer">'+
+      '<span class="out-name">'+bn.name+'</span>'+
+      '<span class="status-pill" id="st-'+bn.id+'">○ WAITING</span>'+
     '</div>';
   outCont.appendChild(el);
 }

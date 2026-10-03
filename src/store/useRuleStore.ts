@@ -2,8 +2,9 @@ import { create } from 'zustand'
 import { v4 as uuid } from 'uuid'
 import {
   SensorBlock, SensorType, ConditionBlock, RuleOperator, SwitchBlock,
-  LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, DisplayBlock, TimerBlock,
+  LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, DisplayBlock, BinBlock, TimerBlock,
 } from '@/types/rules'
+import { DEFAULT_BIN_CYCLE } from '@/lib/binColors'
 import { runTextInference } from '@/lib/textLearner'
 import type { DataItem } from '@/types/dataset'
 
@@ -51,6 +52,7 @@ interface RuleState {
   acBlocks: ACBlock[]
   phoneUnlockBlocks: PhoneUnlockBlock[]
   displayBlocks: DisplayBlock[]
+  binBlocks: BinBlock[]
   timerBlocks: TimerBlock[]
 
   addSensorBlock: (sensorType: SensorType, pos?: { x: number; y: number }) => void
@@ -98,6 +100,11 @@ interface RuleState {
   updateDisplayBlock: (id: string, updates: Partial<DisplayBlock>) => void
   updateDisplayBlockPosition: (id: string, pos: { x: number; y: number }) => void
 
+  addBinBlock: (pos?: { x: number; y: number }) => void
+  removeBinBlock: (id: string) => void
+  updateBinBlock: (id: string, updates: Partial<BinBlock>) => void
+  updateBinBlockPosition: (id: string, pos: { x: number; y: number }) => void
+
   addTimerBlock: (pos?: { x: number; y: number }) => void
   removeTimerBlock: (id: string) => void
   updateTimerBlock: (id: string, updates: Partial<TimerBlock>) => void
@@ -117,6 +124,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   acBlocks: [],
   phoneUnlockBlocks: [],
   displayBlocks: [],
+  binBlocks: [],
   timerBlocks: [],
 
   // ── Sensors ──────────────────────────────────────────────────────────────
@@ -328,6 +336,30 @@ export const useRuleStore = create<RuleState>((set, get) => ({
   updateDisplayBlockPosition: (id, pos) =>
     set((s) => ({ displayBlocks: s.displayBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
 
+  // ── Waste Bin ────────────────────────────────────────────────────────────
+  addBinBlock: (pos?) =>
+    set((s) => ({
+      binBlocks: [
+        ...s.binBlocks,
+        {
+          id: uuid(), type: 'bin',
+          position: pos ?? { x: 1050 + s.binBlocks.length * 40, y: 500 + s.binBlocks.length * 40 },
+          name: `Bin ${s.binBlocks.length + 1}`,
+          color: DEFAULT_BIN_CYCLE[s.binBlocks.length % DEFAULT_BIN_CYCLE.length],
+          linkedRuleBlockId: null, isOn: false,
+        },
+      ],
+    })),
+
+  removeBinBlock: (id) =>
+    set((s) => ({ binBlocks: s.binBlocks.filter((b) => b.id !== id) })),
+
+  updateBinBlock: (id, updates) =>
+    set((s) => ({ binBlocks: s.binBlocks.map((b) => (b.id === id ? { ...b, ...updates } : b)) })),
+
+  updateBinBlockPosition: (id, pos) =>
+    set((s) => ({ binBlocks: s.binBlocks.map((b) => (b.id === id ? { ...b, position: pos } : b)) })),
+
   // ── Timer ────────────────────────────────────────────────────────────────
   addTimerBlock: (pos?) =>
     set((s) => ({
@@ -377,7 +409,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
   // ── Graph evaluation ──────────────────────────────────────────────────────
   evaluateGraph: () => {
-    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, timerBlocks } = get()
+    const { sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks } = get()
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { modelBlocks } = require('@/store/useModelStore').useModelStore.getState()
@@ -499,6 +531,9 @@ export const useRuleStore = create<RuleState>((set, get) => ({
     const newDisplays = displayBlocks.map((d) => ({
       ...d, isOn: d.linkedRuleBlockId ? (resolved.get(d.linkedRuleBlockId) === true) : false,
     }))
+    const newBins = binBlocks.map((b) => ({
+      ...b, isOn: b.linkedRuleBlockId ? (resolved.get(b.linkedRuleBlockId) === true) : false,
+    }))
 
     // 5. Update door/bulb blocks in workflow store
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -513,7 +548,7 @@ export const useRuleStore = create<RuleState>((set, get) => ({
 
     set({
       conditionBlocks: newConditions, logicBlocks: newLogic,
-      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, phoneUnlockBlocks: newPhoneUnlocks, displayBlocks: newDisplays, timerBlocks: newTimers,
+      fanBlocks: newFans, alarmBlocks: newAlarms, acBlocks: newACs, phoneUnlockBlocks: newPhoneUnlocks, displayBlocks: newDisplays, binBlocks: newBins, timerBlocks: newTimers,
     })
   },
 }))

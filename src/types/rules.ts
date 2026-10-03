@@ -97,6 +97,18 @@ export interface DisplayBlock {
   isOn: boolean
 }
 
+export type BinColor = 'blue' | 'green' | 'yellow' | 'red' | 'grey' | 'orange'
+
+export interface BinBlock {
+  id: string
+  type: 'bin'
+  position: { x: number; y: number }
+  name: string
+  color: BinColor
+  linkedRuleBlockId: string | null
+  isOn: boolean
+}
+
 export interface TimerBlock {
   id: string
   type: 'timer'
@@ -136,6 +148,6 @@ export type BlockType =
   | 'labelled' | 'unlabelled' | 'rl-gridworld' | 'door' | 'bulb'
   | 'sensor-temperature' | 'sensor-light' | 'sensor-motion' | 'sensor-humidity' | 'sensor-text'
   | 'condition' | 'switch' | 'logic-and' | 'logic-or' | 'logic-not'
-  | 'fan' | 'alarm' | 'ac' | 'phoneunlock' | 'display' | 'timer'
+  | 'fan' | 'alarm' | 'ac' | 'phoneunlock' | 'display' | 'bin' | 'timer'
   | 'model-image-supervised' | 'model-image-unsupervised' | 'model-image-classifier'
   | 'model-text-corpus' | 'model-text-supervised' | 'model-text-unsupervised'
