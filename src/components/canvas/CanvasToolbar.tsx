@@ -410,14 +410,19 @@ function SelectionBar() {
 
   function handleConfirm() {
     setIsExporting(true)
-    setTimeout(() => {
+    setTimeout(async () => {
       const name = appName.trim() || (derivedMode === 'ai-model' ? 'My AI Model' : 'My AI App')
-      if (derivedMode === 'ai-model') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        exportAIModel(name, selectedIds, theme as any, creatorName.trim(), instructions.trim())
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim(), instructions.trim(), cardOrder.map(c => c.id))
+      try {
+        if (derivedMode === 'ai-model') {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await exportAIModel(name, selectedIds, theme as any, creatorName.trim(), instructions.trim())
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await exportRuleApp(name, selectedIds, theme as any, layout as any, creatorName.trim(), instructions.trim(), cardOrder.map(c => c.id))
+        }
+      } catch (err) {
+        console.error('Export failed', err)
+        window.alert("Export failed — couldn't pack the AI vision engine into your app. Try refreshing the page and exporting again.")
       }
       setIsExporting(false)
       setShowNaming(false)

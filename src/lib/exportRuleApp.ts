@@ -2,6 +2,71 @@ import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useModelStore } from '@/store/useModelStore'
 
+// ── Embedded MobileNet ──────────────────────────────────────────────────────
+// Exported apps can't load MobileNet's default weights — the tfhub.dev URL the
+// mobilenet package falls back to now 404s, so _mobileNet never loads. Instead we
+// inline the same self-hosted MobileNet v2 (alpha 0.5) weights used for training
+// (see MOBILENET_CONFIG in trainModel.ts), so embeddings match exactly.
+const MOBILENET_BASE = '/models/mobilenet-v2-050/'
+let _mobileNetLoaderCache: Promise<string> | null = null
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let bin = ''
+  const CHUNK = 0x8000
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK) as unknown as number[])
+  }
+  return btoa(bin)
+}
+
+async function buildMobileNetLoaderScript(): Promise<string> {
+  const res = await fetch(MOBILENET_BASE + 'model.json')
+  if (!res.ok) throw new Error(`Couldn't load the vision model for export (${res.status})`)
+  const manifest = await res.json() as {
+    modelTopology: unknown; format: string; generatedBy: string; convertedBy: string
+    weightsManifest: Array<{ paths: string[]; weights: unknown[] }>
+  }
+  const shards = await Promise.all(
+    manifest.weightsManifest.flatMap(g => g.paths).map(async p => {
+      const r = await fetch(MOBILENET_BASE + p)
+      if (!r.ok) throw new Error(`Couldn't load the vision model for export (${r.status})`)
+      return new Uint8Array(await r.arrayBuffer())
+    })
+  )
+  const weights = new Uint8Array(shards.reduce((n, s) => n + s.length, 0))
+  let offset = 0
+  for (const s of shards) { weights.set(s, offset); offset += s.length }
+
+  const artifacts = {
+    modelTopology: manifest.modelTopology,
+    format: manifest.format,
+    generatedBy: manifest.generatedBy,
+    convertedBy: manifest.convertedBy,
+    weightSpecs: manifest.weightsManifest.flatMap(g => g.weights),
+  }
+  // Escape "<" so nothing inside the JSON can close the <script> tag.
+  const artifactsJson = JSON.stringify(artifacts).replace(/</g, '\\u003c')
+  return `var MN_ART=${artifactsJson};
+var MN_W="${bytesToBase64(weights)}";
+function _loadMobileNet(){
+  var bin=atob(MN_W),buf=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  return mobilenet.load({version:2,alpha:0.5,inputRange:[0,1],modelUrl:tf.io.fromMemory(Object.assign({},MN_ART,{weightData:buf.buffer}))});
+}
+`
+}
+
+/** JS snippet defining `_loadMobileNet()` with the weights inlined. Cached across exports. */
+function getMobileNetLoaderScript(): Promise<string> {
+  if (!_mobileNetLoaderCache) {
+    _mobileNetLoaderCache = buildMobileNetLoaderScript().catch(err => {
+      _mobileNetLoaderCache = null
+      throw err
+    })
+  }
+  return _mobileNetLoaderCache
+}
+
 export interface ExportCardInfo {
   id: string
   name: string
@@ -190,7 +255,7 @@ const THEMES = {
 type Theme = keyof typeof THEMES
 type Layout = 'classic' | 'dashboard' | 'mobile'
 
-export function exportRuleApp(
+export async function exportRuleApp(
   appName = 'My AI App',
   selectedIds?: Set<string>,
   theme: Theme = 'space',
@@ -198,7 +263,7 @@ export function exportRuleApp(
   creatorName = '',
   instructions = '',
   cardOrder: string[] = [],
-): void {
+): Promise<void> {
   const rule = useRuleStore.getState()
   const workflow = useWorkflowStore.getState()
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
@@ -328,7 +393,8 @@ export function exportRuleApp(
     ...defaultOutputIds.filter(id => !cardOrder.includes(id)),
   ]
 
-  const html = buildHTML(appName, data, THEMES[theme], layout, creatorName, instructions, resolvedInputOrder, resolvedOutputOrder)
+  const mobileNetLoader = (imageModels.length || imageClusterModels.length) ? await getMobileNetLoaderScript() : ''
+  const html = buildHTML(appName, data, THEMES[theme], layout, creatorName, instructions, resolvedInputOrder, resolvedOutputOrder, mobileNetLoader)
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -338,7 +404,7 @@ export function exportRuleApp(
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout, creatorName: string, instructions = '', inputOrder: string[] = [], outputOrder: string[] = []): string {
+function buildHTML(appName: string, data: object, t: typeof THEMES[Theme], layout: Layout, creatorName: string, instructions = '', inputOrder: string[] = [], outputOrder: string[] = [], mobileNetLoader = ''): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeInstructions = instructions.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
@@ -400,6 +466,10 @@ main.layout-mobile .out-card{min-height:190px}
 .img-cam-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#111}
 .img-cam-actions{display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.125rem}
 .img-cam-btn{padding:0.4rem 0.875rem;border-radius:0.5rem;border:none;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer}
+.img-cam-btn:disabled{opacity:0.5;cursor:not-allowed}
+.img-upload-lbl.disabled{opacity:0.45;pointer-events:none}
+.img-cam-flash{position:absolute;inset:0;background:#fff;pointer-events:none;animation:cam-flash 0.4s ease-out forwards}
+@keyframes cam-flash{0%{opacity:0.9}100%{opacity:0}}
 .img-upload-lbl{padding:0.4rem 0.875rem;border-radius:0.5rem;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.7);font-size:0.78rem;font-weight:700;font-family:inherit;cursor:pointer}
 .img-pred-display{font-size:0.95rem;font-weight:700;text-align:center;padding:0.2rem 0;color:#fff;min-height:1.4rem}
 .img-model-hint{font-size:0.68rem;color:rgba(255,255,255,0.28);text-align:center}
@@ -642,28 +712,36 @@ function stopImgThinking(predEl){
   predEl.className='img-pred-display';
 }
 
+${mobileNetLoader}
 // ── Image-model inference ───────────────────────────────────────────────────
 var _imgPredictions={};
 var _pendingFiles={};
 var _mobileNet=null;
-if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.imageClusterModels.length)){
-  function _loadScript(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s);}
+var _imgBusy={};
+function _allImgModels(){return (APP.imageModels||[]).concat(APP.imageClusterModels||[]);}
+if(_allImgModels().length){
+  function _loadScript(src,cb,onErr){var s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=onErr;document.head.appendChild(s);}
+  function _engineFailed(){
+    _allImgModels().forEach(function(m){
+      var ov=document.getElementById('imgov-'+m.id);
+      if(ov) ov.textContent='⚠ AI engine failed to load — check internet and reload';
+      var pe=document.getElementById('imgpred-'+m.id);
+      if(pe) pe.textContent='⚠ AI engine failed to load';
+    });
+  }
   _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js',function(){
     _loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js',function(){
-      mobilenet.load({version:2,alpha:0.5}).then(function(net){
+      _loadMobileNet().then(function(net){
         _mobileNet=net;
-        APP.imageModels.forEach(function(im){
-          var ov=document.getElementById('imgov-'+im.id);
+        _allImgModels().forEach(function(m){
+          var ov=document.getElementById('imgov-'+m.id);
           if(ov) ov.textContent='📷 Click Start Camera to begin';
+          var pe=document.getElementById('imgpred-'+m.id);
+          if(pe&&!_imgBusy[m.id]&&!_imgPredictions[m.id]) pe.textContent='✅ AI ready — start the camera or upload a photo';
         });
-      }).catch(function(){
-        APP.imageModels.forEach(function(im){
-          var ov=document.getElementById('imgov-'+im.id);
-          if(ov) ov.textContent='⚠ AI failed to load — check internet';
-        });
-      });
-    });
-  });
+      }).catch(_engineFailed);
+    },_engineFailed);
+  },_engineFailed);
   function _sqD(a,b){var s=0;for(var i=0;i<a.length;i++)s+=(a[i]-b[i])*(a[i]-b[i]);return s;}
   function _knn(vec,knnData,labels,labelIds,k){
     var all=[];
@@ -682,10 +760,123 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     for(var lab in weights){if(weights[lab]>bestW){bestW=weights[lab];best=lab;}}
     return best;
   }
-  function _inferCanvas(im,canEl,cb){
-    var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
-    t.dispose();
-    feat.data().then(function(data){feat.dispose();cb(_knn(Array.from(data),im.knnData,im.labels,im.labelIds,5));});
+  // Runs MobileNet on the 224x224 capture canvas, then KNN (supervised) or nearest centroid (cluster).
+  function _classifyCanvas(modelId,canEl){
+    return new Promise(function(resolve,reject){
+      try{
+        var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
+        t.dispose();
+        feat.data().then(function(data){
+          feat.dispose();
+          var vec=Array.from(data);
+          var icm=(APP.imageClusterModels||[]).find(function(m){return m.id===modelId;});
+          if(icm){resolve(_nearestCentroid(vec,icm.centroids,icm.labels));return;}
+          var im=(APP.imageModels||[]).find(function(m){return m.id===modelId;});
+          resolve(im?_knn(vec,im.knnData,im.labels,im.labelIds,5):null);
+        }).catch(reject);
+      }catch(e){reject(e);}
+    });
+  }
+  function _setImgBusy(modelId,busy){
+    _imgBusy[modelId]=busy;
+    ['imgpbtn-','imgcambtn-','imgfile-'].forEach(function(pre){
+      var el=document.getElementById(pre+modelId); if(el) el.disabled=busy;
+    });
+    var upl=document.getElementById('imgupl-'+modelId); if(upl) upl.classList.toggle('disabled',busy);
+  }
+  function _setPredictLabel(modelId,retake){
+    var p=document.getElementById('imgpbtn-'+modelId);
+    if(p){p.textContent=retake?'🔄 Retake':'🎯 Predict';p._retake=!!retake;}
+  }
+  function _runImgPrediction(modelId,onDone){
+    var canEl=document.getElementById('imgcap-'+modelId);
+    var predEl=document.getElementById('imgpred-'+modelId);
+    _setImgBusy(modelId,true);
+    startImgThinking(predEl);
+    var t0=Date.now(),floorMs=5000+Math.random()*3000;
+    function finish(label,failed){
+      setTimeout(function(){
+        stopImgThinking(predEl);
+        _setImgBusy(modelId,false);
+        if(failed){
+          if(predEl) predEl.textContent='Could not classify — try again';
+        } else {
+          _imgPredictions[modelId]=label;
+          if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
+          if(label){_blip(880,0.12,'sine');setTimeout(function(){_blip(1175,0.15,'sine');},90);}
+          evaluate();updateOutputs();
+        }
+        if(onDone) onDone();
+      },Math.max(0,floorMs-(Date.now()-t0)));
+    }
+    _classifyCanvas(modelId,canEl).then(function(label){finish(label,false);},function(){finish(null,true);});
+  }
+  function _predictFromFile(modelId,file){
+    var canEl=document.getElementById('imgcap-'+modelId);
+    var url=URL.createObjectURL(file),img=new Image();
+    img.onload=function(){
+      canEl.width=224;canEl.height=224;
+      canEl.getContext('2d').drawImage(img,0,0,224,224);
+      URL.revokeObjectURL(url);
+      _runImgPrediction(modelId);
+    };
+    img.onerror=function(){URL.revokeObjectURL(url);showToast('Could not read that photo — try another one');};
+    img.src=url;
+  }
+  function _flashImg(modelId){
+    var vid=document.getElementById('imgcam-'+modelId);
+    var wrap=vid&&vid.parentNode; if(!wrap) return;
+    var f=document.createElement('div'); f.className='img-cam-flash'; wrap.appendChild(f);
+    setTimeout(function(){if(f.parentNode)f.parentNode.removeChild(f);},450);
+  }
+  // Take a picture from the live camera, freeze it on screen, then classify it.
+  function snapImg(modelId){
+    if(!_mobileNet){showToast('AI engine still loading — please wait');return;}
+    if(_imgBusy[modelId]) return;
+    var vid=document.getElementById('imgcam-'+modelId);
+    var prev=document.getElementById('imgprev-'+modelId);
+    var ov=document.getElementById('imgov-'+modelId);
+    var canEl=document.getElementById('imgcap-'+modelId);
+    if(vid&&vid.srcObject&&vid.readyState>=2){
+      canEl.width=224;canEl.height=224;
+      canEl.getContext('2d').drawImage(vid,0,0,224,224);
+      var snap=document.createElement('canvas');
+      snap.width=vid.videoWidth||640;snap.height=vid.videoHeight||480;
+      snap.getContext('2d').drawImage(vid,0,0,snap.width,snap.height);
+      if(prev){
+        if(prev._url){URL.revokeObjectURL(prev._url);prev._url=null;}
+        prev.src=snap.toDataURL('image/jpeg',0.85);
+        prev.style.objectFit='cover';
+        prev.style.display='block';
+      }
+      vid.style.display='none';
+      if(ov) ov.style.display='none';
+      _flashImg(modelId);
+      _blip(1500,0.05,'square');
+      _runImgPrediction(modelId,function(){_setPredictLabel(modelId,true);});
+    } else if(vid&&vid.srcObject){
+      showToast('Camera is still warming up — try again in a second');
+    } else if(_pendingFiles[modelId]){
+      _predictFromFile(modelId,_pendingFiles[modelId]);
+    } else {
+      showToast('Start the camera or upload a photo first 📸');
+    }
+  }
+  // Drop the frozen photo and go back to the live camera.
+  function retakeImg(modelId){
+    var vid=document.getElementById('imgcam-'+modelId);
+    var prev=document.getElementById('imgprev-'+modelId);
+    _setPredictLabel(modelId,false);
+    if(vid&&vid.srcObject){
+      if(prev){prev.style.display='none';prev.style.objectFit='';}
+      vid.style.display='block';
+    } else {
+      startImgCam(modelId);
+    }
+  }
+  function onImgPredictClick(modelId){
+    var p=document.getElementById('imgpbtn-'+modelId);
+    if(p&&p._retake) retakeImg(modelId); else snapImg(modelId);
   }
   function startImgCam(modelId){
     var vid=document.getElementById('imgcam-'+modelId);
@@ -693,145 +884,41 @@ if((APP.imageModels&&APP.imageModels.length)||(APP.imageClusterModels&&APP.image
     var prev=document.getElementById('imgprev-'+modelId);
     var btn=document.getElementById('imgcambtn-'+modelId);
     if(!vid) return;
-    if(prev) prev.style.display='none';
+    if(prev){prev.style.display='none';prev.style.objectFit='';}
     vid.style.display='block';
+    _setPredictLabel(modelId,false);
+    function onStream(s){
+      vid.srcObject=s;
+      if(ov)ov.style.display='none';
+      if(btn)btn.textContent='⏹ Stop Camera';
+      var pe=document.getElementById('imgpred-'+modelId);
+      if(pe&&!_imgPredictions[modelId]) pe.textContent='📸 Point the camera, then click Predict 🎯';
+    }
     navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
-      .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';if(btn)btn.textContent='⏹ Stop Camera';})
+      .then(onStream)
       .catch(function(){
         navigator.mediaDevices.getUserMedia({video:true})
-          .then(function(s){vid.srcObject=s;if(ov)ov.style.display='none';if(btn)btn.textContent='⏹ Stop Camera';})
+          .then(onStream)
           .catch(function(){if(ov){ov.style.display='flex';ov.textContent='⚠ Camera blocked — upload a photo';}});
       });
   }
   function stopImgCam(modelId){
     var vid=document.getElementById('imgcam-'+modelId);
     var ov=document.getElementById('imgov-'+modelId);
+    var prev=document.getElementById('imgprev-'+modelId);
     var btn=document.getElementById('imgcambtn-'+modelId);
     if(vid&&vid.srcObject){
       vid.srcObject.getTracks().forEach(function(t){t.stop();});
       vid.srcObject=null;
     }
+    if(prev){prev.style.display='none';prev.style.objectFit='';}
     if(ov){ov.style.display='flex';ov.textContent='📷 Click Start Camera to begin';}
     if(btn) btn.textContent='📷 Start Camera';
+    _setPredictLabel(modelId,false);
   }
   function toggleImgCam(modelId){
     var vid=document.getElementById('imgcam-'+modelId);
     if(vid&&vid.srcObject){ stopImgCam(modelId); } else { startImgCam(modelId); }
-  }
-  function uploadImgModel(modelId,file){
-    var im=APP.imageModels.find(function(m){return m.id===modelId;});
-    if(!im||!_mobileNet){showToast('AI engine still loading — please wait');return;}
-    var vid=document.getElementById('imgcam-'+modelId);
-    var ov=document.getElementById('imgov-'+modelId);
-    var prev=document.getElementById('imgprev-'+modelId);
-    var canEl=document.getElementById('imgcap-'+modelId);
-    var predEl=document.getElementById('imgpred-'+modelId);
-    var pBtn=document.getElementById('imgpbtn-'+modelId);
-    if(prev&&prev._url) URL.revokeObjectURL(prev._url);
-    var url=URL.createObjectURL(file);
-    if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
-    if(vid) vid.style.display='none';
-    if(ov) ov.style.display='none';
-    var img=new Image();
-    img.onload=function(){
-      canEl.width=224;canEl.height=224;
-      canEl.getContext('2d').drawImage(img,0,0,224,224);
-      startImgThinking(predEl);
-      if(pBtn) pBtn.disabled=true;
-      var _t0=Date.now();
-      var floorMs=5000+Math.random()*3000;
-      _inferCanvas(im,canEl,function(label){
-        var wait=Math.max(0,floorMs-(Date.now()-_t0));
-        setTimeout(function(){
-          _imgPredictions[modelId]=label;
-          stopImgThinking(predEl);
-          if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
-          if(pBtn) pBtn.disabled=false;
-          evaluate();updateOutputs();
-        },wait);
-      });
-    };
-    img.src=url;
-  }
-  setInterval(function(){
-    if(!_mobileNet) return;
-    APP.imageModels.forEach(function(im){
-      var vid=document.getElementById('imgcam-'+im.id);
-      if(!vid||!vid.srcObject||vid.readyState<2) return;
-      var canEl=document.getElementById('imgcap-'+im.id);
-      canEl.width=224;canEl.height=224;
-      canEl.getContext('2d').drawImage(vid,0,0,224,224);
-      var predElLive=document.getElementById('imgpred-'+im.id);
-      if(predElLive) predElLive.textContent='🤔 Analysing…';
-      _inferCanvas(im,canEl,function(label){
-        var predEl=document.getElementById('imgpred-'+im.id);
-        if(predEl) predEl.textContent=label?'🎯 '+label:'…';
-        if(label!==_imgPredictions[im.id]){
-          _imgPredictions[im.id]=label;
-          evaluate();updateOutputs();
-        }
-      });
-    });
-    if(APP.imageClusterModels) APP.imageClusterModels.forEach(function(icm){
-      var vid=document.getElementById('imgcam-'+icm.id);
-      if(!vid||!vid.srcObject||vid.readyState<2) return;
-      var canEl=document.getElementById('imgcap-'+icm.id);
-      canEl.width=224;canEl.height=224;
-      canEl.getContext('2d').drawImage(vid,0,0,224,224);
-      var predElLive=document.getElementById('imgpred-'+icm.id);
-      if(predElLive) predElLive.textContent='🤔 Analysing…';
-      var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
-      t.dispose();
-      feat.data().then(function(data){
-        feat.dispose();
-        var label=_nearestCentroid(Array.from(data),icm.centroids,icm.labels);
-        var predEl=document.getElementById('imgpred-'+icm.id);
-        if(predEl) predEl.textContent=label?'🎯 '+label:'…';
-        if(label!==_imgPredictions[icm.id]){
-          _imgPredictions[icm.id]=label;
-          evaluate();updateOutputs();
-        }
-      });
-    });
-  },1000);
-  function uploadImgCluster(modelId,file){
-    var icm=APP.imageClusterModels.find(function(m){return m.id===modelId;});
-    if(!icm||!_mobileNet){showToast('AI engine still loading — please wait');return;}
-    var vid=document.getElementById('imgcam-'+modelId);
-    var ov=document.getElementById('imgov-'+modelId);
-    var prev=document.getElementById('imgprev-'+modelId);
-    var canEl=document.getElementById('imgcap-'+modelId);
-    var predEl=document.getElementById('imgpred-'+modelId);
-    var pBtn=document.getElementById('imgpbtn-'+modelId);
-    if(prev&&prev._url) URL.revokeObjectURL(prev._url);
-    var url=URL.createObjectURL(file);
-    if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
-    if(vid) vid.style.display='none';
-    if(ov) ov.style.display='none';
-    var img=new Image();
-    img.onload=function(){
-      canEl.width=224;canEl.height=224;
-      canEl.getContext('2d').drawImage(img,0,0,224,224);
-      startImgThinking(predEl);
-      if(pBtn) pBtn.disabled=true;
-      var _t0=Date.now();
-      var floorMs=5000+Math.random()*3000;
-      var t=tf.browser.fromPixels(canEl),feat=_mobileNet.infer(t,true);
-      t.dispose();
-      feat.data().then(function(data){
-        feat.dispose();
-        var label=_nearestCentroid(Array.from(data),icm.centroids,icm.labels);
-        var wait=Math.max(0,floorMs-(Date.now()-_t0));
-        setTimeout(function(){
-          _imgPredictions[modelId]=label;
-          stopImgThinking(predEl);
-          if(predEl) predEl.textContent=label?'🎯 '+label:'Could not classify';
-          if(pBtn) pBtn.disabled=false;
-          evaluate();updateOutputs();
-        },wait);
-      });
-    };
-    img.src=url;
   }
 }
 
@@ -1210,8 +1297,8 @@ if(APP.imageModels&&APP.imageModels.length){
     var startBtn=document.createElement('button'); startBtn.id='imgcambtn-'+im.id; startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
     (function(mid){startBtn.onclick=function(){toggleImgCam(mid);};})(im.id);
     actions.appendChild(startBtn);
-    var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
-    var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
+    var uplLbl=document.createElement('label'); uplLbl.id='imgupl-'+im.id; uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
+    var fileInp=document.createElement('input'); fileInp.id='imgfile-'+im.id; fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
     (function(mid){
       fileInp.onchange=function(){
         if(!this.files[0]) return;
@@ -1221,21 +1308,19 @@ if(APP.imageModels&&APP.imageModels.length){
         var vid=document.getElementById('imgcam-'+mid);
         var ov=document.getElementById('imgov-'+mid);
         var predEl=document.getElementById('imgpred-'+mid);
-        var pBtn=document.getElementById('imgpbtn-'+mid);
         if(prev&&prev._url) URL.revokeObjectURL(prev._url);
         var url=URL.createObjectURL(this.files[0]);
         if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
         if(vid) vid.style.display='none';
         if(ov) ov.style.display='none';
         if(predEl) predEl.textContent='Photo selected — click Predict 🎯';
-        if(pBtn) pBtn.style.display='inline-flex';
       };
     })(im.id);
     uplLbl.appendChild(fileInp); actions.appendChild(uplLbl);
-    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+im.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict'; pBtn.style.display='none';
-    (function(mid){pBtn.onclick=function(){if(_pendingFiles[mid])uploadImgModel(mid,_pendingFiles[mid]);};})(im.id);
+    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+im.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict';
+    (function(mid){pBtn.onclick=function(){onImgPredictClick(mid);};})(im.id);
     actions.appendChild(pBtn); card.appendChild(actions);
-    var predEl=document.createElement('div'); predEl.id='imgpred-'+im.id; predEl.className='img-pred-display'; predEl.textContent='Waiting for camera…'; card.appendChild(predEl);
+    var predEl=document.createElement('div'); predEl.id='imgpred-'+im.id; predEl.className='img-pred-display'; predEl.textContent='⏳ Loading AI engine…'; card.appendChild(predEl);
     var hint=document.createElement('div'); hint.className='img-model-hint'; hint.textContent='Recognises: '+im.labels.join(', '); card.appendChild(hint);
     inputCont.appendChild(card);
   });
@@ -1255,8 +1340,8 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
     var startBtn=document.createElement('button'); startBtn.id='imgcambtn-'+icm.id; startBtn.className='img-cam-btn'; startBtn.textContent='📷 Start Camera';
     (function(mid){startBtn.onclick=function(){toggleImgCam(mid);};})(icm.id);
     actions.appendChild(startBtn);
-    var uplLbl=document.createElement('label'); uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
-    var fileInp=document.createElement('input'); fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
+    var uplLbl=document.createElement('label'); uplLbl.id='imgupl-'+icm.id; uplLbl.className='img-upload-lbl'; uplLbl.textContent='📁 Upload Photo';
+    var fileInp=document.createElement('input'); fileInp.id='imgfile-'+icm.id; fileInp.type='file'; fileInp.accept='image/*'; fileInp.style.display='none';
     (function(mid){
       fileInp.onchange=function(){
         if(!this.files[0]) return;
@@ -1266,21 +1351,19 @@ if(APP.imageClusterModels&&APP.imageClusterModels.length){
         var vid=document.getElementById('imgcam-'+mid);
         var ov=document.getElementById('imgov-'+mid);
         var predEl=document.getElementById('imgpred-'+mid);
-        var pBtn=document.getElementById('imgpbtn-'+mid);
         if(prev&&prev._url) URL.revokeObjectURL(prev._url);
         var url=URL.createObjectURL(this.files[0]);
         if(prev){prev._url=url;prev.src=url;prev.style.display='block';}
         if(vid) vid.style.display='none';
         if(ov) ov.style.display='none';
         if(predEl) predEl.textContent='Photo selected — click Predict 🎯';
-        if(pBtn) pBtn.style.display='inline-flex';
       };
     })(icm.id);
     uplLbl.appendChild(fileInp); actions.appendChild(uplLbl);
-    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+icm.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict'; pBtn.style.display='none';
-    (function(mid){pBtn.onclick=function(){if(_pendingFiles[mid])uploadImgCluster(mid,_pendingFiles[mid]);};})(icm.id);
+    var pBtn=document.createElement('button'); pBtn.id='imgpbtn-'+icm.id; pBtn.className='img-cam-btn'; pBtn.textContent='🎯 Predict';
+    (function(mid){pBtn.onclick=function(){onImgPredictClick(mid);};})(icm.id);
     actions.appendChild(pBtn); card.appendChild(actions);
-    var predEl=document.createElement('div'); predEl.id='imgpred-'+icm.id; predEl.className='img-pred-display'; predEl.textContent='Waiting for camera…'; card.appendChild(predEl);
+    var predEl=document.createElement('div'); predEl.id='imgpred-'+icm.id; predEl.className='img-pred-display'; predEl.textContent='⏳ Loading AI engine…'; card.appendChild(predEl);
     var hint=document.createElement('div'); hint.className='img-model-hint'; hint.textContent='Groups: '+icm.labels.join(', '); card.appendChild(hint);
     inputCont.appendChild(card);
   });
@@ -1449,13 +1532,13 @@ _appReady=true;
 
 // ── Standalone AI Model Export ──────────────────────────────────────────────
 
-export function exportAIModel(
+export async function exportAIModel(
   appName = 'My AI Model',
   selectedIds?: Set<string>,
   theme: Theme = 'space',
   creatorName = '',
   instructions = '',
-): void {
+): Promise<void> {
   const keep = (id: string) => !selectedIds || selectedIds.has(id)
   const modelState = useModelStore.getState()
 
@@ -1474,7 +1557,7 @@ export function exportAIModel(
         knnData: tm?.knnData ?? {},
       }
     })
-    html = buildImageModelHTML(appName, models, THEMES[theme], creatorName, instructions)
+    html = buildImageModelHTML(appName, models, THEMES[theme], creatorName, instructions, await getMobileNetLoaderScript())
   } else if (primaryType === 'text-unsupervised' || primaryType === 'image-unsupervised') {
     const mb = allSelected[0]
     const tm = modelState.trainedModels.find(m => m.id === mb?.trainedModelId)
@@ -1486,7 +1569,8 @@ export function exportAIModel(
       centroids: tm?.clusterCentroids ?? [],
       vocab: tm?.clusterVocab,
       idfWeights: tm?.clusterIdfWeights,
-    }, THEMES[theme], creatorName, instructions)
+    }, THEMES[theme], creatorName, instructions,
+    primaryType === 'image-unsupervised' ? await getMobileNetLoaderScript() : '')
   } else {
     const models = allSelected
       .filter(mb => mb.modelType === 'text-supervised')
@@ -1789,6 +1873,7 @@ function buildImageModelHTML(
   t: typeof THEMES[Theme],
   creatorName: string,
   instructions = '',
+  mobileNetLoader = '',
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -1920,6 +2005,7 @@ function toggleSound(){_soundOn=!_soundOn;var b=document.getElementById('snd-tog
 function _getCtx(){if(!_actx){try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}return _actx;}
 function _blip(freq,dur,type){var c=_getCtx();if(!c||!_soundOn)return;var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=type||'sine';o.frequency.value=freq;g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.15,c.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);}
 
+${mobileNetLoader}
 var MODELS = ${modelsJson};
 var _mobileNet = null;
 
@@ -2099,7 +2185,7 @@ var PT_BG='${t.ptBg}',PT_W=${t.ptW},PT_H=${t.ptH},PT_RAD='${t.ptRad}';
 // Load MobileNet then build cards
 var bar = document.getElementById('init-bar');
 if (bar) bar.style.width = '20%';
-mobilenet.load({ version: 2, alpha: 0.5 }).then(function(net) {
+_loadMobileNet().then(function(net) {
   _mobileNet = net;
   var status = document.getElementById('init-status');
   if (status) status.style.display = 'none';
@@ -2165,6 +2251,7 @@ function buildClusterHTML(
   t: typeof THEMES[Theme],
   creatorName: string,
   instructions = '',
+  mobileNetLoader = '',
 ): string {
   const safeTitle = appName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const safeCreator = creatorName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -2314,6 +2401,7 @@ var LABELS = ${labelsJson};
 var VOCAB = ${vocabJson};
 var IDF = ${idfJson};
 var IS_IMAGE = ${isImage ? 'true' : 'false'};
+${mobileNetLoader}
 var _mobileNet = null;
 var _previewReady = false;
 
@@ -2534,7 +2622,7 @@ initDiv.id = 'init-status';
 initDiv.style.cssText = 'font-size:0.8rem;color:rgba(255,255,255,0.35);text-align:center;padding-top:1rem';
 initDiv.innerHTML = '<div style="margin-bottom:0.5rem">Loading AI vision engine… (requires internet)</div><div class="loading-bar" id="init-bar"></div>';
 document.getElementById('main-content').appendChild(initDiv);
-mobilenet.load({ version: 2, alpha: 0.5 }).then(function(net) {
+_loadMobileNet().then(function(net) {
   _mobileNet = net;
   var s = document.getElementById('init-status');
   if (s) s.style.display = 'none';
