@@ -1,9 +1,11 @@
 'use client'
 
+import { useRef } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { useModelStore } from '@/store/useModelStore'
 import { useUIStore } from '@/store/useUIStore'
 import { TrainedModel } from '@/types/model'
+import { downloadTrainedModel, parseTrainedModelFile } from '@/lib/modelFile'
 
 const MODEL_TYPE_LABELS: Record<string, string> = {
   'image-supervised': 'Image Supervised',
@@ -21,7 +23,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(diff / 86400)}d ago`
 }
 
-function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete: () => void }) {
+function DraggableModelCard({ model, onDelete, onSaveFile }: { model: TrainedModel; onDelete: () => void; onSaveFile: () => void }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `trained-model-${model.id}`,
     data: { type: 'trained-model', model },
@@ -76,6 +78,15 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
         <span className="text-xs text-emerald-400/80 font-body font-semibold">✓ Trained</span>
         <span className="text-xs text-white/35 font-body">drag to canvas ↗</span>
       </div>
+
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={onSaveFile}
+        title="Save this model as a file (e.g. to Google Drive) so you can load it on any Chromebook"
+        className="min-h-[32px] rounded-lg bg-white/5 border border-white/15 text-xs font-heading font-semibold text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+      >
+        💾 Save to file
+      </button>
     </div>
   )
 }
@@ -83,7 +94,35 @@ function DraggableModelCard({ model, onDelete }: { model: TrainedModel; onDelete
 export default function TrainedModelsList() {
   const trainedModels = useModelStore((s) => s.trainedModels)
   const deleteTrainedModel = useModelStore((s) => s.deleteTrainedModel)
+  const saveTrainedModel = useModelStore((s) => s.saveTrainedModel)
   const addToast = useUIStore((s) => s.addToast)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleLoadFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow picking the same file again
+    if (!file) return
+    try {
+      const model = parseTrainedModelFile(await file.text())
+      saveTrainedModel(model)
+      addToast(`📂 Loaded "${model.name}" — drag it onto the canvas to use it!`, 'success')
+    } catch (err) {
+      addToast(`⚠️ ${err instanceof Error ? err.message : "Couldn't load that file."}`, 'warn')
+    }
+  }
+
+  const loadButton = (
+    <>
+      <input ref={fileInputRef} type="file" accept=".json,application/json" className="hidden" onChange={handleLoadFile} />
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        title="Load a model you saved as a file earlier"
+        className="w-full min-h-[36px] rounded-xl border border-dashed border-violet-400/40 text-xs font-heading font-semibold text-violet-200 hover:bg-violet-500/10 transition-colors"
+      >
+        📂 Load model from file
+      </button>
+    </>
+  )
 
   if (trainedModels.length === 0) {
     return (
@@ -93,16 +132,22 @@ export default function TrainedModelsList() {
         <p className="text-white/40 text-xs font-body leading-relaxed">
           Add a <span className="text-violet-400">🤖 Model</span> block, link a labelled dataset, and hit Train!
         </p>
+        {loadButton}
       </div>
     )
   }
 
   return (
     <div className="flex flex-col gap-2">
+      {loadButton}
       {trainedModels.map((model) => (
         <DraggableModelCard
           key={model.id}
           model={model}
+          onSaveFile={() => {
+            downloadTrainedModel(model)
+            addToast(`💾 Saved "${model.name}" to a file`, 'success')
+          }}
           onDelete={() => {
             deleteTrainedModel(model.id)
             addToast(`🗑 Deleted "${model.name}"`, 'info')
