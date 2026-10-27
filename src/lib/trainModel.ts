@@ -13,12 +13,37 @@ const MOBILENET_CONFIG = {
   inputRange: [0, 1] as [number, number],
 }
 
-async function loadMobileNet(mobilenetModule: typeof import('@tensorflow-models/mobilenet')) {
-  try {
-    return await mobilenetModule.load(MOBILENET_CONFIG)
-  } catch {
-    throw new Error("Couldn't load the vision model — try refreshing the page.")
+// Loaded once and shared by every train/test/cluster run. Reloading it each
+// time leaked a full copy of the weights into GPU memory per run, which
+// crashed the tab after a few runs on 4 GB Chromebooks.
+let mobileNetPromise: Promise<import('@tensorflow-models/mobilenet').MobileNet> | null = null
+
+function loadMobileNet(mobilenetModule: typeof import('@tensorflow-models/mobilenet')) {
+  if (!mobileNetPromise) {
+    mobileNetPromise = mobilenetModule.load(MOBILENET_CONFIG).catch(() => {
+      mobileNetPromise = null // let the next run try again
+      throw new Error("Couldn't load the vision model — try refreshing the page.")
+    })
   }
+  return mobileNetPromise
+}
+
+// MobileNet only ever sees 224×224 (it squashes larger inputs itself), so draw
+// each photo onto a 224×224 canvas first — the same preparation the exported
+// apps use. Avoids a ~36 MB tensor per 12 MP photo on low-memory Chromebooks.
+const MODEL_INPUT_SIZE = 224
+let modelInputCanvas: HTMLCanvasElement | null = null
+
+function toModelInput(img: HTMLImageElement): HTMLCanvasElement {
+  if (!modelInputCanvas) {
+    modelInputCanvas = document.createElement('canvas')
+    modelInputCanvas.width = MODEL_INPUT_SIZE
+    modelInputCanvas.height = MODEL_INPUT_SIZE
+  }
+  const ctx = modelInputCanvas.getContext('2d', { willReadFrequently: true })!
+  ctx.clearRect(0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE)
+  ctx.drawImage(img, 0, 0, MODEL_INPUT_SIZE, MODEL_INPUT_SIZE)
+  return modelInputCanvas
 }
 
 export function decodeImage(base64: string): Promise<HTMLImageElement> {
@@ -78,7 +103,7 @@ export async function trainImageSupervisedModel(
       } catch {
         throw new Error(`The image "${bankItem.name}" couldn't be loaded for training — it may be corrupted or in an unsupported format. Try removing and re-uploading it.`)
       }
-      const imgTensor = tf.browser.fromPixels(img)
+      const imgTensor = tf.browser.fromPixels(toModelInput(img))
       const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
 
       knn.addExample(features, label.id)
@@ -167,7 +192,7 @@ export async function runInference(
     } catch {
       throw new Error(`The image "${item.name}" couldn't be loaded for testing — it may be corrupted or in an unsupported format.`)
     }
-    const imgTensor = tf.browser.fromPixels(img)
+    const imgTensor = tf.browser.fromPixels(toModelInput(img))
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
     const featureValues = Array.from(await features.data())
 
@@ -307,7 +332,7 @@ export async function runClusterImageInference(
     } catch {
       throw new Error(`The image "${item.name}" couldn't be loaded for testing — it may be corrupted or in an unsupported format.`)
     }
-    const imgTensor = tf.browser.fromPixels(img)
+    const imgTensor = tf.browser.fromPixels(toModelInput(img))
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
     const featureValues = Array.from(await features.data())
 
@@ -354,7 +379,7 @@ export async function clusterImages(
     } catch {
       throw new Error(`One of the images (id: ${items[i].itemId}) couldn't be loaded — it may be corrupted or in an unsupported format.`)
     }
-    const imgTensor = tf.browser.fromPixels(img)
+    const imgTensor = tf.browser.fromPixels(toModelInput(img))
     const features = mobileNet.infer(imgTensor, true) as ReturnType<typeof tf.tensor>
     allFeatures.push(Array.from(await features.data()))
     imgTensor.dispose()
