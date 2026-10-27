@@ -221,7 +221,7 @@ export default function DatasetBuilderPage() {
   useEffect(() => {
     const el = toolbarSlotRef.current
     if (!el) return
-    const ro = new ResizeObserver(([entry]) => setToolbarCompact(entry.contentRect.width < 760))
+    const ro = new ResizeObserver(([entry]) => setToolbarCompact(entry.contentRect.width < 640))
     ro.observe(el)
     return () => ro.disconnect()
   }, [])

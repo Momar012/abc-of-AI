@@ -21,13 +21,11 @@ function ToolButton({
   title,
   onClick,
   children,
-  wide = false,
 }: {
   active: boolean
   title: string
   onClick: () => void
   children: React.ReactNode
-  wide?: boolean
 }) {
   return (
     <button
@@ -35,7 +33,7 @@ function ToolButton({
       title={title}
       aria-label={title}
       aria-pressed={active}
-      className={`${wide ? 'h-9 px-2.5 gap-1 text-xs whitespace-nowrap' : 'w-9 h-9 text-base'} flex items-center justify-center rounded-lg font-heading transition-all ${
+      className={`w-9 h-9 flex items-center justify-center rounded-lg text-base font-heading transition-all ${
         active
           ? 'bg-violet-500/30 border border-violet-400 text-white'
           : 'text-white/60 border border-transparent hover:bg-white/10 hover:text-white'
@@ -46,12 +44,9 @@ function ToolButton({
   )
 }
 
-function CanvasToolGroup({ compact }: { compact: boolean }) {
+function CanvasToolGroup() {
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
-  const multiSelectMode = useUIStore((s) => s.multiSelectMode)
-  const setMultiSelectMode = useUIStore((s) => s.setMultiSelectMode)
-  const requestSelectAll = useUIStore((s) => s.requestSelectAll)
 
   return (
     <div className="flex items-center gap-1">
@@ -63,23 +58,6 @@ function CanvasToolGroup({ compact }: { compact: boolean }) {
       </ToolButton>
       <ToolButton active={canvasTool === 'text'} title="Text (T)" onClick={() => setCanvasTool('text')}>
         🔤
-      </ToolButton>
-      {/* Touchscreens have no Ctrl key, so these are the touch way to pick several blocks (e.g. to Export). */}
-      <ToolButton
-        active={multiSelectMode}
-        wide={!compact}
-        title="Pick many — tap blocks to add them to the selection, or drag a box around them"
-        onClick={() => { setCanvasTool('select'); setMultiSelectMode(!multiSelectMode) }}
-      >
-        ☑️{!compact && <span>Pick many</span>}
-      </ToolButton>
-      <ToolButton
-        active={false}
-        wide={!compact}
-        title="Select all blocks"
-        onClick={() => { setCanvasTool('select'); requestSelectAll() }}
-      >
-        🔳{!compact && <span>All</span>}
       </ToolButton>
     </div>
   )
@@ -828,7 +806,7 @@ export default function CanvasToolbar({ compact = false }: { compact?: boolean }
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap justify-center">
-        <CanvasToolGroup compact={compact} />
+        <CanvasToolGroup />
         <div className="w-px h-5 bg-white/10 self-center" />
         {!compact && <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>}
         <DataMenu compact={compact} />

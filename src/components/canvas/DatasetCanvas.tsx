@@ -16,7 +16,6 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   useReactFlow,
-  useStoreApi,
   OnSelectionChangeParams,
 } from 'reactflow'
 import { useDndMonitor, useDroppable } from '@dnd-kit/core'
@@ -53,17 +52,6 @@ import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
 import RuleEdge from './edges/RuleEdge'
-
-// "Select many" mode: React Flow's own multi-selection flag (normally only on
-// while Ctrl/Cmd is held) is switched on, so taps add/remove blocks — the only
-// way to pick several blocks on a touchscreen, which has no Ctrl key.
-function MultiSelectModeSync({ active }: { active: boolean }) {
-  const store = useStoreApi()
-  useEffect(() => {
-    store.setState({ multiSelectionActive: active })
-  }, [active, store])
-  return null
-}
 
 // Rough footprint assumed for a block that hasn't rendered yet (flow units),
 // used to find a free spot so click-added blocks land side by side.
@@ -377,8 +365,6 @@ export default function DatasetCanvas() {
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
   const canvasInteractive = useUIStore((s) => s.canvasInteractive)
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
-  const multiSelectMode = useUIStore((s) => s.multiSelectMode)
-  const selectAllRequest = useUIStore((s) => s.selectAllRequest)
   const dataBankWidth = useUIStore((s) => s.dataBankWidth)
   const addToast = useUIStore((s) => s.addToast)
   const flashBlock = useUIStore((s) => s.flashBlock)
@@ -464,12 +450,6 @@ export default function DatasetCanvas() {
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
       sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, textBlocks, imageBlocks,
       justAddedBlockId, setRfNodes])
-
-  // Toolbar "Select all" — select every block so a touch user can reach Export/Delete.
-  useEffect(() => {
-    if (!selectAllRequest) return
-    setRfNodes((nds) => nds.map((n) => (n.selected ? n : { ...n, selected: true })))
-  }, [selectAllRequest, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -1157,13 +1137,13 @@ export default function DatasetCanvas() {
         zoomOnPinch
         connectionRadius={30}
         panOnDrag={
-          canvasTool === 'pan' || isSpacePressed || (isTouchInput && canvasTool === 'select' && !multiSelectMode)
+          canvasTool === 'pan' || isSpacePressed || (isTouchInput && canvasTool === 'select')
             ? true
             : canvasTool === 'text'
             ? false
             : [1, 2]
         }
-        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && (!isTouchInput || multiSelectMode)}
+        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && !isTouchInput}
         selectionMode={SelectionMode.Partial}
         nodesDraggable={canvasInteractive && canvasTool === 'select' && !isSpacePressed}
         nodesConnectable={canvasInteractive}
@@ -1180,7 +1160,6 @@ export default function DatasetCanvas() {
           // Sit just right of the Data Bank, which is left-4 + its resizable width.
           style={{ left: leftPanelCollapsed ? '4.5rem' : dataBankWidth + 32 }}
         />
-        <MultiSelectModeSync active={multiSelectMode} />
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
       </ReactFlow>
       {textDragRect && (
