@@ -2,7 +2,7 @@ import { DataItem, LabelledDatasetBlock, UnlabelledDatasetBlock, SplitConfig, Sa
 import { ModelBlock, TrainedModel } from '@/types/model'
 import { RLGridworldBlock } from '@/types/rl'
 import { DoorBlock, BulbBlock } from '@/types/workflow'
-import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, DisplayBlock, BinBlock, TimerBlock } from '@/types/rules'
+import { SensorBlock, ConditionBlock, SwitchBlock, LogicBlock, FanBlock, AlarmBlock, ACBlock, PhoneUnlockBlock, DisplayBlock, BinBlock, TimerBlock, TextBlock, ImageBlock } from '@/types/rules'
 
 const KEY = 'abcai_dataset_v1'
 
@@ -42,6 +42,8 @@ interface PersistedState {
   displayBlocks?: DisplayBlock[]
   binBlocks?: BinBlock[]
   timerBlocks?: TimerBlock[]
+  textBlocks?: TextBlock[]
+  imageBlocks?: ImageBlock[]
 }
 
 export function saveToLocalStorage(state: {
@@ -68,6 +70,8 @@ export function saveToLocalStorage(state: {
   displayBlocks: DisplayBlock[]
   binBlocks: BinBlock[]
   timerBlocks: TimerBlock[]
+  textBlocks: TextBlock[]
+  imageBlocks: ImageBlock[]
 }): SaveResult {
   try {
     const toSave: PersistedState = {
@@ -96,6 +100,8 @@ export function saveToLocalStorage(state: {
       timerBlocks: state.timerBlocks.map(({ isRunning: _r, remainingSeconds: _s, currentOutput: _o, lastTriggerInput: _l, ...rest }) => ({
         ...rest, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
       })),
+      textBlocks: state.textBlocks,
+      imageBlocks: state.imageBlocks,
     }
     localStorage.setItem(KEY, JSON.stringify(toSave))
     return { ok: true }
@@ -169,6 +175,8 @@ export function loadFromLocalStorage(): PersistedState | null {
       timerBlocks: (parsed.timerBlocks ?? []).map((b) => ({
         ...b, isRunning: false, remainingSeconds: 0, currentOutput: null, lastTriggerInput: null,
       })),
+      textBlocks: parsed.textBlocks ?? [],
+      imageBlocks: parsed.imageBlocks ?? [],
     }
   } catch {
     return null

@@ -27,6 +27,7 @@ import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useCanvasStore } from '@/store/useCanvasStore'
 import { createDoubleTapDetector } from '@/hooks/useDoubleTap'
+import { downscaleImage, CANVAS_IMAGE_MAX_DIM } from '@/lib/downscaleImage'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -1029,22 +1030,15 @@ export default function DatasetCanvas() {
       e.preventDefault()
 
       ;(async () => {
-        const bitmap = await createImageBitmap(file)
-        // Cap the stored resolution — clipboard screenshots are often large
-        // uncompressed PNGs, and nothing else in the app compresses images
-        // before persisting them, so this keeps pasted images from being
-        // needlessly huge.
-        const MAX_STORED_DIM = 1400
-        const scale = Math.min(1, MAX_STORED_DIM / Math.max(bitmap.width, bitmap.height))
-        const width = Math.round(bitmap.width * scale)
-        const height = Math.round(bitmap.height * scale)
-        const canvasEl = document.createElement('canvas')
-        canvasEl.width = width
-        canvasEl.height = height
-        const ctx = canvasEl.getContext('2d')
-        if (!ctx) return
-        ctx.drawImage(bitmap, 0, 0, width, height)
-        const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85)
+        // Cap the stored size — clipboard screenshots are often large
+        // uncompressed PNGs, and pasted images are saved with the project.
+        let shrunk
+        try {
+          shrunk = await downscaleImage(file, CANVAS_IMAGE_MAX_DIM, 0.8)
+        } catch {
+          return
+        }
+        const { dataUrl, width, height } = shrunk
 
         if (!canvasRef.current || !rfInstanceRef.current) return
         const bounds = canvasRef.current.getBoundingClientRect()

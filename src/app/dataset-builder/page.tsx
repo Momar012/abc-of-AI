@@ -36,6 +36,7 @@ import { useModelStore } from '@/store/useModelStore'
 import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
+import { useCanvasStore } from '@/store/useCanvasStore'
 import { useDragFromBank } from '@/hooks/useDragFromBank'
 import { saveToLocalStorage, loadFromLocalStorage } from '@/store/persistence'
 import { useCurriculumStore } from '@/store/useCurriculumStore'
@@ -119,6 +120,8 @@ export default function DatasetBuilderPage() {
   const displayBlocks = useRuleStore((s) => s.displayBlocks)
   const binBlocks = useRuleStore((s) => s.binBlocks)
   const timerBlocks = useRuleStore((s) => s.timerBlocks)
+  const textBlocks = useCanvasStore((s) => s.textBlocks)
+  const imageBlocks = useCanvasStore((s) => s.imageBlocks)
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
@@ -181,6 +184,9 @@ export default function DatasetBuilderPage() {
       }
       if (saved.timerBlocks) {
         useRuleStore.setState({ timerBlocks: saved.timerBlocks })
+      }
+      if (saved.textBlocks || saved.imageBlocks) {
+        useCanvasStore.setState({ textBlocks: saved.textBlocks ?? [], imageBlocks: saved.imageBlocks ?? [] })
       }
     }
 
@@ -275,6 +281,8 @@ export default function DatasetBuilderPage() {
         displayBlocks,
         binBlocks,
         timerBlocks,
+        textBlocks,
+        imageBlocks,
       })
       if (result.ok) {
         hasWarnedSaveFailureRef.current = false
@@ -289,7 +297,7 @@ export default function DatasetBuilderPage() {
       }
     }, 500)
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current) }
-  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, addToast])
+  }, [bankItems, labelledBlocks, unlabelledBlocks, splitConfig, earnedBadges, currentDatasetName, savedDatasets, modelBlocks, trainedModels, rlBlocks, doorBlocks, bulbBlocks, sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, textBlocks, imageBlocks, addToast])
 
   // Clear selection if its block was deleted (e.g. via the node's own × button),
   // so the right panel falls back to the Getting Started view instead of going blank.

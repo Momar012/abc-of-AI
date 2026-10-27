@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { useUIStore } from '@/store/useUIStore'
 import { MAX_BANK_ITEMS } from '@/lib/constants'
-import { decodeImage } from '@/lib/trainModel'
+import { downscaleImage, BANK_IMAGE_MAX_DIM } from '@/lib/downscaleImage'
 
 export default function DataBankUploader() {
   const addBankItem = useDatasetStore((s) => s.addBankItem)
@@ -25,21 +25,20 @@ export default function DataBankUploader() {
         }
 
         if (file.type.startsWith('image/')) {
-          const base64 = await fileToBase64(file)
-          // The browser reports a MIME type based on the file extension, not the
-          // actual bytes — a HEIC photo renamed .jpg (common straight off an iPhone)
-          // or a genuinely corrupted file will pass this check but fail to decode.
-          // Catch that now, at upload time, instead of later during training when
-          // the connection to this specific file is much less obvious.
+          // Shrink before storing: a full-size phone photo alone can fill the
+          // ~5 MB the browser allows for saving. Decoding here also catches files
+          // the browser reports as images by extension but can't actually read —
+          // a HEIC photo renamed .jpg (common straight off an iPhone) or a
+          // corrupted file — at upload time instead of later during training.
+          let shrunk
           try {
-            await decodeImage(base64)
+            shrunk = await downscaleImage(file, BANK_IMAGE_MAX_DIM)
           } catch {
             addToast(`⚠ "${file.name}" isn't a format this browser can use — try converting it to JPG or PNG first.`, 'warn')
             continue
           }
-          const blob = new Blob([await file.arrayBuffer()], { type: file.type })
-          const thumbnailUrl = URL.createObjectURL(blob)
-          addBankItem({ type: 'image', name: file.name, content: base64, thumbnailUrl })
+          const thumbnailUrl = URL.createObjectURL(shrunk.blob)
+          addBankItem({ type: 'image', name: file.name, content: shrunk.dataUrl, thumbnailUrl })
           added++
         } else if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
           const text = await file.text()
@@ -104,11 +103,3 @@ export default function DataBankUploader() {
   )
 }
 
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
