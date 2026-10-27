@@ -52,14 +52,14 @@ export default function TestEdge({
 
       {/* Delete button at midpoint */}
       <foreignObject
-        x={labelX - 10}
-        y={labelY - 10}
-        width={20}
-        height={20}
+        x={labelX - 14}
+        y={labelY - 14}
+        width={28}
+        height={28}
         style={{ overflow: 'visible' }}
         className="edgebutton-foreignobject"
       >
-        <div style={{ width: 20, height: 20 }}>
+        <div style={{ width: 28, height: 28 }}>
           <button
             onClick={() =>
               updateModelBlock(target, {
@@ -69,13 +69,13 @@ export default function TestEdge({
               })
             }
             style={{
-              width: 20,
-              height: 20,
+              width: 28,
+              height: 28,
               borderRadius: '50%',
               background: 'rgba(239,68,68,0.85)',
               border: '1px solid rgba(239,68,68,0.5)',
               color: 'white',
-              fontSize: 13,
+              fontSize: 16,
               lineHeight: '1',
               cursor: 'pointer',
               display: 'flex',

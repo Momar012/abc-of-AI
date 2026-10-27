@@ -6,6 +6,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { LabelledDatasetBlock as LabelledBlock } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import LabelCreator from './LabelCreator'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 import LabelTableRow from './LabelTableRow'
 
 interface LabelledDatasetBlockProps {
@@ -17,6 +18,7 @@ export default function LabelledDatasetBlock({ block }: LabelledDatasetBlockProp
   const renameLabelledBlock = useDatasetStore((s) => s.renameLabelledBlock)
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(block.name)
+  const onNameDoubleTap = useDoubleTap(() => setEditingName(true))
 
   const { isOver, setNodeRef } = useDroppable({
     id: `block-table-${block.id}`,
@@ -68,8 +70,9 @@ export default function LabelledDatasetBlock({ block }: LabelledDatasetBlockProp
           ) : (
             <button
               onDoubleClick={() => setEditingName(true)}
+              onPointerUp={onNameDoubleTap}
               className="text-sm font-heading font-bold text-white truncate flex-1 text-left"
-              title="Double-click to rename"
+              title="Double-click or double-tap to rename"
             >
               {block.name}
             </button>
@@ -103,7 +106,7 @@ export default function LabelledDatasetBlock({ block }: LabelledDatasetBlockProp
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto overflow-y-auto max-h-56">
+        <div className="nowheel overflow-x-auto overflow-y-auto max-h-56">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-white/10 bg-[rgba(18,12,45,0.95)]">

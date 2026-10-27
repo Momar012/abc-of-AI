@@ -91,7 +91,7 @@ export default function SpreadsheetPasteModal({ blockId, onClose }: Props) {
         </div>
 
         {/* ── Body ── */}
-        <div className="flex-1 min-h-0 flex flex-col gap-3 px-5 pb-5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-3 px-5 pb-5 overflow-y-auto">
 
           {/* When no data yet: instruction + format hint + big textarea */}
           {rows.length === 0 && (

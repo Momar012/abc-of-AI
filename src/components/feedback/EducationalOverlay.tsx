@@ -28,7 +28,7 @@ export default function EducationalOverlay() {
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.85, y: 20 }}
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-            className="glass-card max-w-md w-full p-8 text-center"
+            className="glass-card max-w-md w-full max-h-full overflow-y-auto p-6 sm:p-8 text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-5xl mb-4">🤖</div>

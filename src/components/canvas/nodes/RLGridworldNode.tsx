@@ -80,7 +80,7 @@ export default function RLGridworldNode({ data, selected }: NodeProps<{ block: R
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => removeRLBlock(block.id)}
-            className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
+            className="relative w-6 h-6 before:content-[''] before:absolute before:-inset-1 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
           >
             ×
           </button>
@@ -182,7 +182,7 @@ export default function RLGridworldNode({ data, selected }: NodeProps<{ block: R
 
         {/* Status / hint */}
         {block.trainingStatus === 'idle' && (
-          <p className="text-xs text-white/35 font-body text-center">Double-click for properties</p>
+          <p className="text-xs text-white/35 font-body text-center">Double-click or double-tap for properties</p>
         )}
         {block.trainingStatus === 'paused' && (
           <p className="text-xs text-amber-400/70 font-body text-center">⏸ Paused</p>

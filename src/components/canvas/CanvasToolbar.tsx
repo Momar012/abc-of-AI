@@ -21,17 +21,21 @@ function ToolButton({
   title,
   onClick,
   children,
+  wide = false,
 }: {
   active: boolean
   title: string
   onClick: () => void
   children: React.ReactNode
+  wide?: boolean
 }) {
   return (
     <button
       onClick={onClick}
       title={title}
-      className={`w-8 h-8 flex items-center justify-center rounded-lg text-base font-heading transition-all ${
+      aria-label={title}
+      aria-pressed={active}
+      className={`${wide ? 'h-9 px-2.5 gap-1 text-xs whitespace-nowrap' : 'w-9 h-9 text-base'} flex items-center justify-center rounded-lg font-heading transition-all ${
         active
           ? 'bg-violet-500/30 border border-violet-400 text-white'
           : 'text-white/60 border border-transparent hover:bg-white/10 hover:text-white'
@@ -42,9 +46,12 @@ function ToolButton({
   )
 }
 
-function CanvasToolGroup() {
+function CanvasToolGroup({ compact }: { compact: boolean }) {
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
+  const multiSelectMode = useUIStore((s) => s.multiSelectMode)
+  const setMultiSelectMode = useUIStore((s) => s.setMultiSelectMode)
+  const requestSelectAll = useUIStore((s) => s.requestSelectAll)
 
   return (
     <div className="flex items-center gap-1">
@@ -56,6 +63,23 @@ function CanvasToolGroup() {
       </ToolButton>
       <ToolButton active={canvasTool === 'text'} title="Text (T)" onClick={() => setCanvasTool('text')}>
         🔤
+      </ToolButton>
+      {/* Touchscreens have no Ctrl key, so these are the touch way to pick several blocks (e.g. to Export). */}
+      <ToolButton
+        active={multiSelectMode}
+        wide={!compact}
+        title="Pick many — tap blocks to add them to the selection, or drag a box around them"
+        onClick={() => { setCanvasTool('select'); setMultiSelectMode(!multiSelectMode) }}
+      >
+        ☑️{!compact && <span>Pick many</span>}
+      </ToolButton>
+      <ToolButton
+        active={false}
+        wide={!compact}
+        title="Select all blocks"
+        onClick={() => { setCanvasTool('select'); requestSelectAll() }}
+      >
+        🔳{!compact && <span>All</span>}
       </ToolButton>
     </div>
   )
@@ -81,8 +105,8 @@ function DraggableActionItem({
       {...listeners}
       {...attributes}
       onClick={() => { requestQuickAdd(blockType); onAdd() }}
-      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
-      className="text-left px-3 py-2 rounded-lg text-xs font-heading font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors whitespace-nowrap cursor-grab active:cursor-grabbing select-none"
+      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'pan-y' }}
+      className="text-left px-3 py-2.5 min-h-[40px] flex items-center rounded-lg text-sm font-heading font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors whitespace-nowrap cursor-grab active:cursor-grabbing select-none"
     >
       {label}
     </div>
@@ -104,7 +128,7 @@ function useDropdownPosition() {
   return { pos, wrapperRef, computePos }
 }
 
-function DataMenu() {
+function DataMenu({ compact }: { compact: boolean }) {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
@@ -138,14 +162,14 @@ function DataMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
-        🗂️ Datasets {open ? '▴' : '▾'}
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Datasets" aria-label="Datasets">
+        🗂️{!compact && ' Datasets'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )
 }
 
-function ActionsMenu() {
+function ActionsMenu({ compact }: { compact: boolean }) {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
@@ -187,14 +211,14 @@ function ActionsMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
-        ⚡ Actions {open ? '▴' : '▾'}
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Actions" aria-label="Actions">
+        ⚡{!compact && ' Actions'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )
 }
 
-function ModelMenu() {
+function ModelMenu({ compact }: { compact: boolean }) {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
@@ -239,14 +263,14 @@ function ModelMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle}>
-        🤖 Model {open ? '▴' : '▾'}
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Model" aria-label="Model">
+        🤖{!compact && ' Model'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )
 }
 
-function RuleBasedMenu() {
+function RuleBasedMenu({ compact }: { compact: boolean }) {
   const [open, setOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
@@ -305,8 +329,8 @@ function RuleBasedMenu() {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="ghost" onClick={handleToggle}>
-        🔌 Rule-Based {open ? '▴' : '▾'}
+      <GlowButton size="xs" variant="ghost" onClick={handleToggle} title="Rule-Based" aria-label="Rule-Based">
+        🔌{!compact && ' Rule-Based'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
   )
@@ -497,7 +521,8 @@ function SelectionBar() {
           <span className="text-xs font-heading font-bold text-white/80">{isAI ? 'AI Model' : 'App'}</span>
           <button
             onClick={() => setShowNaming(false)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-md text-white/28 hover:text-white/75 hover:bg-white/10 transition-colors text-xs"
+            aria-label="Close"
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-md text-white/40 hover:text-white/75 hover:bg-white/10 transition-colors text-sm"
           >
             ✕
           </button>
@@ -509,7 +534,7 @@ function SelectionBar() {
             <button
               key={t.id}
               onClick={() => setActiveTab(i)}
-              className={`flex-1 py-1.5 rounded-lg text-[0.65rem] font-heading font-bold transition-all ${
+              className={`flex-1 py-2 min-h-[36px] rounded-lg text-xs font-heading font-bold transition-all ${
                 activeTab === i
                   ? 'bg-violet-500/20 text-white border border-violet-400/40'
                   : 'text-white/30 border border-white/8 hover:text-white/55 hover:border-white/18 hover:bg-white/5'
@@ -521,7 +546,7 @@ function SelectionBar() {
         </div>}
 
         {/* ── Tab content — fixed height ──────────────── */}
-        <div className="px-4 pt-3 pb-2 h-[172px] overflow-y-auto">
+        <div className="px-4 pt-3 pb-2 h-[min(200px,40vh)] overflow-y-auto">
           {isExporting ? (
             <div className="h-full flex flex-col items-center justify-center gap-4">
               {(isAI
@@ -635,10 +660,10 @@ function SelectionBar() {
                       >
                         {inputCards.map(card => (
                           <Reorder.Item key={card.id} value={card}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                            className="flex items-center gap-1.5 px-2 py-2 min-h-[32px] rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors touch-none"
                           >
-                            <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
-                            <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                            <span className="text-white/40 text-xs select-none">⠿</span>
+                            <span className="text-xs font-heading text-white/65 truncate">{card.icon} {card.name}</span>
                           </Reorder.Item>
                         ))}
                       </Reorder.Group>
@@ -653,10 +678,10 @@ function SelectionBar() {
                       >
                         {outputCards.map(card => (
                           <Reorder.Item key={card.id} value={card}
-                            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors"
+                            className="flex items-center gap-1.5 px-2 py-2 min-h-[32px] rounded-md bg-white/5 border border-white/8 cursor-grab active:cursor-grabbing select-none hover:bg-white/8 transition-colors touch-none"
                           >
-                            <span className="text-white/22 text-[0.55rem] select-none">⠿</span>
-                            <span className="text-[0.62rem] font-heading text-white/65 truncate">{card.icon} {card.name}</span>
+                            <span className="text-white/40 text-xs select-none">⠿</span>
+                            <span className="text-xs font-heading text-white/65 truncate">{card.icon} {card.name}</span>
                           </Reorder.Item>
                         ))}
                       </Reorder.Group>
@@ -778,7 +803,7 @@ function SelectionBar() {
         onClick={() => setShowNaming(true)}
         disabled={!activeCheck.valid}
         title={activeTooltips[activeCheck.reason]}
-        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold transition-all ${
+        className={`flex items-center gap-1 px-2.5 py-1 min-h-[32px] rounded-lg text-xs font-heading font-semibold transition-all ${
           activeCheck.valid
             ? 'bg-gradient-to-r from-violet-500/20 to-teal-500/20 border border-violet-500/40 text-white hover:from-violet-500/30 hover:to-teal-500/30'
             : 'border border-white/10 text-white/25 cursor-not-allowed'
@@ -789,7 +814,7 @@ function SelectionBar() {
       {!isSingleModel && (
         <button
           onClick={handleDelete}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold border border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-300 transition-all"
+          className="flex items-center gap-1 px-2.5 py-1 min-h-[32px] rounded-lg text-xs font-heading font-semibold border border-red-500/30 text-red-400/70 hover:bg-red-500/10 hover:text-red-300 transition-all"
         >
           🗑️ Delete
         </button>
@@ -798,18 +823,19 @@ function SelectionBar() {
   )
 }
 
-export default function CanvasToolbar() {
+/** `compact` = icon-only buttons, used when the space between the side panels is narrow (Chromebook screens) so the toolbar stays on one row. */
+export default function CanvasToolbar({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap">
-        <CanvasToolGroup />
+      <div className="flex items-center gap-1.5 p-1.5 glass-panel rounded-xl flex-wrap justify-center">
+        <CanvasToolGroup compact={compact} />
         <div className="w-px h-5 bg-white/10 self-center" />
-        <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>
-        <DataMenu />
-        <ModelMenu />
-        <ActionsMenu />
+        {!compact && <span className="hidden xl:inline text-xs text-white/40 font-heading">Drag or click to add:</span>}
+        <DataMenu compact={compact} />
+        <ModelMenu compact={compact} />
+        <ActionsMenu compact={compact} />
         <div className="w-px h-5 bg-white/10 self-center" />
-        <RuleBasedMenu />
+        <RuleBasedMenu compact={compact} />
       </div>
       <SelectionBar />
     </div>

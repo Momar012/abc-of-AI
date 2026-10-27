@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { useModelStore } from '@/store/useModelStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import { LABEL_PALETTE } from '@/lib/constants'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 
 function EditableClusterName({
   trainedModelId,
@@ -20,6 +21,7 @@ function EditableClusterName({
   const renameClusterLabel = useModelStore((s) => s.renameClusterLabel)
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(name)
+  const onNameDoubleTap = useDoubleTap(() => { setValue(name); setEditing(true) })
 
   const commit = () => {
     const trimmed = value.trim()
@@ -50,9 +52,10 @@ function EditableClusterName({
   return (
     <button
       onDoubleClick={() => { setValue(name); setEditing(true) }}
+      onPointerUp={onNameDoubleTap}
       className="text-sm font-heading font-bold hover:opacity-80 transition-opacity text-left"
       style={{ color }}
-      title="Double-click to rename"
+      title="Double-click or double-tap to rename"
     >
       {name}
     </button>

@@ -73,7 +73,7 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => { removeTimerBlock(block.id); evaluateGraph() }}
-            className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
+            className="relative w-6 h-6 before:content-[''] before:absolute before:-inset-1 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×
           </button>
@@ -100,7 +100,7 @@ export default function TimerNode({ data, selected }: NodeProps<{ block: TimerBl
           <p className="text-xs text-white/35 font-body text-center">Connect a rule</p>
         )}
 
-        <p className="text-[10px] text-white/35 font-body text-center italic">double-click for properties</p>
+        <p className="text-[10px] text-white/35 font-body text-center italic">double-click or double-tap for properties</p>
       </div>
     </div>
   )

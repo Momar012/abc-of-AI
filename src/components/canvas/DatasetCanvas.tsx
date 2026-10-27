@@ -16,6 +16,7 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   useReactFlow,
+  useStoreApi,
   OnSelectionChangeParams,
 } from 'reactflow'
 import { useDndMonitor, useDroppable } from '@dnd-kit/core'
@@ -26,6 +27,7 @@ import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useCanvasStore } from '@/store/useCanvasStore'
+import { createDoubleTapDetector } from '@/hooks/useDoubleTap'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -52,8 +54,73 @@ import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
 import RuleEdge from './edges/RuleEdge'
 
+// "Select many" mode: React Flow's own multi-selection flag (normally only on
+// while Ctrl/Cmd is held) is switched on, so taps add/remove blocks — the only
+// way to pick several blocks on a touchscreen, which has no Ctrl key.
+function MultiSelectModeSync({ active }: { active: boolean }) {
+  const store = useStoreApi()
+  useEffect(() => {
+    store.setState({ multiSelectionActive: active })
+  }, [active, store])
+  return null
+}
+
+// Rough footprint assumed for a block that hasn't rendered yet (flow units),
+// used to find a free spot so click-added blocks land side by side.
+const NEW_BLOCK_W = 280
+const NEW_BLOCK_H = 220
+const NEW_BLOCK_GAP = 40
+
+/**
+ * Top-left position for a new block near `center`, stepping outward (sideways
+ * first, then rows above/below) until it doesn't overlap an existing block.
+ * Prefers spots inside the visible area; falls back to the centre.
+ */
+function findFreeSpot(
+  center: { x: number; y: number },
+  nodes: Node[],
+  visible: { minX: number; minY: number; maxX: number; maxY: number },
+) {
+  const start = { x: center.x - NEW_BLOCK_W / 2, y: center.y - NEW_BLOCK_H / 2 }
+  const rects = nodes.map((n) => ({
+    x: n.positionAbsolute?.x ?? n.position.x,
+    y: n.positionAbsolute?.y ?? n.position.y,
+    w: n.width ?? NEW_BLOCK_W,
+    h: n.height ?? NEW_BLOCK_H,
+  }))
+  const pad = NEW_BLOCK_GAP / 2
+  const isFree = (x: number, y: number) => rects.every((r) =>
+    x + NEW_BLOCK_W + pad <= r.x || r.x + r.w + pad <= x ||
+    y + NEW_BLOCK_H + pad <= r.y || r.y + r.h + pad <= y)
+  const isVisible = (x: number, y: number) =>
+    x >= visible.minX && y >= visible.minY && x + NEW_BLOCK_W <= visible.maxX && y + NEW_BLOCK_H <= visible.maxY
+
+  const offsets: Array<[number, number]> = []
+  for (let ring = 0; ring <= 6; ring++) {
+    for (let dy = -ring; dy <= ring; dy++) {
+      for (let dx = -ring; dx <= ring; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) === ring) offsets.push([dx, dy])
+      }
+    }
+  }
+  // Within a ring: same row first, then nearest rows; right before left.
+  offsets.sort((a, b) =>
+    Math.max(Math.abs(a[0]), Math.abs(a[1])) - Math.max(Math.abs(b[0]), Math.abs(b[1])) ||
+    Math.abs(a[1]) - Math.abs(b[1]) || Math.abs(a[0]) - Math.abs(b[0]) || b[0] - a[0] || a[1] - b[1])
+
+  const candidates = offsets.map(([dx, dy]) => ({
+    x: start.x + dx * (NEW_BLOCK_W + NEW_BLOCK_GAP),
+    y: start.y + dy * (NEW_BLOCK_H + NEW_BLOCK_GAP),
+  }))
+  return (
+    candidates.find((c) => isFree(c.x, c.y) && isVisible(c.x, c.y)) ??
+    candidates.find((c) => isFree(c.x, c.y)) ??
+    start
+  )
+}
+
 function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
-  const { project } = useReactFlow()
+  const { project, getNodes, getViewport, setViewport } = useReactFlow()
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
@@ -147,15 +214,27 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
     },
   })
 
-  // Click-to-add (CanvasToolbar palette items): place the new block at the
+  // Click-to-add (CanvasToolbar palette items): place the new block near the
   // center of the currently visible canvas — not a hardcoded canvas-space
-  // default — so it's never off-screen after the user has panned/zoomed.
+  // default — so it's never off-screen after the user has panned/zoomed, and
+  // beside (not on top of) blocks already there.
   useEffect(() => {
     if (!quickAddRequest || !canvasRef.current) return
     const bounds = canvasRef.current.getBoundingClientRect()
-    const jitter = () => (Math.random() - 0.5) * 60
-    const centerPos = project({ x: bounds.width / 2 + jitter(), y: bounds.height / 2 + jitter() })
-    const id = addBlockByType(quickAddRequest.blockType, centerPos)
+    // Visible area minus the floating toolbar along the top edge
+    const topLeft = project({ x: 16, y: 80 })
+    const bottomRight = project({ x: bounds.width - 16, y: bounds.height - 16 })
+    const visible = { minX: topLeft.x, minY: topLeft.y, maxX: bottomRight.x, maxY: bottomRight.y }
+    const pos = findFreeSpot(project({ x: bounds.width / 2, y: bounds.height / 2 }), getNodes(), visible)
+    const id = addBlockByType(quickAddRequest.blockType, pos)
+    // The only free spot may be partly off-screen on a small Chromebook
+    // screen — slide the view just enough to show the whole new block.
+    const shiftX = pos.x < visible.minX ? pos.x - visible.minX : Math.max(0, pos.x + NEW_BLOCK_W - visible.maxX)
+    const shiftY = pos.y < visible.minY ? pos.y - visible.minY : Math.max(0, pos.y + NEW_BLOCK_H - visible.maxY)
+    if (shiftX || shiftY) {
+      const vp = getViewport()
+      setViewport({ x: vp.x - shiftX * vp.zoom, y: vp.y - shiftY * vp.zoom, zoom: vp.zoom }, { duration: 300 })
+    }
     if (id) flashBlock(id)
     clearQuickAddRequest()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -297,8 +376,10 @@ export default function DatasetCanvas() {
   const canvasTool = useUIStore((s) => s.canvasTool)
   const setCanvasTool = useUIStore((s) => s.setCanvasTool)
   const canvasInteractive = useUIStore((s) => s.canvasInteractive)
-  const setCanvasInteractive = useUIStore((s) => s.setCanvasInteractive)
   const setCanvasSelection = useUIStore((s) => s.setCanvasSelection)
+  const multiSelectMode = useUIStore((s) => s.multiSelectMode)
+  const selectAllRequest = useUIStore((s) => s.selectAllRequest)
+  const dataBankWidth = useUIStore((s) => s.dataBankWidth)
   const addToast = useUIStore((s) => s.addToast)
   const flashBlock = useUIStore((s) => s.flashBlock)
 
@@ -383,6 +464,12 @@ export default function DatasetCanvas() {
   }, [labelledBlocks, unlabelledBlocks, modelBlocks, rlBlocks, doorBlocks, bulbBlocks,
       sensorBlocks, conditionBlocks, switchBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, textBlocks, imageBlocks,
       justAddedBlockId, setRfNodes])
+
+  // Toolbar "Select all" — select every block so a touch user can reach Export/Delete.
+  useEffect(() => {
+    if (!selectAllRequest) return
+    setRfNodes((nds) => nds.map((n) => (n.selected ? n : { ...n, selected: true })))
+  }, [selectAllRequest, setRfNodes])
 
   // Sync linked IDs → RF edges
   useEffect(() => {
@@ -917,6 +1004,16 @@ export default function DatasetCanvas() {
     setSelectedBlock(node.id, node.type as InspectableType)
   }, [canvasTool, setSelectedBlock])
 
+  // Chrome doesn't reliably turn a finger double-tap into dblclick on blocks,
+  // so detect it from taps too — double-click/double-tap stays the only way in.
+  const nodeDoubleTapRef = useRef(createDoubleTapDetector())
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    const pointerType = (event.nativeEvent as PointerEvent).pointerType || (isTouchInput ? 'touch' : 'mouse')
+    if (nodeDoubleTapRef.current(pointerType, node.id, event.clientX, event.clientY)) {
+      onNodeDoubleClick(event, node)
+    }
+  }, [isTouchInput, onNodeDoubleClick])
+
   // Keyboard shortcuts: H = hand/pan tool, V = selection tool, T = text tool, Escape = back to selection tool + close Properties
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1041,6 +1138,7 @@ export default function DatasetCanvas() {
           setCanvasSelection(nodes.map((n) => ({ id: n.id, type: n.type ?? '' })))
         }
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeClick={onNodeClick}
         onPaneClick={clearSelectedBlock}
         zoomOnDoubleClick={false}
         onInit={(instance) => { rfInstanceRef.current = instance }}
@@ -1048,17 +1146,24 @@ export default function DatasetCanvas() {
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.05}
+        // Cap the auto-fit: with only one or two blocks it zoomed to 200%, filling a Chromebook screen
+        fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+        minZoom={0.25}
         maxZoom={2}
+        // Chromebook touchpads send two-finger scroll as plain wheel events —
+        // pan with them; pinch arrives as Ctrl+wheel, which still zooms.
+        panOnScroll
+        zoomOnScroll={false}
+        zoomOnPinch
+        connectionRadius={30}
         panOnDrag={
-          canvasTool === 'pan' || isSpacePressed || (isTouchInput && canvasTool === 'select')
+          canvasTool === 'pan' || isSpacePressed || (isTouchInput && canvasTool === 'select' && !multiSelectMode)
             ? true
             : canvasTool === 'text'
             ? false
             : [1, 2]
         }
-        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && !isTouchInput}
+        selectionOnDrag={canvasTool === 'select' && !isSpacePressed && (!isTouchInput || multiSelectMode)}
         selectionMode={SelectionMode.Partial}
         nodesDraggable={canvasInteractive && canvasTool === 'select' && !isSpacePressed}
         nodesConnectable={canvasInteractive}
@@ -1067,13 +1172,15 @@ export default function DatasetCanvas() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} color="rgba(255,255,255,0.18)" gap={24} size={1.5} />
+        {/* No lock button — a stray tap on it froze the whole canvas for kids. */}
         <Controls
           position="bottom-left"
-          onInteractiveChange={setCanvasInteractive}
-          className={`!bg-white/10 !border-white/10 !rounded-xl !bottom-4 transition-[left] duration-200 ease-out ${
-            leftPanelCollapsed ? '!left-[4.5rem]' : '!left-[17rem] 2xl:!left-[20rem]'
-          }`}
+          showInteractive={false}
+          className="!bg-white/10 !border-white/10 !rounded-xl !bottom-4 transition-[left] duration-200 ease-out"
+          // Sit just right of the Data Bank, which is left-4 + its resizable width.
+          style={{ left: leftPanelCollapsed ? '4.5rem' : dataBankWidth + 32 }}
         />
+        <MultiSelectModeSync active={multiSelectMode} />
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
       </ReactFlow>
       {textDragRect && (

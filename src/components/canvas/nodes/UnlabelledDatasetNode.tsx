@@ -34,7 +34,7 @@ export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ bl
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => removeUnlabelledBlock(block.id)}
-            className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
+            className="relative w-6 h-6 before:content-[''] before:absolute before:-inset-1 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
           >
             ×
           </button>
@@ -47,7 +47,7 @@ export default function UnlabelledDatasetNode({ data, selected }: NodeProps<{ bl
 
         {/* Hint */}
         <p className="text-xs text-white/35 font-body text-center mt-1">
-          Double-click for properties
+          Double-click or double-tap for properties
         </p>
       </div>
 

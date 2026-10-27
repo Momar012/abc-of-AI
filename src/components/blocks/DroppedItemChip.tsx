@@ -46,7 +46,7 @@ export default function DroppedItemChip({ itemId, blockId, labelId, color }: Dro
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleRemove}
-        className="ml-auto flex-shrink-0 opacity-0 group-hover:opacity-100 text-white/40 hover:text-red-400 transition-opacity leading-none"
+        className="relative ml-auto flex-shrink-0 w-5 h-5 flex items-center justify-center before:content-[''] before:absolute before:-inset-1.5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 text-white/40 hover:text-red-400 transition-opacity leading-none"
       >
         ×
       </button>

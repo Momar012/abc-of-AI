@@ -109,6 +109,15 @@ body {
   box-shadow: 0 0 10px rgba(139, 92, 246, 0.9);
 }
 
+/* Invisible ~32px grab area around each 10–12px port so wires are easy to start
+   with a touchpad or a finger (the visible dot stays small). */
+.react-flow__handle::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+}
+
 .react-flow__connection-line {
   stroke: #8B5CF6;
 }
@@ -120,6 +129,8 @@ body {
 }
 
 .react-flow__controls-button {
+  width: 32px !important;
+  height: 32px !important;
   border: none !important;
   border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: transparent !important;
@@ -191,11 +202,11 @@ body {
 /* Widen the text box's resize-handle hit areas (default is 1px) */
 .react-flow__node-text .react-flow__resize-control.line.left,
 .react-flow__node-text .react-flow__resize-control.line.right {
-  width: 8px;
+  width: 12px;
 }
 .react-flow__node-text .react-flow__resize-control.line.top,
 .react-flow__node-text .react-flow__resize-control.line.bottom {
-  height: 8px;
+  height: 12px;
 }
 
 /* Cross-browser range slider — sensor nodes (no accent-color needed, works on Chrome < 93) */
@@ -215,13 +226,13 @@ body {
 }
 .sensor-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #fb923c;
   border: 2px solid #fff;
   box-sizing: border-box;
-  margin-top: -6px;
+  margin-top: -9px;
   cursor: grab;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
   transition: transform 0.1s ease;
@@ -237,8 +248,8 @@ body {
   border: none;
 }
 .sensor-slider::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #fb923c;
   border: 2px solid #fff;

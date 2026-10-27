@@ -17,8 +17,9 @@ const variantStyles = {
 }
 
 const sizeStyles = {
-  xs: 'px-2 py-1 text-xs',
-  sm: 'px-3 py-1.5 text-sm',
+  // Min heights keep small buttons easy to hit with a finger on touchscreen Chromebooks
+  xs: 'px-2 py-1 text-xs min-h-[32px]',
+  sm: 'px-3 py-1.5 text-sm min-h-[36px]',
   md: 'px-5 py-2.5 text-sm',
   lg: 'px-8 py-3.5 text-base',
 }

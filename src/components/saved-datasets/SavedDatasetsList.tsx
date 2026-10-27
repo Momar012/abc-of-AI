@@ -30,7 +30,7 @@ function DraggableDatasetCard({ ds, onDelete }: { ds: SavedDataset; onDelete: ()
       {...listeners}
       {...attributes}
       className="glass-card rounded-xl p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing"
-      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'none' }}
+      style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'pan-y' }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">

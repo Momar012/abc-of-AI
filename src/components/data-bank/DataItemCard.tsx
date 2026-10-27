@@ -40,7 +40,7 @@ export default function DataItemCard({ item, isOverlay = false }: DataItemCardPr
         ${isOverlay ? 'shadow-2xl shadow-violet-500/30 rotate-2 scale-105 border-white/10' : ''}
         ${!isOverlay && isSelected ? 'border-violet-400 ring-2 ring-violet-400/60' : !isOverlay ? 'border-white/10' : ''}
       `}
-      style={isOverlay ? undefined : { touchAction: 'none', userSelect: 'none' }}
+      style={isOverlay ? undefined : { touchAction: 'pan-y', userSelect: 'none' }}
       {...(isOverlay ? {} : { ...attributes, ...listeners })}
     >
       {item.type === 'image' && item.thumbnailUrl ? (
@@ -77,8 +77,8 @@ export default function DataItemCard({ item, isOverlay = false }: DataItemCardPr
         <button
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); removeBankItem(item.id) }}
-          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white/60 text-xs
-            flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+          className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white/70 text-sm before:content-[''] before:absolute before:-inset-1.5
+            flex items-center justify-center opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity hover:text-red-400"
         >
           ×
         </button>

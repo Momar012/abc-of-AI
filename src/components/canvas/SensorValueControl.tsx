@@ -68,7 +68,7 @@ export default function SensorValueControl({ value, min, max, unit = '', onChang
 
   const pct = max > min ? Math.round(((value - min) / (max - min)) * 100) : 0
   const lg = size === 'lg'
-  const btnCls = `${lg ? 'w-8 h-8 text-lg' : 'w-6 h-6 text-sm'} flex-shrink-0 rounded-full bg-white/10 text-orange-200 font-heading font-bold flex items-center justify-center hover:bg-orange-500/25 active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none select-none`
+  const btnCls = `${lg ? 'w-9 h-9 text-lg' : 'w-8 h-8 text-base'} flex-shrink-0 rounded-full bg-white/10 text-orange-200 font-heading font-bold flex items-center justify-center hover:bg-orange-500/25 active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none select-none`
 
   return (
     <div className="nodrag nopan nowheel flex flex-col gap-1.5">

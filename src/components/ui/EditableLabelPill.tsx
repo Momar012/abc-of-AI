@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Label } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 
 interface Props {
   blockId: string
@@ -16,6 +17,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
   const [nameValue, setNameValue] = useState(label.name)
   const [renameError, setRenameError] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const onNameDoubleTap = useDoubleTap(() => { setNameValue(label.name); setEditing(true) })
   const labels = useDatasetStore((s) => s.labelledBlocks.find((b) => b.id === blockId)?.labels ?? [])
   const bankItems = useDatasetStore((s) => s.bankItems)
   // Defensive: count only ids that still resolve to a real item, so an orphaned
@@ -99,9 +101,10 @@ export default function EditableLabelPill({ blockId, label }: Props) {
       ) : (
         <button
           onDoubleClick={() => { setNameValue(label.name); setEditing(true) }}
+          onPointerUp={onNameDoubleTap}
           onPointerDown={(e) => e.stopPropagation()}
           className="hover:opacity-80 transition-opacity"
-          title="Double-click to rename"
+          title="Double-click or double-tap to rename"
         >
           {label.name}
         </button>
@@ -112,7 +115,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={handleDeleteClick}
-        className="opacity-0 group-hover:opacity-100 hover:text-red-400 text-white/40 transition-all leading-none ml-0.5"
+        className="relative w-5 h-5 inline-flex items-center justify-center before:content-[''] before:absolute before:-inset-1.5 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 hover:text-red-400 text-white/40 transition-all leading-none ml-0.5"
         title="Delete label"
       >
         ×

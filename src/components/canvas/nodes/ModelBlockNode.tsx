@@ -159,7 +159,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
         id="prediction-out"
         onMouseEnter={() => setHoveredHandle('prediction-out')}
         onMouseLeave={() => setHoveredHandle(null)}
-        style={{ background: '#10B981', border: '2px solid #064E3B', width: 10, height: 10, right: -5, top: '85%' }}
+        style={{ background: '#10B981', border: '2px solid #064E3B', width: 12, height: 12, right: -6, top: '85%' }}
       />
       {hoveredHandle === 'prediction-out' && (
         <div className="absolute right-4 z-50 pointer-events-none" style={{ top: '85%', transform: 'translateY(-50%)' }}>
@@ -192,7 +192,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => removeModelBlock(block.id)}
-            className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
+            className="relative w-6 h-6 before:content-[''] before:absolute before:-inset-1 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all flex-shrink-0"
           >
             ×
           </button>
@@ -237,7 +237,7 @@ export default function ModelBlockNode({ data, selected }: NodeProps<{ block: Mo
 
         {/* Hint */}
         <p className="text-xs text-white/35 font-body text-center mt-1">
-          Double-click for properties
+          Double-click or double-tap for properties
         </p>
       </div>
     </div>

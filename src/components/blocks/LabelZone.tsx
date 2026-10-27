@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { Label } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import DroppedItemChip from './DroppedItemChip'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 
 interface LabelZoneProps {
   blockId: string
@@ -17,6 +18,7 @@ export default function LabelZone({ blockId, label }: LabelZoneProps) {
   const removeLabel = useDatasetStore((s) => s.removeLabel)
   const [editing, setEditing] = useState(false)
   const [nameValue, setNameValue] = useState(label.name)
+  const onNameDoubleTap = useDoubleTap(() => setEditing(true))
 
   const { isOver, setNodeRef } = useDroppable({
     id: `label-${blockId}-${label.id}`,
@@ -60,8 +62,9 @@ export default function LabelZone({ blockId, label }: LabelZoneProps) {
           ) : (
             <button
               onDoubleClick={() => setEditing(true)}
+              onPointerUp={onNameDoubleTap}
               className="text-xs font-heading font-semibold text-white/90 hover:text-white truncate"
-              title="Double-click to rename"
+              title="Double-click or double-tap to rename"
             >
               {label.name}
             </button>

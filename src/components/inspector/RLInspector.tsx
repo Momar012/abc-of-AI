@@ -117,6 +117,8 @@ function GridEditor({ block }: { block: RLGridworldBlock }) {
           padding: 4,
           borderRadius: 8,
           width: 'fit-content',
+          // Let a finger drag paint walls instead of scrolling the panel
+          touchAction: 'none',
         }}
       >
         {block.cells.map((row, r) =>
@@ -131,7 +133,14 @@ function GridEditor({ block }: { block: RLGridworldBlock }) {
             return (
               <div
                 key={`${r}-${c}`}
-                onPointerDown={(e) => { e.preventDefault(); handlePointerDown(r, c) }}
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  // Touch pointers are implicitly captured by the first cell, which would
+                  // stop pointerenter from firing on the others — release so drag-painting works.
+                  const el = e.currentTarget
+                  if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
+                  handlePointerDown(r, c)
+                }}
                 onPointerEnter={() => handlePointerEnter(r, c)}
                 style={{
                   width: CELL,

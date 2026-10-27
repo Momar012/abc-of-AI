@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { UnlabelledDatasetBlock as UnlabelledBlock } from '@/types/dataset'
 import { useDatasetStore } from '@/store/useDatasetStore'
 import DroppedItemChip from './DroppedItemChip'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 
 interface UnlabelledDatasetBlockProps {
   block: UnlabelledBlock
@@ -17,6 +18,7 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
   const removeItemFromUnlabelled = useDatasetStore((s) => s.removeItemFromUnlabelled)
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState(block.name)
+  const onNameDoubleTap = useDoubleTap(() => setEditingName(true))
 
   const { isOver, setNodeRef } = useDroppable({
     id: `unlabelled-${block.id}`,
@@ -48,8 +50,9 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
           ) : (
             <button
               onDoubleClick={() => setEditingName(true)}
+              onPointerUp={onNameDoubleTap}
               className="text-sm font-heading font-bold text-white truncate flex-1 text-left"
-              title="Double-click to rename"
+              title="Double-click or double-tap to rename"
             >
               {block.name}
             </button>
@@ -70,7 +73,7 @@ export default function UnlabelledDatasetBlock({ block }: UnlabelledDatasetBlock
           scale: isOver ? 1.02 : 1,
         }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className="drop-zone min-h-[80px] max-h-48 overflow-y-auto p-2 flex flex-col gap-1"
+        className="nowheel drop-zone min-h-[80px] max-h-48 overflow-y-auto p-2 flex flex-col gap-1"
         style={{ borderColor: isOver ? '#2DD4BF' : undefined }}
       >
         {block.itemIds.length === 0 ? (

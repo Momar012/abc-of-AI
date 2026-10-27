@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NodeProps, NodeResizer } from 'reactflow'
 import { TextBlock } from '@/types/rules'
 import { useCanvasStore } from '@/store/useCanvasStore'
+import { useDoubleTap } from '@/hooks/useDoubleTap'
 
 function placeCaretAtEnd(el: HTMLElement) {
   el.focus()
@@ -21,6 +22,7 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
   const removeTextBlock = useCanvasStore((s) => s.removeTextBlock)
   const editableRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(block.text === '')
+  const onTextDoubleTap = useDoubleTap(() => setIsEditing(true))
 
   // Set the initial content once; afterwards the DOM is uncontrolled while editing.
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function TextNode({ data, selected }: NodeProps<{ block: TextBloc
         suppressContentEditableWarning
         data-placeholder="Type here…"
         onDoubleClick={() => setIsEditing(true)}
+        onPointerUp={onTextDoubleTap}
         onBlur={(e) => {
           const text = e.currentTarget.innerText
           if (text.trim() === '') {

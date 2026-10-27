@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import {
   DndContext,
@@ -198,6 +198,32 @@ export default function DatasetBuilderPage() {
       toggleCurriculumPanel()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // On a Chromebook-width window, opening Properties alongside the expanded
+  // Curriculum + Data Bank leaves almost no canvas — tuck the Curriculum away
+  // when the inspector opens (only on the open transition, so a kid who
+  // re-expands it while Properties stays open isn't fought).
+  const hadSelectedBlockRef = useRef(false)
+  useEffect(() => {
+    const hasSelected = !!selectedBlockId
+    if (hasSelected && !hadSelectedBlockRef.current && window.innerWidth < 1100 && !curriculumCollapsed) {
+      toggleCurriculumPanel()
+    }
+    hadSelectedBlockRef.current = hasSelected
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBlockId])
+
+  // Icon-only toolbar when the gap between the side panels is too narrow for
+  // the labelled one — otherwise it wraps onto 2–3 rows over the canvas.
+  const toolbarSlotRef = useRef<HTMLDivElement>(null)
+  const [toolbarCompact, setToolbarCompact] = useState(false)
+  useEffect(() => {
+    const el = toolbarSlotRef.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setToolbarCompact(entry.contentRect.width < 760))
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [])
 
   // Panel widths are only clamped against the viewport while actively being
@@ -452,9 +478,11 @@ export default function DatasetBuilderPage() {
             )}
             {!curriculumCollapsed && (
               <div
-                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
+                className="absolute -right-1.5 top-0 bottom-0 w-3 cursor-col-resize z-20 touch-none flex justify-center group"
                 onPointerDown={handleResizeStart}
-              />
+              >
+                <div className="w-1 h-full group-hover:bg-violet-500/40 group-active:bg-violet-500/60 transition-colors" />
+              </div>
             )}
           </div>
 
@@ -468,14 +496,18 @@ export default function DatasetBuilderPage() {
 
             {/* Toolbar — centered in the space between the floating panels */}
             <div
-              className="absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300"
+              ref={toolbarSlotRef}
+              // Right edge clears the Inspector, whose width is breakpoint-based
+              // (w-52 / lg:w-56 / xl:w-64 / 2xl:w-80, plus its right-4 inset and a gap).
+              className={`absolute top-4 z-20 flex justify-center pointer-events-none transition-all duration-300 ${
+                selectedBlockId ? 'right-[15rem] lg:right-[16rem] xl:right-[18rem] 2xl:right-[22rem]' : 'right-4'
+              }`}
               style={{
                 left: leftPanelCollapsed ? '8rem' : `${dataBankWidth + 32}px`,
-                right: selectedBlockId ? '17rem' : '1rem',
               }}
             >
               <div className="pointer-events-auto max-w-full">
-                <CanvasToolbar />
+                <CanvasToolbar compact={toolbarCompact} />
               </div>
             </div>
 
@@ -495,14 +527,16 @@ export default function DatasetBuilderPage() {
                 <button
                   onClick={toggleLeftPanel}
                   title="Hide Data Bank"
-                  className="absolute -top-3 -right-3 z-30 glass-panel w-7 h-7 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                  className="absolute -top-3 -right-3 z-30 glass-panel w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors"
                 >
                   <PanelToggleIcon side="left" />
                 </button>
                 <div
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize z-20 hover:bg-violet-500/40 active:bg-violet-500/60 transition-colors"
+                  className="absolute -right-1.5 top-0 bottom-0 w-3 cursor-col-resize z-20 touch-none flex justify-center group"
                   onPointerDown={handleDataBankResizeStart}
-                />
+                >
+                  <div className="w-1 h-full group-hover:bg-violet-500/40 group-active:bg-violet-500/60 transition-colors" />
+                </div>
                 <DataBank />
               </div>
             )}

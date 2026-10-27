@@ -72,7 +72,7 @@ export default function LabelTableRow({ blockId, itemId, labels, assignedLabelId
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); removeItemFromBlock(blockId, itemId) }}
-        className="w-5 h-5 flex-shrink-0 rounded-full text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all text-sm leading-none"
+        className="relative w-6 h-6 flex-shrink-0 rounded-full before:content-[''] before:absolute before:-inset-1.5 text-white/40 hover:text-red-400 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all text-sm leading-none"
       >
         ×
       </button>

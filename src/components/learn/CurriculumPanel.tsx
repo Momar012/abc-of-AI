@@ -113,7 +113,7 @@ export default function CurriculumPanel() {
           <button
             onClick={toggleCurriculumPanel}
             title="Hide curriculum"
-            className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center rounded-md text-white/35 hover:text-white hover:bg-white/10 transition-colors"
+            className="absolute top-2.5 right-2.5 w-8 h-8 flex items-center justify-center rounded-md text-white/35 hover:text-white hover:bg-white/10 transition-colors"
           >
             <SidebarIcon />
           </button>
@@ -159,7 +159,7 @@ export default function CurriculumPanel() {
               transition={{ duration: 0.18 }}
               className="overflow-hidden"
             >
-              <div className="mt-3 max-h-64 overflow-y-auto overscroll-contain pr-1">
+              <div className="mt-3 max-h-[30vh] overflow-y-auto overscroll-contain pr-1">
                 <ModuleSelector modules={CURRICULUM} currentModuleId={currentModuleId} onSelect={handleModuleSelect} />
               </div>
             </motion.div>
@@ -189,7 +189,7 @@ export default function CurriculumPanel() {
       </div>
 
       {/* Step content — scrollable */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep.id}

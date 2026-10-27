@@ -42,7 +42,7 @@ export default function BulbNode({ data, selected }: NodeProps<{ block: BulbBloc
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => { removeBulbBlock(block.id); evaluateGraph() }}
-            className="w-5 h-5 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
+            className="relative w-6 h-6 before:content-[''] before:absolute before:-inset-1 rounded-full bg-white/10 text-white/40 hover:text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center transition-all"
           >
             ×
           </button>

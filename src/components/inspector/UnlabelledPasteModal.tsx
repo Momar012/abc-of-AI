@@ -78,7 +78,7 @@ export default function UnlabelledPasteModal({ blockId, onClose }: Props) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 min-h-0 flex flex-col gap-3 px-5 pb-5 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-3 px-5 pb-5 overflow-y-auto">
 
           {/* Format hint — only when no data yet */}
           {items.length === 0 && (

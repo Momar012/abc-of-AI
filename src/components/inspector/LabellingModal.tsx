@@ -208,7 +208,7 @@ export default function LabellingModal() {
                         className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${
                           isSelected
                             ? 'bg-violet-500 border-violet-400'
-                            : 'bg-black/40 border-white/30 opacity-0 group-hover:opacity-100'
+                            : 'bg-black/40 border-white/30 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100'
                         }`}
                       >
                         {isSelected && (
@@ -221,7 +221,7 @@ export default function LabellingModal() {
 
                     {/* Delete button — top right, visible on hover */}
                     <button
-                      className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded bg-black/50 border border-white/20 text-white/50 hover:text-red-400 hover:bg-red-500/20 hover:border-red-500/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all text-xs leading-none"
+                      className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded bg-black/50 border border-white/20 text-white/50 hover:text-red-400 hover:bg-red-500/20 hover:border-red-500/40 flex items-center justify-center opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-all text-sm leading-none"
                       title="Delete this item"
                       onClick={(e) => handleDeleteOne(itemId, e)}
                     >

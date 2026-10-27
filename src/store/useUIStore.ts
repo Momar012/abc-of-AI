@@ -27,6 +27,9 @@ interface UIState {
   canvasTool: 'select' | 'pan' | 'text'
   canvasInteractive: boolean
   canvasSelection: Array<{ id: string; type: string }>
+  /** Touch-friendly multi-select: taps add/remove blocks and a finger drag draws a selection box (no Ctrl key needed). */
+  multiSelectMode: boolean
+  selectAllRequest: number
   quickAddRequest: { blockType: BlockType; nonce: number } | null
   justAddedBlockId: string | null
   hasAutoCollapsedForCompactView: boolean
@@ -54,6 +57,8 @@ interface UIState {
   setCanvasTool: (tool: 'select' | 'pan' | 'text') => void
   setCanvasInteractive: (v: boolean) => void
   setCanvasSelection: (nodes: Array<{ id: string; type: string }>) => void
+  setMultiSelectMode: (v: boolean) => void
+  requestSelectAll: () => void
   requestQuickAdd: (blockType: BlockType) => void
   clearQuickAddRequest: () => void
   flashBlock: (id: string) => void
@@ -78,6 +83,8 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   canvasTool: 'select',
   canvasInteractive: true,
   canvasSelection: [],
+  multiSelectMode: false,
+  selectAllRequest: 0,
   quickAddRequest: null,
   justAddedBlockId: null,
   hasAutoCollapsedForCompactView: false,
@@ -132,6 +139,8 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   setCanvasTool: (tool) => set({ canvasTool: tool }),
   setCanvasInteractive: (v) => set({ canvasInteractive: v }),
   setCanvasSelection: (nodes) => set({ canvasSelection: nodes }),
+  setMultiSelectMode: (v) => set({ multiSelectMode: v }),
+  requestSelectAll: () => set((s) => ({ selectAllRequest: s.selectAllRequest + 1 })),
 
   requestQuickAdd: (blockType) => set({ quickAddRequest: { blockType, nonce: Date.now() } }),
   clearQuickAddRequest: () => set({ quickAddRequest: null }),
