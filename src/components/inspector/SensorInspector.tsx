@@ -79,6 +79,7 @@ export default function SensorInspector() {
         <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Current Value</label>
 
         {isNumeric && (
+          <div data-abee="inspector.sensor.value">
           <SensorValueControl
             size="lg"
             value={Number(block.value)}
@@ -87,6 +88,7 @@ export default function SensorInspector() {
             unit={block.unit}
             onChange={setValue}
           />
+          </div>
         )}
 
         {block.sensorType === 'motion' && (

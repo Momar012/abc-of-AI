@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware'
 import { v4 as uuid } from 'uuid'
 import { BlockType } from '@/types/rules'
 
+export type ToolbarMenu = 'datasets' | 'model' | 'actions' | 'rules'
+
 export interface Toast {
   id: string
   message: string
@@ -30,6 +32,7 @@ interface UIState {
   quickAddRequest: { blockType: BlockType; nonce: number } | null
   justAddedBlockId: string | null
   hasAutoCollapsedForCompactView: boolean
+  openToolbarMenu: ToolbarMenu | null
 
   addToast: (message: string, type?: Toast['type']) => void
   removeToast: (id: string) => void
@@ -58,6 +61,7 @@ interface UIState {
   clearQuickAddRequest: () => void
   flashBlock: (id: string) => void
   setHasAutoCollapsedForCompactView: () => void
+  setOpenToolbarMenu: (menu: ToolbarMenu | null) => void
 }
 
 export const useUIStore = create<UIState>()(persist((set) => ({
@@ -81,6 +85,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   quickAddRequest: null,
   justAddedBlockId: null,
   hasAutoCollapsedForCompactView: false,
+  openToolbarMenu: null,
 
   addToast: (message, type = 'info') =>
     set((s) => ({
@@ -143,6 +148,7 @@ export const useUIStore = create<UIState>()(persist((set) => ({
   },
 
   setHasAutoCollapsedForCompactView: () => set({ hasAutoCollapsedForCompactView: true }),
+  setOpenToolbarMenu: (menu) => set({ openToolbarMenu: menu }),
 }), {
   name: 'abcai_ui_panels_v2',
   partialize: (s) => ({

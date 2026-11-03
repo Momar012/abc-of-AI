@@ -122,6 +122,7 @@ export default function ConditionInspector() {
             <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">If prediction is…</label>
             {availableLabels.length > 0 ? (
               <select
+                data-abee="inspector.condition.modelCondition"
                 value={block.modelCondition ?? ''}
                 onChange={(e) => update({ modelCondition: e.target.value || null, currentOutput: null })}
                 className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 cursor-pointer"
@@ -161,6 +162,7 @@ export default function ConditionInspector() {
           <div className="flex flex-col gap-2">
             <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Condition</label>
             <select
+              data-abee="inspector.condition.operator"
               value={block.operator}
               onChange={(e) => update({ operator: e.target.value as RuleOperator })}
               className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 cursor-pointer"
@@ -175,6 +177,7 @@ export default function ConditionInspector() {
 
             {sensorType === 'motion' ? (
               <select
+                data-abee="inspector.condition.value"
                 value={block.threshold === null ? '' : String(block.threshold)}
                 onChange={(e) => update({ threshold: e.target.value === '' ? null : e.target.value === 'true' })}
                 className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-yellow-400 cursor-pointer"
@@ -186,6 +189,7 @@ export default function ConditionInspector() {
               </select>
             ) : sensorType === 'text-input' ? (
               <input
+                data-abee="inspector.condition.value"
                 type="text"
                 value={String(block.threshold)}
                 onChange={(e) => update({ threshold: e.target.value })}
@@ -194,6 +198,7 @@ export default function ConditionInspector() {
               />
             ) : (
               <input
+                data-abee="inspector.condition.value"
                 type="number"
                 value={thresholdText}
                 onChange={(e) => {

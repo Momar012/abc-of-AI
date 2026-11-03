@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useDraggable, useDndMonitor } from '@dnd-kit/core'
 import { useDatasetStore } from '@/store/useDatasetStore'
@@ -9,7 +9,7 @@ import { useRLStore } from '@/store/useRLStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
 import { useRuleStore } from '@/store/useRuleStore'
 import { useCanvasStore } from '@/store/useCanvasStore'
-import { useUIStore } from '@/store/useUIStore'
+import { useUIStore, ToolbarMenu } from '@/store/useUIStore'
 import { BlockType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
@@ -30,6 +30,7 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
+      data-abee={`toolbar.tool.${title.split(' ')[0].toLowerCase()}`}
       title={title}
       aria-label={title}
       aria-pressed={active}
@@ -83,6 +84,7 @@ function DraggableActionItem({
       {...listeners}
       {...attributes}
       onClick={() => { requestQuickAdd(blockType); onAdd() }}
+      data-abee={`menu.item.${blockType}`}
       style={{ opacity: isDragging ? 0.4 : 1, touchAction: 'pan-y' }}
       className="text-left px-3 py-2.5 min-h-[40px] flex items-center rounded-lg text-sm font-heading font-semibold text-white/80 hover:bg-white/10 hover:text-white transition-colors whitespace-nowrap cursor-grab active:cursor-grabbing select-none"
     >
@@ -106,10 +108,18 @@ function useDropdownPosition() {
   return { pos, wrapperRef, computePos }
 }
 
-function DataMenu({ compact }: { compact: boolean }) {
-  const [open, setOpen] = useState(false)
+// Open/closed lives in the UI store (one menu at a time) so Abee can open a
+// menu while demonstrating, not just the student's click.
+function useToolbarMenu(menu: ToolbarMenu) {
+  const open = useUIStore((s) => s.openToolbarMenu === menu)
+  const setOpenToolbarMenu = useUIStore((s) => s.setOpenToolbarMenu)
   const [dragging, setDragging] = useState(false)
   const { pos, wrapperRef, computePos } = useDropdownPosition()
+
+  const setOpen = (next: boolean) => {
+    if (next) setOpenToolbarMenu(menu)
+    else if (useUIStore.getState().openToolbarMenu === menu) setOpenToolbarMenu(null)
+  }
 
   useDndMonitor({
     onDragStart:  () => setDragging(true),
@@ -117,10 +127,17 @@ function DataMenu({ compact }: { compact: boolean }) {
     onDragCancel: () => { setDragging(false); setOpen(false) },
   })
 
-  const handleToggle = () => {
-    if (!open) computePos()
-    setOpen((o) => !o)
-  }
+  // Measure on every open, however it was opened
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { if (open) computePos() }, [open])
+
+  const handleToggle = () => setOpen(!open)
+
+  return { open, setOpen, dragging, pos, wrapperRef, handleToggle }
+}
+
+function DataMenu({ compact }: { compact: boolean }) {
+  const { open, setOpen, dragging, pos, wrapperRef, handleToggle } = useToolbarMenu('datasets')
 
   return (
     <div ref={wrapperRef}>
@@ -140,7 +157,7 @@ function DataMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Datasets" aria-label="Datasets">
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Datasets" aria-label="Datasets" data-abee="toolbar.datasets">
         🗂️{!compact && ' Datasets'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -148,20 +165,7 @@ function DataMenu({ compact }: { compact: boolean }) {
 }
 
 function ActionsMenu({ compact }: { compact: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [dragging, setDragging] = useState(false)
-  const { pos, wrapperRef, computePos } = useDropdownPosition()
-
-  useDndMonitor({
-    onDragStart:  () => setDragging(true),
-    onDragEnd:    () => { setDragging(false); setOpen(false) },
-    onDragCancel: () => { setDragging(false); setOpen(false) },
-  })
-
-  const handleToggle = () => {
-    if (!open) computePos()
-    setOpen((o) => !o)
-  }
+  const { open, setOpen, dragging, pos, wrapperRef, handleToggle } = useToolbarMenu('actions')
 
   return (
     <div ref={wrapperRef}>
@@ -189,7 +193,7 @@ function ActionsMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Actions" aria-label="Actions">
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Actions" aria-label="Actions" data-abee="toolbar.actions">
         ⚡{!compact && ' Actions'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -197,20 +201,7 @@ function ActionsMenu({ compact }: { compact: boolean }) {
 }
 
 function ModelMenu({ compact }: { compact: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [dragging, setDragging] = useState(false)
-  const { pos, wrapperRef, computePos } = useDropdownPosition()
-
-  useDndMonitor({
-    onDragStart:  () => setDragging(true),
-    onDragEnd:    () => { setDragging(false); setOpen(false) },
-    onDragCancel: () => { setDragging(false); setOpen(false) },
-  })
-
-  const handleToggle = () => {
-    if (!open) computePos()
-    setOpen((o) => !o)
-  }
+  const { open, setOpen, dragging, pos, wrapperRef, handleToggle } = useToolbarMenu('model')
 
   return (
     <div ref={wrapperRef}>
@@ -241,7 +232,7 @@ function ModelMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Model" aria-label="Model">
+      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Model" aria-label="Model" data-abee="toolbar.model">
         🤖{!compact && ' Model'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -249,20 +240,7 @@ function ModelMenu({ compact }: { compact: boolean }) {
 }
 
 function RuleBasedMenu({ compact }: { compact: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [dragging, setDragging] = useState(false)
-  const { pos, wrapperRef, computePos } = useDropdownPosition()
-
-  useDndMonitor({
-    onDragStart:  () => setDragging(true),
-    onDragEnd:    () => { setDragging(false); setOpen(false) },
-    onDragCancel: () => { setDragging(false); setOpen(false) },
-  })
-
-  const handleToggle = () => {
-    if (!open) computePos()
-    setOpen((o) => !o)
-  }
+  const { open, setOpen, dragging, pos, wrapperRef, handleToggle } = useToolbarMenu('rules')
 
   return (
     <div ref={wrapperRef}>
@@ -307,7 +285,7 @@ function RuleBasedMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="ghost" onClick={handleToggle} title="Rule-Based" aria-label="Rule-Based">
+      <GlowButton size="xs" variant="ghost" onClick={handleToggle} title="Rule-Based" aria-label="Rule-Based" data-abee="toolbar.rules">
         🔌{!compact && ' Rule-Based'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>

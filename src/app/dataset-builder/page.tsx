@@ -26,6 +26,7 @@ import LogicInspector from '@/components/inspector/LogicInspector'
 import TimerInspector from '@/components/inspector/TimerInspector'
 import BadgeToast from '@/components/gamification/BadgeToast'
 import EducationalOverlay from '@/components/feedback/EducationalOverlay'
+import AbeeDock from '@/components/abee/AbeeDock'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
 import ClusterResultsModal from '@/components/inspector/ClusterResultsModal'
 import LabellingModal from '@/components/inspector/LabellingModal'
@@ -462,6 +463,7 @@ export default function DatasetBuilderPage() {
                 <button
                   onClick={toggleCurriculumPanel}
                   title="Open Curriculum"
+                  data-abee="curriculum.open"
                   className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl
                     bg-gradient-to-br from-violet-500/30 to-teal-500/20
                     border border-violet-500/30
@@ -526,12 +528,13 @@ export default function DatasetBuilderPage() {
                 variant="primary"
                 onClick={toggleLeftPanel}
                 title="Show Data Bank"
+                data-abee="databank.open"
                 className="absolute top-4 left-4 z-20"
               >
                 🗃️ Data-Panel
               </GlowButton>
             ) : (
-              <div className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
+              <div data-abee="databank" className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
                 <button
                   onClick={toggleLeftPanel}
                   title="Hide Data Bank"
@@ -551,7 +554,7 @@ export default function DatasetBuilderPage() {
 
             {/* Inspector (right) — shown only when a block is selected */}
             {selectedBlockId && (
-              <div className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
+              <div data-abee="inspector" className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
                 <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 flex-1">
                   {selectedBlockType === 'rl-gridworld' ? (
                     <RLInspector key={selectedBlockId} />
@@ -581,6 +584,7 @@ export default function DatasetBuilderPage() {
       <TestResultsModal />
       <ClusterResultsModal />
       <LabellingModal />
+      <AbeeDock />
     </DndContext>
   )
 }

@@ -28,6 +28,8 @@ import { useRuleStore } from '@/store/useRuleStore'
 import { useCanvasStore } from '@/store/useCanvasStore'
 import { createDoubleTapDetector } from '@/hooks/useDoubleTap'
 import { downscaleImage, CANVAS_IMAGE_MAX_DIM } from '@/lib/downscaleImage'
+import { applyConnection, isConnectionAllowed, SENSOR_BLOCKED_HANDLES } from '@/lib/canvasConnect'
+import { setFlowInstance } from '@/lib/abee/flowRef'
 import LabelledDatasetNode from './nodes/LabelledDatasetNode'
 import UnlabelledDatasetNode from './nodes/UnlabelledDatasetNode'
 import ValidationResultNode from './nodes/ValidationResultNode'
@@ -268,14 +270,6 @@ const edgeTypes = {
   test: TestEdge,
   workflow: WorkflowEdge,
   rule: RuleEdge,
-}
-
-// Rule-graph handles that expect a boolean-producing block (Condition/Logic/
-// Timer/Switch) as their source — a raw Sensor id never resolves here.
-const SENSOR_BLOCKED_HANDLES: Record<string, string> = {
-  'logic-in-1': 'a Logic gate', 'logic-in-2': 'a Logic gate', 'logic-in': 'a Logic gate',
-  'timer-in': 'a Timer',
-  'door-in': 'a Door', 'bulb-in': 'a Bulb', 'fan-in': 'a Fan', 'alarm-in': 'an Alarm', 'ac-in': 'an AC', 'phoneunlock-in': 'a Phone Unlock', 'display-in': 'a Display', 'bin-in': 'a Waste Bin',
 }
 
 export default function DatasetCanvas() {
@@ -575,12 +569,23 @@ export default function DatasetCanvas() {
   }, [modelBlocks, doorBlocks, bulbBlocks,
       conditionBlocks, logicBlocks, fanBlocks, alarmBlocks, acBlocks, phoneUnlockBlocks, displayBlocks, binBlocks, timerBlocks, setRfEdges])
 
+  const lastDragPositionRef = useRef<Record<string, { x: number; y: number }>>({})
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
       setRfNodes((nds) => applyNodeChanges(changes, nds))
       for (const change of changes) {
-        if (change.type === 'position' && !change.dragging && change.position) {
-          const { id, position: p } = change
+        // React Flow's drag-end change carries no position (only keyboard moves
+        // do), so remember the last position seen mid-drag and save that when it
+        // ends — otherwise dragged blocks were never saved
+        if (change.type === 'position' && change.dragging && change.position) {
+          lastDragPositionRef.current[change.id] = change.position
+        }
+        const p = change.type === 'position' && !change.dragging
+          ? change.position ?? lastDragPositionRef.current[change.id]
+          : undefined
+        if (change.type === 'position' && !change.dragging) delete lastDragPositionRef.current[change.id]
+        if (change.type === 'position' && p) {
+          const { id } = change
           if (modelBlocks.some((b) => b.id === id)) updateModelBlockPosition(id, p)
           else if (rlBlocks.some((b) => b.id === id)) updateRLBlockPosition(id, p)
           else if (doorBlocks.some((b) => b.id === id)) updateDoorBlockPosition(id, p)
@@ -616,120 +621,16 @@ export default function DatasetCanvas() {
     ]
   )
 
-  const onConnect = useCallback(
-    (connection: Connection) => {
-      if (!connection.source || !connection.target) return
-      const { source, target, targetHandle, sourceHandle } = connection
+  const onConnect = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return
+    applyConnection({ ...connection, source: connection.source, target: connection.target })
+  }, [])
 
-      // ── ML pipeline ──────────────────────────────────────────────────────
-      if (targetHandle === 'test-in') {
-        updateModelBlock(target, { testLinkedBlockId: source, testStatus: 'idle', testResults: null })
-      } else if (targetHandle === 'in') {
-        const current = modelBlocks.find((b) => b.id === target)
-        if (current?.trainedModelId) {
-          // Model already trained — just update the linked block. Don't auto-reset;
-          // the user must explicitly retrain if they want to update the model.
-          updateModelBlock(target, { linkedBlockId: source })
-        } else {
-          updateModelBlock(target, { linkedBlockId: source, status: 'idle', trainedModelId: null, trainedLinkedBlockId: null, testStatus: 'idle', testResults: null })
-        }
-      } else if (targetHandle === 'door-in') {
-        updateDoorBlock(target, { linkedRuleBlockId: source, isOpen: false })
-        evaluateGraph()
-      } else if (targetHandle === 'bulb-in') {
-        updateBulbBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      }
-
-      // ── Rule pipeline ────────────────────────────────────────────────────
-      else if (targetHandle === 'condition-in') {
-        if (sourceHandle === 'prediction-out') {
-          updateConditionBlock(target, { linkedModelId: source, linkedSensorId: null, currentOutput: null })
-        } else {
-          const sensor = sensorBlocks.find((b) => b.id === source)
-          if (sensor?.sensorType === 'motion') {
-            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: 'is', threshold: null })
-          } else if (sensor?.sensorType === 'text-input') {
-            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '==', threshold: '' })
-          } else {
-            updateConditionBlock(target, { linkedSensorId: source, linkedModelId: null, currentOutput: null, operator: '>', threshold: null })
-          }
-        }
-        evaluateGraph()
-      } else if (targetHandle === 'logic-in-1') {
-        const block = logicBlocks.find((b) => b.id === target)
-        if (block) {
-          const ids = [...block.linkedInputIds]
-          ids[0] = source
-          updateLogicBlock(target, { linkedInputIds: ids })
-          evaluateGraph()
-        }
-      } else if (targetHandle === 'logic-in-2') {
-        const block = logicBlocks.find((b) => b.id === target)
-        if (block) {
-          const ids = [...block.linkedInputIds]
-          ids[1] = source
-          updateLogicBlock(target, { linkedInputIds: ids })
-          evaluateGraph()
-        }
-      } else if (targetHandle === 'logic-in') {
-        updateLogicBlock(target, { linkedInputIds: [source] })
-        evaluateGraph()
-      } else if (targetHandle === 'fan-in') {
-        updateFanBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'alarm-in') {
-        updateAlarmBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'ac-in') {
-        updateACBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'phoneunlock-in') {
-        updatePhoneUnlockBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'display-in') {
-        updateDisplayBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'bin-in') {
-        updateBinBlock(target, { linkedRuleBlockId: source, isOn: false })
-        evaluateGraph()
-      } else if (targetHandle === 'timer-in') {
-        updateTimerBlock(target, { linkedRuleBlockId: source, isRunning: false, currentOutput: null, lastTriggerInput: null })
-        evaluateGraph()
-      } else if (targetHandle === 'live-in') {
-        const sensor = sensorBlocks.find((b) => b.id === source)
-        if (sensor?.sensorType === 'text-input') {
-          updateModelBlock(target, { liveLinkedSensorId: source, liveResult: null })
-          evaluateGraph()
-        }
-      }
-    },
-    [
-      updateModelBlock, updateDoorBlock, updateBulbBlock,
-      updateConditionBlock, updateLogicBlock, updateFanBlock, updateAlarmBlock,
-      updateACBlock, updatePhoneUnlockBlock, updateDisplayBlock, updateBinBlock, updateTimerBlock,
-      logicBlocks, sensorBlocks, evaluateGraph, modelBlocks,
-    ]
-  )
-
-  // Kids sometimes wire a Switch into an IF block's sensor-input handle by habit —
-  // that silently stores the Switch's id as linkedSensorId, which never resolves
-  // against sensorBlocks in evaluateGraph(), leaving the condition stuck forever.
-  // Sensors have the mirror-image problem: wired straight into a Logic gate,
-  // Timer, or actuator, their raw value never appears in evaluateGraph()'s
-  // resolved boolean map, so the block is silently dead forever too. Refuse
-  // both at the connection layer instead.
   const isValidConnection = useCallback(
-    (connection: Connection | Edge) => {
-      if (connection.targetHandle === 'condition-in') {
-        if (connection.sourceHandle === 'prediction-out') return true
-        return sensorBlocks.some((b) => b.id === connection.source)
-      }
-      if (connection.targetHandle && SENSOR_BLOCKED_HANDLES[connection.targetHandle]) {
-        return !sensorBlocks.some((b) => b.id === connection.source)
-      }
-      return true
-    },
+    (connection: Connection | Edge) =>
+      isConnectionAllowed({ ...connection, source: connection.source ?? '', target: connection.target ?? '' }),
+    // Re-created when sensors change so React Flow re-validates handle hover styling
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sensorBlocks]
   )
 
@@ -1000,6 +901,8 @@ export default function DatasetCanvas() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return
+      // Leave browser shortcuts (Ctrl+V paste, Ctrl+T new tab…) alone
+      if (e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'h' || e.key === 'H') {
         setCanvasTool('pan')
       } else if (e.key === 'v' || e.key === 'V') {
@@ -1115,7 +1018,7 @@ export default function DatasetCanvas() {
         onNodeClick={onNodeClick}
         onPaneClick={clearSelectedBlock}
         zoomOnDoubleClick={false}
-        onInit={(instance) => { rfInstanceRef.current = instance }}
+        onInit={(instance) => { rfInstanceRef.current = instance; setFlowInstance(instance) }}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
         connectionLineStyle={{ stroke: '#8B5CF6', strokeWidth: 2, strokeDasharray: '5 5' }}

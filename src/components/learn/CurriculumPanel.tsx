@@ -132,6 +132,7 @@ export default function CurriculumPanel() {
         <div className="px-4 pt-3 pb-3">
           <button
             onClick={() => setShowModules((s) => !s)}
+            data-abee="curriculum.chapters"
             className="w-full flex items-center gap-2.5 group text-left"
           >
             <span className="text-2xl">{module.emoji}</span>
@@ -189,7 +190,7 @@ export default function CurriculumPanel() {
       </div>
 
       {/* Step content — scrollable */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
+      <div ref={scrollRef} data-abee="curriculum.step" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep.id}
@@ -209,6 +210,7 @@ export default function CurriculumPanel() {
       <div className="flex-shrink-0 p-4 border-t border-white/10 flex items-center gap-2">
         <button
           onClick={handlePrev}
+          data-abee="curriculum.prev"
           disabled={currentStepIndex === 0 || isNavigating}
           className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-colors
             disabled:opacity-30 disabled:cursor-not-allowed
@@ -221,6 +223,7 @@ export default function CurriculumPanel() {
         {isLastStep && nextModule ? (
           <button
             onClick={handleNextChapter}
+            data-abee="curriculum.next"
             disabled={isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
               disabled:opacity-30 disabled:cursor-not-allowed
@@ -234,6 +237,7 @@ export default function CurriculumPanel() {
         ) : (
           <button
             onClick={handleNext}
+            data-abee="curriculum.next"
             disabled={isLastStep || isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
               disabled:opacity-30 disabled:cursor-not-allowed

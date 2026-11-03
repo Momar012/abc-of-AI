@@ -97,7 +97,7 @@ export default function TimerInspector() {
       {/* Mode toggle */}
       <div className="flex flex-col gap-1">
         <label className="text-[10px] text-white/40 font-body uppercase tracking-wider">Mode</label>
-        <div className="flex gap-2">
+        <div className="flex gap-2" data-abee="inspector.timer.mode">
           <button
             onClick={() => setTimerMode('duration')}
             className={`flex-1 px-3 py-2 rounded-lg border text-xs font-heading font-bold transition-all ${
@@ -132,6 +132,7 @@ export default function TimerInspector() {
               type="number"
               min={0}
               max={59}
+              data-abee="inspector.timer.minutes"
               value={block.durationMinutes}
               onChange={(e) => updateTimerBlock(block.id, { durationMinutes: Math.max(0, Number(e.target.value)) })}
               className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-violet-400 bg-transparent"
@@ -143,6 +144,7 @@ export default function TimerInspector() {
               type="number"
               min={0}
               max={59}
+              data-abee="inspector.timer.seconds"
               value={block.durationSeconds}
               onChange={(e) => updateTimerBlock(block.id, { durationSeconds: Math.min(59, Math.max(0, Number(e.target.value))) })}
               className="w-full px-3 py-2 rounded-lg border border-white/15 text-white text-sm font-body outline-none focus:border-violet-400 bg-transparent"

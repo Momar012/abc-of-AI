@@ -618,6 +618,7 @@ export default function ModelInspector() {
                 )}
                 <button
                   onClick={handleTrainText}
+                  data-abee="inspector.train"
                   disabled={!isTrainable}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                     isTrainable
@@ -761,6 +762,7 @@ export default function ModelInspector() {
 
                 <button
                   onClick={handleTrainTextSupervised}
+                  data-abee="inspector.train"
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                     isWorking
@@ -791,6 +793,7 @@ export default function ModelInspector() {
 
                 <button
                   onClick={handleTrain}
+                  data-abee="inspector.train"
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                     isWorking
@@ -980,6 +983,7 @@ export default function ModelInspector() {
                 {!isTesting && (
                   <button
                     onClick={handleTest}
+                    data-abee="inspector.test"
                     disabled={testItems.length === 0 || !trainedModel}
                     className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
                       testItems.length === 0 || !trainedModel

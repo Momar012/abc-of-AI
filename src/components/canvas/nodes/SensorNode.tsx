@@ -88,6 +88,7 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
 
         {/* Inline value control */}
         {isNumeric && (
+          <div data-abee-control="value">
           <SensorValueControl
             size="sm"
             value={Number(block.value)}
@@ -96,12 +97,14 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
             unit={block.unit}
             onChange={handleValueChange}
           />
+          </div>
         )}
 
         {block.sensorType === 'motion' && (
           <button
             onPointerDown={(e) => e.stopPropagation()}
             onClick={() => handleValueChange(!block.value)}
+            data-abee-control="value"
             className={`nodrag w-full py-1.5 rounded-lg text-xs font-heading font-bold transition-all ${
               block.value
                 ? 'bg-orange-500/30 text-orange-300 border border-orange-500/50'
@@ -113,7 +116,7 @@ export default function SensorNode({ data, selected }: NodeProps<{ block: Sensor
         )}
 
         {block.sensorType === 'text-input' && (
-          <div className="nodrag nopan">
+          <div className="nodrag nopan" data-abee-control="value">
             <TextInputSensorControl
               value={String(block.value)}
               onSend={handleValueChange}
