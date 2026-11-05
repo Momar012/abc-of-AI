@@ -9,7 +9,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { MISSIONS, MISSION_TOTAL, missionNumber, resolveHint, startMission, missionBlocks, oldBlocks } from '@/lib/missions/missions'
 import { removeBlocks } from '@/lib/canvas/removeBlocks'
 import type { StepView } from '@/lib/tour/steps'
-import Spotlight, { placeBubble, useTrackedBoxes } from '@/components/tour/Spotlight'
+import HintOverlay from '@/components/tour/HintOverlay'
 
 const TICK_MS = 250
 
@@ -208,7 +208,6 @@ export default function MissionCard() {
     if (hintView) setPlayKey((k) => k + 1)
   }, [hintView?.target, hintView?.gesture]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const boxes = useTrackedBoxes(hintView)
 
   if (!visible || !mission) return null
 
@@ -222,21 +221,7 @@ export default function MissionCard() {
 
   return createPortal(
     <>
-      {hintView && wonStars === null && (
-        <>
-          <Spotlight view={hintView} targetBox={boxes.targetBox} dragToBox={boxes.dragToBox} showHand playKey={playKey} />
-          {/* The hint itself, right next to what it points at */}
-          <motion.div
-            key={hintView.text}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fixed z-[10004] pointer-events-none glass-card border border-cyan-400/40 px-3 py-2 shadow-2xl"
-            style={{ ...placeBubble(boxes.targetBox, boxes.avoidBox, 64, hintView.prefer), width: 'min(320px, calc(100vw - 32px))' }}
-          >
-            <p className="text-sm font-body text-cyan-50">💡 {hintView.text}</p>
-          </motion.div>
-        </>
-      )}
+      <HintOverlay view={wonStars === null ? hintView : null} playKey={playKey} />
 
       <motion.div
         ref={cardRef}

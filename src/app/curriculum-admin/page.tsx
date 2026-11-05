@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { CurriculumModule, CurriculumStep, CURRICULUM } from '@/data/curriculum'
 import { useCurriculumContentStore } from '@/store/useCurriculumContentStore'
 import { LearnStepView, LabStepView, ChallengeStepView, TYPE_DOT } from '@/components/learn/StepViews'
+import { describeAction, isGuidable, parseLab, splitLab } from '@/lib/guide/parseLab'
 import {
   DndContext,
   DragOverlay,
@@ -186,6 +187,158 @@ function ModuleEditor({
   )
 }
 
+// ── Guided Lab: what the step-by-step guide will understand ──────────────────
+
+const LAB_TEMPLATE = `## 🎯 Goal
+
+Learn how …
+
+## 🧩 Problem
+
+If the **Switch** is **ON**, the **Bulb** should turn **ON**.
+
+## 📋 Instructions
+
+**Step 1:**
+Drag a **Switch** from the **Rule-Based** menu.
+
+**Step 2:**
+Drag a **Bulb** from the **Actions** menu.
+
+**Step 3:**
+Connect the **Switch** to the **Bulb**.
+
+**Step 4:**
+Turn **ON** the **Switch** and observe the result.
+
+## ✅ Expected Result
+
+✅ When the **Switch** is **ON**, the **Bulb** turns **ON**.
+
+## 💡 What You Learned
+
+1. …
+`
+
+const CHEAT_SHEET: Array<[string, string]> = [
+  ['Drag a **Switch** from the **Rule-Based** menu.', 'block is added'],
+  ['Connect the **Switch** to the **Bulb**.', 'wire is made'],
+  ['Connect:  then lines like  **Text Input → IF Condition**', 'each arrow is a wire'],
+  ['Double-click the **IF Condition**.', 'settings opened'],
+  ['Set the condition to **Temperature > 30**', 'IF value set'],
+  ['Configure it as: **Contains: MONEY**', 'IF contains / equals'],
+  ['Turn **ON** the **Switch** …', 'switch flipped'],
+  ['Change the **Motion Sensor** to **Motion Detected**', 'motion button'],
+  ['Move the slider to 35', 'sensor slider'],
+  ['Go to the **Text Input** and type: **MONEY**', 'text typed'],
+]
+
+function GuideCheck({ instruction }: { instruction: string }) {
+  const [help, setHelp] = useState(false)
+  const parts = splitLab(instruction)
+  const lines = parseLab(instruction)
+  const guided = isGuidable(lines)
+  const checked = lines.filter((l) => l.action.type !== 'manual').length
+  const manual = lines.length - checked
+
+  const status = !lines.length
+    ? { dot: '🔴', cls: 'text-rose-300', text: 'Not guided: no steps found. Add a "## 📋 Instructions" section with **Step 1:**, **Step 2:** …' }
+    : !guided
+    ? { dot: '🔴', cls: 'text-rose-300', text: `Not guided, kids see plain text: only ${checked} of ${lines.length} steps can be checked (needs at least half).` }
+    : manual
+    ? { dot: '🟡', cls: 'text-amber-200', text: `Guided: ${checked} of ${lines.length} steps check themselves, ${manual} manual.` }
+    : { dot: '🟢', cls: 'text-teal-200', text: `Guided: all ${lines.length} steps check themselves.` }
+
+  const chips: Array<[string, boolean, string]> = [
+    ['🎯 Goal', !!(parts.goal || parts.intro), 'Shown first so kids know what they will learn'],
+    ['🧩 Problem', !!parts.problem, 'What the kid is building'],
+    [`📋 Instructions${lines.length ? ` · ${lines.length}` : ''}`, lines.length > 0, 'Becomes the self-checking step list'],
+    [`✅ Expected Result${parts.expected.length ? ` · ${parts.expected.length}` : ''}`, parts.expected.length > 0, 'Add ✅ lines so kids can test their build (👍/👎)'],
+    [`💡 What You Learned${parts.learned.length ? ` · ${parts.learned.length}` : ''}`, parts.learned.length > 0, 'Shown at the top and ticked off at the end'],
+  ]
+
+  return (
+    <div className="rounded-xl border border-teal-400/20 bg-teal-500/[0.04] p-4 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-heading font-bold text-white/40 uppercase tracking-widest">🧭 Guide check</span>
+        <button
+          type="button"
+          onClick={() => setHelp((v) => !v)}
+          className="ml-auto text-[11px] font-heading text-teal-300/70 hover:text-teal-200"
+        >
+          {help ? '▾' : '▸'} ✍️ How to write checkable steps
+        </button>
+      </div>
+
+      <p className={`text-xs font-heading font-bold ${status.cls}`}>
+        {status.dot} {status.text}
+      </p>
+
+      <div className="flex flex-wrap gap-1.5">
+        {chips.map(([label, ok, tip]) => (
+          <span
+            key={label}
+            title={tip}
+            className={`px-2 py-0.5 rounded-md text-[11px] font-heading border ${
+              ok ? 'border-teal-400/30 text-teal-200 bg-teal-500/10' : 'border-white/10 text-white/30 line-through'
+            }`}
+          >
+            {label}
+          </span>
+        ))}
+      </div>
+      {!parts.expected.length && lines.length > 0 && (
+        <p className="text-[11px] text-amber-200/70 font-body -mt-1">
+          Tip: add a <code>## ✅ Expected Result</code> section with ✅ lines so kids can test their build with 👍/👎.
+        </p>
+      )}
+
+      {lines.length > 0 && (
+        <ol className="flex flex-col gap-1">
+          {lines.map((l, i) => {
+            const isManual = l.action.type === 'manual'
+            return (
+              <li
+                key={i}
+                className={`grid grid-cols-[1.5rem_1fr] gap-x-2 rounded-md px-2 py-1 text-[11.5px] leading-snug ${
+                  isManual ? 'bg-amber-500/10 border border-amber-400/20' : ''
+                }`}
+              >
+                <span className="text-white/30 font-heading text-right">{i + 1}.</span>
+                <span className="text-white/75 font-body">{l.text}</span>
+                <span />
+                <span className={`font-heading text-[10.5px] ${isManual ? 'text-amber-200/80' : 'text-teal-300/80'}`}>
+                  {isManual ? '✋ ' : '✅ checks: '}
+                  {describeAction(l.action)}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
+      {help && (
+        <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3 flex flex-col gap-1.5">
+          <p className="text-[11px] text-white/55 font-body">
+            Put block names in <code className="text-violet-300">**bold**</code>. Start every step with{' '}
+            <code className="text-violet-300">**Step N:**</code>. Lines like &quot;Observe the result.&quot; join the step above.
+            These phrases are checked automatically:
+          </p>
+          {CHEAT_SHEET.map(([ex, what]) => (
+            <div key={ex} className="grid grid-cols-[1fr_auto] gap-3 text-[11px]">
+              <code className="text-white/70">{ex}</code>
+              <span className="text-teal-300/70 font-heading">{what}</span>
+            </div>
+          ))}
+          <p className="text-[11px] text-white/40 font-body mt-1">
+            Anything else becomes a manual &quot;✓ I did it&quot; step. A lab gets the guide when at least half its steps can be checked.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StepEditor({
   step,
   onUpdate,
@@ -345,6 +498,20 @@ function StepEditor({
             className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-200 hover:border-violet-500/30 transition-colors"
             title="Insert ASCII diagram block"
           >Diagram</button>
+          {step.type === 'lab' && (
+            <>
+              <div className="w-px h-4 bg-white/10 mx-0.5" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (mainValue.trim() && !window.confirm('Replace the instruction with the Guided Lab template?')) return
+                  onUpdate({ instruction: LAB_TEMPLATE } as Partial<CurriculumStep>)
+                }}
+                className="px-2.5 py-1 rounded-md text-[11px] font-heading font-bold border border-white/10 text-teal-300/70 hover:bg-teal-500/15 hover:text-teal-200 hover:border-teal-500/30 transition-colors"
+                title="Start from a Guided Lab layout the step-by-step guide understands"
+              >Lab template</button>
+            </>
+          )}
         </div>
 
         <p className="text-[10px] text-white/30 font-body mb-2">
@@ -364,6 +531,8 @@ function StepEditor({
           className={textareaCls}
         />
       </div>
+
+      {step.type === 'lab' && <GuideCheck instruction={step.instruction} />}
 
       {/* Optional field */}
       <div>
@@ -390,7 +559,7 @@ function StepEditor({
         <p className="text-[10px] font-heading font-bold text-white/25 uppercase tracking-widest mb-3">Live Preview</p>
         <div className="glass-card p-4">
           {step.type === 'learn'     && <LearnStepView     step={step} />}
-          {step.type === 'lab'       && <LabStepView       step={step} />}
+          {step.type === 'lab'       && <LabStepView       step={step} preview />}
           {step.type === 'challenge' && <ChallengeStepView step={step} />}
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 
-function renderInline(text: string): React.ReactNode[] {
+export function renderInline(text: string): React.ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*)/)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {

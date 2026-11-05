@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LearnStep, LabStep, ChallengeStep } from '@/data/curriculum'
 import SimpleContent from './SimpleContent'
+import LabGuide from './LabGuide'
+import { isGuidable, parseLab, splitLab } from '@/lib/guide/parseLab'
 
 export const TYPE_COLOR = {
   learn: 'text-violet-300',
@@ -52,7 +54,11 @@ export function LearnStepView({ step }: { step: LearnStep }) {
   )
 }
 
-export function LabStepView({ step }: { step: LabStep }) {
+export function LabStepView({ step, preview = false }: { step: LabStep; preview?: boolean }) {
+  const parts = useMemo(() => splitLab(step.instruction), [step.instruction])
+  const lines = useMemo(() => parseLab(step.instruction), [step.instruction])
+  const guided = isGuidable(lines)
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
@@ -69,7 +75,14 @@ export function LabStepView({ step }: { step: LabStep }) {
         </div>
       </div>
 
-      <SimpleContent body={step.instruction} />
+      {guided ? (
+        <>
+          <LabGuide stepId={step.id} lines={lines} parts={parts} preview={preview} />
+          {parts.rest && <SimpleContent body={parts.rest} />}
+        </>
+      ) : (
+        <SimpleContent body={step.instruction} />
+      )}
 
       {step.canvasHint && (
         <div className="glass-card p-2.5 flex gap-2 items-start">
