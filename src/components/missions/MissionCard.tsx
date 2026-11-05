@@ -257,8 +257,17 @@ export default function MissionCard() {
             onClick={() => setMinimised((m) => !m)}
             className="ml-auto w-7 h-7 rounded-md text-white/40 hover:text-white hover:bg-white/10 text-sm"
             title={minimised ? 'Show mission' : 'Hide mission'}
+            aria-label={minimised ? 'Show mission' : 'Hide mission'}
           >
             {minimised ? '▴' : '▾'}
+          </button>
+          <button
+            onClick={() => useMissionStore.getState().quit()}
+            className="w-7 h-7 rounded-md text-white/40 hover:text-white hover:bg-white/10 text-base leading-none"
+            title={wonStars !== null ? 'Close' : 'Close mission (you can start it again from Missions)'}
+            aria-label="Close mission"
+          >
+            ×
           </button>
         </div>
         <p className="font-heading font-extrabold text-white text-base mt-0.5">
@@ -360,12 +369,6 @@ export default function MissionCard() {
                       <span className="text-amber-200/80 font-bold">{pointsForStars(starsFor(hintsUsed))} XP</span>
                       <span className="hidden sm:inline">to win</span>
                     </span>
-                    <button
-                      onClick={() => useMissionStore.getState().quit()}
-                      className="ml-auto px-2 py-1.5 min-h-[32px] rounded-lg text-xs font-heading text-white/40 hover:text-white hover:bg-white/10"
-                    >
-                      Quit
-                    </button>
                   </div>
                 </>
               )}

@@ -10,6 +10,8 @@ export interface MissionResult {
 interface MissionState {
   /** Mission being played right now, if any. */
   activeId: string | null
+  /** The active mission was just completed (its card shows the result until closed). */
+  activeDone: boolean
   /** Snapshot taken when the active mission started (e.g. block ids already on the canvas). */
   baseline: unknown
   /** Hints used in the current attempt — fewer hints, more stars. */
@@ -38,6 +40,7 @@ export const useMissionStore = create<MissionState>()(
   persist(
     (set, get) => ({
       activeId: null,
+      activeDone: false,
       baseline: null,
       hintsUsed: 0,
       results: {},
@@ -51,7 +54,7 @@ export const useMissionStore = create<MissionState>()(
       openPanel: () => set({ panelOpen: true }),
       closePanel: () => set({ panelOpen: false }),
 
-      start: (id, baseline) => set({ activeId: id, baseline, hintsUsed: 0, panelOpen: false }),
+      start: (id, baseline) => set({ activeId: id, activeDone: false, baseline, hintsUsed: 0, panelOpen: false }),
 
       takeHint: () => set((s) => ({ hintsUsed: s.hintsUsed + 1 })),
 
@@ -60,6 +63,7 @@ export const useMissionStore = create<MissionState>()(
         set((s) => {
           const prev = s.results[id]
           return {
+            activeDone: true,
             results: {
               ...s.results,
               [id]: { stars: Math.max(stars, prev?.stars ?? 0), doneAt: prev?.doneAt ?? Date.now() },
@@ -69,12 +73,12 @@ export const useMissionStore = create<MissionState>()(
         return stars
       },
 
-      quit: () => set({ activeId: null, baseline: null, hintsUsed: 0 }),
+      quit: () => set({ activeId: null, activeDone: false, baseline: null, hintsUsed: 0 }),
     }),
     {
       name: 'abcai_missions_v1',
       partialize: (s) => ({
-        activeId: s.activeId,
+        activeId: s.activeDone ? null : s.activeId,
         baseline: s.baseline,
         hintsUsed: s.hintsUsed,
         results: s.results,
