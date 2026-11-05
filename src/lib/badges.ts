@@ -29,4 +29,18 @@ export const BADGES: Badge[] = [
     icon: '🔬',
     color: '#F59E0B',
   },
+  {
+    id: 'explorer',
+    name: 'ABITA Explorer',
+    description: 'Finished Getting Started: dragged, connected, zoomed and panned like a pro',
+    icon: '🧭',
+    color: '#22D3EE',
+  },
+  {
+    id: 'mission-master',
+    name: 'Mission Master',
+    description: 'Completed all 13 mini-missions on your own',
+    icon: '🎯',
+    color: '#F59E0B',
+  },
 ]

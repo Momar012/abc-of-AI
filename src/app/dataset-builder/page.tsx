@@ -26,6 +26,13 @@ import LogicInspector from '@/components/inspector/LogicInspector'
 import TimerInspector from '@/components/inspector/TimerInspector'
 import BadgeToast from '@/components/gamification/BadgeToast'
 import EducationalOverlay from '@/components/feedback/EducationalOverlay'
+import TourOverlay from '@/components/tour/TourOverlay'
+import WelcomeCard from '@/components/tour/WelcomeCard'
+import FinishCard from '@/components/tour/FinishCard'
+import MissionsPanel from '@/components/missions/MissionsPanel'
+import MissionCard from '@/components/missions/MissionCard'
+import MilestoneCelebration from '@/components/missions/MilestoneCelebration'
+import TrophyCase from '@/components/missions/TrophyCase'
 import TestResultsModal from '@/components/inspector/TestResultsModal'
 import ClusterResultsModal from '@/components/inspector/ClusterResultsModal'
 import LabellingModal from '@/components/inspector/LabellingModal'
@@ -89,8 +96,6 @@ export default function DatasetBuilderPage() {
   const savedDatasets = useDatasetStore((s) => s.savedDatasets)
   const earnedBadges = useUIStore((s) => s.earnedBadges)
   const addToast = useUIStore((s) => s.addToast)
-  const firstVisit = useUIStore((s) => s.firstVisit)
-  const setShowEducationalOverlay = useUIStore((s) => s.setShowEducationalOverlay)
   const selectedBlockId = useUIStore((s) => s.selectedBlockId)
   const selectedBlockType = useUIStore((s) => s.selectedBlockType)
   const clearSelectedBlock = useUIStore((s) => s.clearSelectedBlock)
@@ -189,9 +194,8 @@ export default function DatasetBuilderPage() {
         useCanvasStore.setState({ textBlocks: saved.textBlocks ?? [], imageBlocks: saved.imageBlocks ?? [] })
       }
     }
-
-    if (firstVisit) setShowEducationalOverlay(true)
-  }, [firstVisit, setShowEducationalOverlay])
+    // First-visit welcome is now the Getting Started WelcomeCard (driven by useTourStore).
+  }, [])
 
   // On a tablet-width window, start with the Curriculum sidebar tucked away
   // (it already collapses to a 48px icon strip) so the canvas has room —
@@ -461,6 +465,7 @@ export default function DatasetBuilderPage() {
               <div className="h-full flex flex-col items-center pt-3 gap-2">
                 <button
                   onClick={toggleCurriculumPanel}
+                  data-tour="curriculum-open"
                   title="Open Curriculum"
                   className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl
                     bg-gradient-to-br from-violet-500/30 to-teal-500/20
@@ -551,7 +556,7 @@ export default function DatasetBuilderPage() {
 
             {/* Inspector (right) — shown only when a block is selected */}
             {selectedBlockId && (
-              <div className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
+              <div data-properties-panel data-canvas-avoid className="absolute top-4 right-4 z-20 w-52 lg:w-56 xl:w-64 2xl:w-80 h-[calc(100%-2rem)] flex flex-col">
                 <div className="flex flex-col gap-3 overflow-y-auto overflow-x-hidden min-h-0 flex-1">
                   {selectedBlockType === 'rl-gridworld' ? (
                     <RLInspector key={selectedBlockId} />
@@ -578,6 +583,13 @@ export default function DatasetBuilderPage() {
 
       <BadgeToast />
       <EducationalOverlay />
+      <WelcomeCard />
+      <TourOverlay />
+      <FinishCard />
+      <MissionsPanel />
+      <MissionCard />
+      <MilestoneCelebration />
+      <TrophyCase />
       <TestResultsModal />
       <ClusterResultsModal />
       <LabellingModal />

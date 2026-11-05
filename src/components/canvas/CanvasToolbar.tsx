@@ -13,6 +13,7 @@ import { useUIStore } from '@/store/useUIStore'
 import { BlockType } from '@/types/rules'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
 import GlowButton from '@/components/ui/GlowButton'
+import { removeBlocks } from '@/lib/canvas/removeBlocks'
 import { Reorder, motion, AnimatePresence } from 'framer-motion'
 import { exportRuleApp, validateExportSelection, exportAIModel, validateAIModelExport, getExportCards, ExportCardInfo } from '@/lib/exportRuleApp'
 
@@ -80,6 +81,7 @@ function DraggableActionItem({
   return (
     <div
       ref={setNodeRef}
+      data-tour={`palette-${blockType}`}
       {...listeners}
       {...attributes}
       onClick={() => { requestQuickAdd(blockType); onAdd() }}
@@ -130,7 +132,7 @@ function DataMenu({ compact }: { compact: boolean }) {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-36 shadow-xl"
+            data-menu-dropdown className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-36 shadow-xl"
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🗂️ Datasets</p>
@@ -171,7 +173,7 @@ function ActionsMenu({ compact }: { compact: boolean }) {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-32 shadow-xl"
+            data-menu-dropdown className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-32 shadow-xl"
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-white/40 font-heading uppercase tracking-wider">ML Actions</p>
@@ -189,7 +191,7 @@ function ActionsMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Actions" aria-label="Actions">
+      <GlowButton data-tour="menu-actions" size="xs" variant="secondary" onClick={handleToggle} title="Actions" aria-label="Actions">
         ⚡{!compact && ' Actions'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -220,7 +222,7 @@ function ModelMenu({ compact }: { compact: boolean }) {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-44 shadow-xl"
+            data-menu-dropdown className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-44 shadow-xl"
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             <p className="px-3 pt-1 pb-0.5 text-[10px] text-violet-400/70 font-heading uppercase tracking-wider">🤖 Models</p>
@@ -272,7 +274,7 @@ function RuleBasedMenu({ compact }: { compact: boolean }) {
             <div className="fixed inset-0 z-[9999]" onPointerDown={() => setOpen(false)} />
           )}
           <div
-            className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-40 shadow-xl"
+            data-menu-dropdown className="fixed z-[10000] glass-panel rounded-xl overflow-y-auto flex flex-col p-1 min-w-40 shadow-xl"
             style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
           >
             {/* Sensors */}
@@ -307,7 +309,7 @@ function RuleBasedMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="ghost" onClick={handleToggle} title="Rule-Based" aria-label="Rule-Based">
+      <GlowButton data-tour="menu-rule" size="xs" variant="ghost" onClick={handleToggle} title="Rule-Based" aria-label="Rule-Based">
         🔌{!compact && ' Rule-Based'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -344,28 +346,6 @@ function SelectionBar() {
   const [activeTab, setActiveTab] = useState(0)
   const [isExporting, setIsExporting] = useState(false)
 
-  // Rule store removers
-  const removeSensorBlock    = useRuleStore((s) => s.removeSensorBlock)
-  const removeConditionBlock = useRuleStore((s) => s.removeConditionBlock)
-  const removeSwitchBlock    = useRuleStore((s) => s.removeSwitchBlock)
-  const removeLogicBlock     = useRuleStore((s) => s.removeLogicBlock)
-  const removeFanBlock       = useRuleStore((s) => s.removeFanBlock)
-  const removeAlarmBlock     = useRuleStore((s) => s.removeAlarmBlock)
-  const removeACBlock        = useRuleStore((s) => s.removeACBlock)
-  const removePhoneUnlockBlock = useRuleStore((s) => s.removePhoneUnlockBlock)
-  const removeDisplayBlock   = useRuleStore((s) => s.removeDisplayBlock)
-  const removeBinBlock       = useRuleStore((s) => s.removeBinBlock)
-  const removeTimerBlock     = useRuleStore((s) => s.removeTimerBlock)
-  // Workflow store removers
-  const removeDoorBlock      = useWorkflowStore((s) => s.removeDoorBlock)
-  const removeBulbBlock      = useWorkflowStore((s) => s.removeBulbBlock)
-  // Other store removers
-  const removeLabelledBlock   = useDatasetStore((s) => s.removeLabelledBlock)
-  const removeUnlabelledBlock = useDatasetStore((s) => s.removeUnlabelledBlock)
-  const removeModelBlock      = useModelStore((s) => s.removeModelBlock)
-  const removeRLBlock         = useRLStore((s) => s.removeRLBlock)
-  const removeTextBlock       = useCanvasStore((s) => s.removeTextBlock)
-  const removeImageBlock      = useCanvasStore((s) => s.removeImageBlock)
 
   const count = canvasSelection.length
   const isSingleModel = count === 1 && canvasSelection[0]?.type === 'model'
@@ -442,31 +422,7 @@ function SelectionBar() {
   }
 
   function handleDelete() {
-    for (const { id, type } of canvasSelection) {
-      switch (type) {
-        case 'sensor':      removeSensorBlock(id);    break
-        case 'condition':   removeConditionBlock(id); break
-        case 'switch':      removeSwitchBlock(id);    break
-        case 'logic':       removeLogicBlock(id);     break
-        case 'fan':         removeFanBlock(id);       break
-        case 'alarm':       removeAlarmBlock(id);     break
-        case 'ac':          removeACBlock(id);        break
-        case 'phoneunlock': removePhoneUnlockBlock(id);break
-        case 'display':     removeDisplayBlock(id);   break
-        case 'bin':         removeBinBlock(id);       break
-        case 'timer':       removeTimerBlock(id);     break
-        case 'door':        removeDoorBlock(id);      break
-        case 'bulb':        removeBulbBlock(id);      break
-        case 'labelled':    removeLabelledBlock(id);  break
-        case 'unlabelled':  removeUnlabelledBlock(id);break
-        case 'model':       removeModelBlock(id);     break
-        case 'rl-gridworld':removeRLBlock(id);        break
-        case 'text':        removeTextBlock(id);      break
-        case 'image':       removeImageBlock(id);     break
-      }
-    }
-    const { selectedBlockId, clearSelectedBlock } = useUIStore.getState()
-    if (selectedBlockId && canvasSelection.some((n) => n.id === selectedBlockId)) clearSelectedBlock()
+    removeBlocks(canvasSelection)
     setCanvasSelection([])
   }
 

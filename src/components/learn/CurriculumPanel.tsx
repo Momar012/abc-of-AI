@@ -33,6 +33,7 @@ function ModuleSelector({
       {modules.map((m) => (
         <button
           key={m.id}
+          data-tour={`chapter-${m.id}`}
           onClick={() => onSelect(m.id)}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors ${
             m.id === currentModuleId
@@ -105,7 +106,7 @@ export default function CurriculumPanel() {
   }
 
   return (
-    <div className="glass-panel h-full flex flex-col overflow-hidden">
+    <div data-tour="lesson-panel" className="glass-panel h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-white/10">
         {/* Icon banner */}
@@ -132,6 +133,7 @@ export default function CurriculumPanel() {
         <div className="px-4 pt-3 pb-3">
           <button
             onClick={() => setShowModules((s) => !s)}
+            data-tour="chapter-picker"
             className="w-full flex items-center gap-2.5 group text-left"
           >
             <span className="text-2xl">{module.emoji}</span>
@@ -159,7 +161,7 @@ export default function CurriculumPanel() {
               transition={{ duration: 0.18 }}
               className="overflow-hidden"
             >
-              <div className="mt-3 max-h-[30vh] overflow-y-auto overscroll-contain pr-1">
+              <div data-tour="chapter-list" className="mt-3 max-h-[30vh] overflow-y-auto overscroll-contain pr-1">
                 <ModuleSelector modules={CURRICULUM} currentModuleId={currentModuleId} onSelect={handleModuleSelect} />
               </div>
             </motion.div>
@@ -168,9 +170,9 @@ export default function CurriculumPanel() {
       </div>
 
       {/* Progress bar + step type */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-white/10">
+      <div data-tour="lesson-progress" className="flex-shrink-0 px-4 py-3 border-b border-white/10">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
+          <div data-tour="lesson-type" className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${TYPE_DOT[currentStep.type]}`} />
             <span className={`text-[10px] font-heading font-bold uppercase tracking-wider ${TYPE_COLOR[currentStep.type]}`}>
               {TYPE_LABEL[currentStep.type]}
@@ -189,7 +191,7 @@ export default function CurriculumPanel() {
       </div>
 
       {/* Step content — scrollable */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
+      <div ref={scrollRef} data-tour="lesson-content" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep.id}
@@ -209,6 +211,7 @@ export default function CurriculumPanel() {
       <div className="flex-shrink-0 p-4 border-t border-white/10 flex items-center gap-2">
         <button
           onClick={handlePrev}
+          data-tour="curriculum-prev"
           disabled={currentStepIndex === 0 || isNavigating}
           className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-colors
             disabled:opacity-30 disabled:cursor-not-allowed
@@ -221,6 +224,7 @@ export default function CurriculumPanel() {
         {isLastStep && nextModule ? (
           <button
             onClick={handleNextChapter}
+            data-tour="curriculum-next"
             disabled={isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
               disabled:opacity-30 disabled:cursor-not-allowed
@@ -234,6 +238,7 @@ export default function CurriculumPanel() {
         ) : (
           <button
             onClick={handleNext}
+            data-tour="curriculum-next"
             disabled={isLastStep || isNavigating}
             className="flex-1 py-2 rounded-xl text-xs font-heading font-bold transition-all
               disabled:opacity-30 disabled:cursor-not-allowed

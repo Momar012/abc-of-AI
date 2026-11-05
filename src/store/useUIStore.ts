@@ -149,5 +149,6 @@ export const useUIStore = create<UIState>()(persist((set) => ({
     leftPanelCollapsed: s.leftPanelCollapsed, rightPanelCollapsed: s.rightPanelCollapsed,
     curriculumCollapsed: s.curriculumCollapsed, dataBankWidth: s.dataBankWidth,
     hasAutoCollapsedForCompactView: s.hasAutoCollapsedForCompactView,
+    firstVisit: s.firstVisit,
   }),
 }))

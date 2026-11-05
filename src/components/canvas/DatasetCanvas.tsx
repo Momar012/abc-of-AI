@@ -69,14 +69,19 @@ function findFreeSpot(
   center: { x: number; y: number },
   nodes: Node[],
   visible: { minX: number; minY: number; maxX: number; maxY: number },
+  // Areas covered by floating UI (mission card, Properties panel), in canvas coordinates.
+  covered: Array<{ x: number; y: number; w: number; h: number }> = [],
 ) {
   const start = { x: center.x - NEW_BLOCK_W / 2, y: center.y - NEW_BLOCK_H / 2 }
-  const rects = nodes.map((n) => ({
-    x: n.positionAbsolute?.x ?? n.position.x,
-    y: n.positionAbsolute?.y ?? n.position.y,
-    w: n.width ?? NEW_BLOCK_W,
-    h: n.height ?? NEW_BLOCK_H,
-  }))
+  const rects = [
+    ...nodes.map((n) => ({
+      x: n.positionAbsolute?.x ?? n.position.x,
+      y: n.positionAbsolute?.y ?? n.position.y,
+      w: n.width ?? NEW_BLOCK_W,
+      h: n.height ?? NEW_BLOCK_H,
+    })),
+    ...covered,
+  ]
   const pad = NEW_BLOCK_GAP / 2
   const isFree = (x: number, y: number) => rects.every((r) =>
     x + NEW_BLOCK_W + pad <= r.x || r.x + r.w + pad <= x ||
@@ -214,7 +219,14 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
     const topLeft = project({ x: 16, y: 80 })
     const bottomRight = project({ x: bounds.width - 16, y: bounds.height - 16 })
     const visible = { minX: topLeft.x, minY: topLeft.y, maxX: bottomRight.x, maxY: bottomRight.y }
-    const pos = findFreeSpot(project({ x: bounds.width / 2, y: bounds.height / 2 }), getNodes(), visible)
+    // Don't drop new blocks underneath floating panels (anything tagged data-canvas-avoid).
+    const covered = Array.from(document.querySelectorAll('[data-canvas-avoid]')).map((el) => {
+      const r = el.getBoundingClientRect()
+      const a = project({ x: r.left - bounds.left, y: r.top - bounds.top })
+      const b = project({ x: r.right - bounds.left, y: r.bottom - bounds.top })
+      return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y }
+    })
+    const pos = findFreeSpot(project({ x: bounds.width / 2, y: bounds.height / 2 }), getNodes(), visible, covered)
     const id = addBlockByType(quickAddRequest.blockType, pos)
     // The only free spot may be partly off-screen on a small Chromebook
     // screen — slide the view just enough to show the whole new block.
@@ -1081,6 +1093,7 @@ export default function DatasetCanvas() {
   return (
     <div
       ref={(el) => { setCanvasDropRef(el); (canvasRef as React.MutableRefObject<HTMLDivElement | null>).current = el }}
+      data-tour="canvas"
       data-canvas-tool={canvasTool}
       data-space-pressed={isSpacePressed}
       className={`relative w-full h-full overflow-hidden ${
