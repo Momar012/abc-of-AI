@@ -476,6 +476,7 @@ export default function ModelInspector() {
           </div>
         </div>
         <button
+          data-tour="inspector-close"
           onClick={clearSelectedBlock}
           className="w-7 h-7 rounded-full bg-white/10 text-white/50 hover:text-white hover:bg-white/20 text-sm flex items-center justify-center transition-all"
         >
@@ -670,6 +671,7 @@ export default function ModelInspector() {
                 )}
 
                 <button
+                  data-tour="model-train"
                   onClick={handleCluster}
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
@@ -730,6 +732,7 @@ export default function ModelInspector() {
                 )}
 
                 <button
+                  data-tour="model-train"
                   onClick={handleClusterTexts}
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
@@ -760,6 +763,7 @@ export default function ModelInspector() {
                 )}
 
                 <button
+                  data-tour="model-train"
                   onClick={handleTrainTextSupervised}
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
@@ -790,6 +794,7 @@ export default function ModelInspector() {
                 )}
 
                 <button
+                  data-tour="model-train"
                   onClick={handleTrain}
                   disabled={!isTrainable || isWorking}
                   className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
@@ -881,6 +886,7 @@ export default function ModelInspector() {
               {block.modelType === 'image-unsupervised' || block.modelType === 'text-unsupervised' ? '3 · Name Your Result' : '3 · Save to My Models'}
             </p>
             <input
+              data-tour="model-name"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
               placeholder="Model name…"
@@ -888,6 +894,7 @@ export default function ModelInspector() {
               maxLength={60}
             />
             <button
+              data-tour="model-save"
               onClick={() => {
                 const name = saveName.trim() || block.name
                 if (block.trainedModelId) renameTrainedModel(block.trainedModelId, name)
@@ -979,6 +986,7 @@ export default function ModelInspector() {
                 {/* Run Test button */}
                 {!isTesting && (
                   <button
+                    data-tour="model-run-test"
                     onClick={handleTest}
                     disabled={testItems.length === 0 || !trainedModel}
                     className={`w-full py-2 rounded-lg text-sm font-heading font-semibold transition-all ${
@@ -1001,6 +1009,7 @@ export default function ModelInspector() {
                       </p>
                     </div>
                     <button
+                      data-tour="model-expand-results"
                       onClick={() => openTestResultsModal(block.id)}
                       className="w-full py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-sm font-heading font-semibold transition-all"
                     >

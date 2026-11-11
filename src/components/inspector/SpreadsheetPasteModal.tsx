@@ -10,15 +10,29 @@ interface ParsedRow {
   text: string
 }
 
+/** A table's header row ("Text | Label", "Text | Expected Label"), not a real example. */
+const HEADER_LABEL = /^(expected\s+|actual\s+)?(label|labels|category|class|answer)$/i
+/** "|------|------|" under a markdown table header. */
+const DIVIDER = /^[\s|:-]+$/
+
+/** Columns from one line: spreadsheet cells (tab-separated) or a markdown table row ("| a | b |"). */
+function cells(line: string): string[] {
+  if (line.includes('\t')) return line.split('\t')
+  if (line.trim().startsWith('|')) return line.trim().replace(/^\||\|$/g, '').split('|')
+  return [line]
+}
+
 function parse(raw: string): ParsedRow[] {
   return raw
     .split(/\r?\n/)
-    .map((line) => line.split('\t'))
-    .filter((cols) => cols.some((c) => c.trim()))
+    .filter((line) => line.trim() && !DIVIDER.test(line))
+    .map(cells)
     .flatMap((cols) => {
       const text = cols[0]?.trim() ?? ''
       const label = cols[1]?.trim() ?? ''
       if (!label || !text) return []
+      // Copying a whole table brings its header too: it must not become a label called "Label".
+      if (HEADER_LABEL.test(label)) return []
       return [{ label, text }]
     })
 }
@@ -57,6 +71,7 @@ export default function SpreadsheetPasteModal({ blockId, onClose }: Props) {
       onClick={onClose}
     >
       <div
+        data-tour="paste-modal"
         className="glass-card w-full flex flex-col overflow-hidden"
         style={{
           maxWidth: 520,
@@ -130,6 +145,7 @@ export default function SpreadsheetPasteModal({ blockId, onClose }: Props) {
           {/* Textarea — shrinks once data is pasted */}
           <div className="relative flex-shrink-0">
             <textarea
+              data-tour="paste-input"
               autoFocus
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
@@ -229,6 +245,7 @@ export default function SpreadsheetPasteModal({ blockId, onClose }: Props) {
             Cancel
           </button>
           <button
+            data-tour="paste-import"
             onClick={handleImport}
             disabled={rows.length === 0}
             className="flex-1 py-2.5 rounded-xl text-sm font-heading font-semibold transition-all"

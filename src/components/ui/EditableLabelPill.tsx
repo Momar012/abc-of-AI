@@ -51,7 +51,7 @@ export default function EditableLabelPill({ blockId, label }: Props) {
         style={{ background: `${label.color}22`, border: `1px solid ${label.color}88`, color: label.color }}
       >
         <span className="text-white/70 whitespace-nowrap">
-          Delete? <span className="font-semibold">{liveItemCount}</span> unassigned
+          Delete? <span className="font-semibold">{liveItemCount}</span> will have no label
         </span>
         <button
           onPointerDown={(e) => e.stopPropagation()}

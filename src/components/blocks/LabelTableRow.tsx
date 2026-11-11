@@ -59,7 +59,7 @@ export default function LabelTableRow({ blockId, itemId, labels, assignedLabelId
           className="text-xs font-body bg-white/10 border border-white/15 text-white rounded-lg px-1.5 py-1 outline-none focus:border-violet-400 cursor-pointer w-full min-w-0"
           style={{ colorScheme: 'dark' }}
         >
-          <option value="" style={{ background: '#1e1b4b', color: 'white' }}>unassigned</option>
+          <option value="" style={{ background: '#1e1b4b', color: 'white' }}>no label</option>
           {labels.map((label) => (
             <option key={label.id} value={label.id} style={{ background: '#1e1b4b', color: 'white' }}>
               {label.name}

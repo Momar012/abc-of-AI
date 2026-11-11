@@ -72,6 +72,7 @@ export default function DataBankUploader() {
 
   return (
     <motion.label
+      data-tour="add-data"
       htmlFor="bank-upload"
       onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
       onDragLeave={() => setIsDragOver(false)}

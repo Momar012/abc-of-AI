@@ -49,6 +49,7 @@ export default function DataBankGrid({ items }: DataBankGridProps) {
         <div className="flex items-center justify-between px-1 py-0.5">
           <span className="text-xs text-white/40 font-body">{items.length} item{items.length !== 1 ? 's' : ''}</span>
           <button
+            data-tour="bank-select-all"
             onPointerDown={(e) => e.stopPropagation()}
             onClick={handleSelectAll}
             className="text-xs text-white/40 hover:text-white font-body transition-colors"
@@ -87,7 +88,7 @@ export default function DataBankGrid({ items }: DataBankGridProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 p-1">
+      <div data-tour="bank-grid" className="grid grid-cols-2 gap-2 p-1">
         <AnimatePresence>
           {items.map((item) => (
             <DataItemCard key={item.id} item={item} />

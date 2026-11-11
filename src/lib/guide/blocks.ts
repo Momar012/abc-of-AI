@@ -1,9 +1,11 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useWorkflowStore } from '@/store/useWorkflowStore'
+import { useDatasetStore } from '@/store/useDatasetStore'
+import { useModelStore } from '@/store/useModelStore'
 import type { SensorType } from '@/types/rules'
 
 /**
- * One registry of the rule-based blocks a guide can talk about: what kids call them in the
+ * One registry of the blocks a guide can talk about: what kids call them in the
  * lessons, where they live in the toolbar, which dots they have, and what's wired into them.
  */
 
@@ -11,12 +13,16 @@ export type GuideKind =
   | 'switch' | 'bulb' | 'fan' | 'door' | 'ac' | 'alarm'
   | 'sensor-temperature' | 'sensor-motion' | 'sensor-light' | 'sensor-humidity' | 'sensor-text'
   | 'condition' | 'logic-and' | 'logic-or' | 'logic-not'
+  | 'labelled' | 'unlabelled'
+  | 'model-image-supervised' | 'model-image-unsupervised' | 'model-text-supervised' | 'model-text-unsupervised'
+
+export type Menu = 'rule' | 'actions' | 'data' | 'model'
 
 export interface KindInfo {
   /** Names used in lesson text (lower-case, singular). */
   names: string[]
   label: string
-  menu: 'rule' | 'actions'
+  menu: Menu
   /** Out dot id, if it has one. */
   out?: string
   /** In dot ids, in the order to fill them. */
@@ -39,10 +45,24 @@ export const KINDS: Record<GuideKind, KindInfo> = {
   'logic-and': { names: ['and condition', 'and', 'and gate'], label: '∧ AND', menu: 'rule', out: 'rule-out', in: ['logic-in-1', 'logic-in-2'] },
   'logic-or': { names: ['or condition', 'or', 'or gate'], label: '∨ OR', menu: 'rule', out: 'rule-out', in: ['logic-in-1', 'logic-in-2'] },
   'logic-not': { names: ['not condition', 'not', 'not gate'], label: '¬ NOT', menu: 'rule', out: 'rule-out', in: ['logic-in'] },
+  // The toolbar calls it "Labelled" and its settings say "Labelled Block", so hints use that word too.
+  labelled: { names: ['labelled', 'label data', 'label data block', 'labelled block', 'labelled dataset block'], label: '🏷️ Labelled', menu: 'data', out: 'out' },
+  unlabelled: { names: ['unlabelled block', 'unlabelled data', 'unlabelled dataset', 'unlabelled dataset block'], label: '📦 Unlabelled', menu: 'data', out: 'out' },
+  'model-image-supervised': { names: ['image supervised model', 'image supervised'], label: '🖼️ Image Supervised Model', menu: 'model', in: ['in'] },
+  'model-image-unsupervised': { names: ['image unsupervised model', 'image unsupervised'], label: '🧩 Image Unsupervised Model', menu: 'model', in: ['in'] },
+  'model-text-supervised': { names: ['text supervised model', 'text supervised'], label: '📝 Text Supervised Model', menu: 'model', in: ['in'] },
+  'model-text-unsupervised': { names: ['text unsupervised model', 'text unsupervised'], label: '🔤 Text Unsupervised Model', menu: 'model', in: ['in'] },
 }
 
-export const MENU_SEL = { rule: '[data-tour="menu-rule"]', actions: '[data-tour="menu-actions"]' } as const
-export const MENU_LABEL = { rule: '🔌 Rule-Based', actions: '⚡ Actions' } as const
+export const isModelKind = (k: GuideKind) => k.startsWith('model-')
+
+export const MENU_SEL: Record<Menu, string> = {
+  rule: '[data-tour="menu-rule"]',
+  actions: '[data-tour="menu-actions"]',
+  data: '[data-tour="menu-data"]',
+  model: '[data-tour="menu-model"]',
+}
+export const MENU_LABEL: Record<Menu, string> = { rule: '🔌 Rule-Based', actions: '⚡ Actions', data: '🗂️ Datasets', model: '🤖 Model' }
 export const paletteSel = (k: GuideKind) => `[data-tour="palette-${k}"]`
 export const nodeSel = (id: string | undefined | null) => (id ? `.react-flow__node[data-id="${id}"]` : null)
 export const handleSel = (id: string | undefined | null, handle: string) =>
@@ -65,7 +85,7 @@ export function kindFromName(raw: string): GuideKind | null {
 
 // ── reading the stores ───────────────────────────────────────────────────────
 
-interface AnyBlock {
+export interface AnyBlock {
   id: string
   kind: GuideKind
   inputs: string[]
@@ -73,6 +93,17 @@ interface AnyBlock {
   value?: unknown
   operator?: string
   threshold?: unknown
+  /** Dataset and model blocks: the name shown on the block. */
+  name?: string
+  /** Label Data: its label names, how many items it holds, and how many still have no label. */
+  labels?: string[]
+  items?: number
+  unassigned?: number
+  /** Models: idle / loading / training / trained / error. */
+  status?: string
+  /** Models: the dataset plugged into the amber test dot, and how testing is going (idle / running / done). */
+  testInput?: string | null
+  testStatus?: string
 }
 
 const SENSOR_KIND: Partial<Record<SensorType, GuideKind>> = {
@@ -105,6 +136,24 @@ export function allBlocks(): AnyBlock[] {
   r.logicBlocks.forEach((b) =>
     out.push({ id: b.id, kind: `logic-${b.logicType}` as GuideKind, inputs: b.linkedInputIds.filter((x): x is string => !!x) })
   )
+  const d = useDatasetStore.getState()
+  d.labelledBlocks.forEach((b) => {
+    const labelled = b.labels.reduce((n, l) => n + l.itemIds.length, 0)
+    out.push({
+      id: b.id, kind: 'labelled', inputs: [], name: b.name,
+      labels: b.labels.map((l) => l.name), items: b.itemIds.length + labelled, unassigned: b.itemIds.length,
+    })
+  })
+  d.unlabelledBlocks.forEach((b) => out.push({ id: b.id, kind: 'unlabelled', inputs: [], name: b.name, items: b.itemIds.length }))
+  useModelStore.getState().modelBlocks.forEach((b) => {
+    const kind = `model-${b.modelType}` as GuideKind
+    if (KINDS[kind]) {
+      out.push({
+        id: b.id, kind, inputs: linked(b.linkedBlockId), name: b.name, status: b.status,
+        testInput: b.testLinkedBlockId, testStatus: b.testStatus,
+      })
+    }
+  })
   return out
 }
 

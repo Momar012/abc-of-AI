@@ -142,7 +142,7 @@ function DataMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Datasets" aria-label="Datasets">
+      <GlowButton data-tour="menu-data" size="xs" variant="secondary" onClick={handleToggle} title="Datasets" aria-label="Datasets">
         🗂️{!compact && ' Datasets'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>
@@ -243,7 +243,7 @@ function ModelMenu({ compact }: { compact: boolean }) {
         </>,
         document.body
       )}
-      <GlowButton size="xs" variant="secondary" onClick={handleToggle} title="Model" aria-label="Model">
+      <GlowButton data-tour="menu-model" size="xs" variant="secondary" onClick={handleToggle} title="Model" aria-label="Model">
         🤖{!compact && ' Model'} {open ? '▴' : '▾'}
       </GlowButton>
     </div>

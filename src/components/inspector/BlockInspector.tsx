@@ -16,6 +16,7 @@ function ExpandViewButton({ blockId }: { blockId: string }) {
   const openLabellingModal = useUIStore((s) => s.openLabellingModal)
   return (
     <button
+      data-tour="expand-view"
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => openLabellingModal(blockId)}
       className="text-xs text-violet-300 hover:text-violet-200 font-body transition-colors whitespace-nowrap"
@@ -56,6 +57,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
         <p className="text-xs text-white/40 font-heading font-semibold uppercase tracking-wider">Items</p>
         <div className="flex items-center gap-2">
           <button
+            data-tour="label-paste"
             onClick={() => setShowPasteModal(true)}
             className="text-xs text-violet-300 hover:text-violet-200 font-body transition-colors whitespace-nowrap"
             title="Import labelled text rows from a spreadsheet"
@@ -73,6 +75,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
       {/* Drop zone + table */}
       <motion.div
         ref={setNodeRef}
+        data-tour="label-items"
         animate={{ boxShadow: isOver ? '0 0 24px 6px rgba(124,58,237,0.4)' : 'none' }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         style={{ borderColor: isOver ? 'rgba(124,58,237,0.6)' : undefined }}
@@ -112,7 +115,7 @@ function LabelledContent({ blockId }: { blockId: string }) {
       </motion.div>
 
       {/* Label creator */}
-      <div className="px-4 py-3 border-t border-white/8 flex-shrink-0">
+      <div data-tour="label-creator" className="px-4 py-3 border-t border-white/8 flex-shrink-0">
         <p className="text-xs text-white/40 mb-1.5 font-heading font-semibold">Labels</p>
         <LabelCreator blockId={block.id} labels={block.labels} />
         {block.labels.length > 0 && (
@@ -240,6 +243,7 @@ export default function BlockInspector() {
           </div>
         </div>
         <button
+          data-tour="inspector-close"
           onClick={clearSelectedBlock}
           className="w-7 h-7 rounded-full bg-white/10 text-white/50 hover:text-white hover:bg-white/20 text-sm flex items-center justify-center transition-all"
           title="Close inspector"
@@ -258,6 +262,7 @@ export default function BlockInspector() {
       <div className="px-4 py-4 border-t border-white/8 flex flex-col gap-2 flex-shrink-0">
         <p className="text-xs text-white/50 font-heading font-semibold uppercase tracking-wider">Save Dataset</p>
         <input
+          data-tour="dataset-name"
           value={saveName}
           onChange={(e) => setSaveName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -266,6 +271,7 @@ export default function BlockInspector() {
           maxLength={60}
         />
         <button
+          data-tour="dataset-save"
           onClick={handleSave}
           className="w-full py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-heading font-semibold transition-colors"
         >

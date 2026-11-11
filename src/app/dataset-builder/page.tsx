@@ -527,6 +527,7 @@ export default function DatasetBuilderPage() {
             {/* Floating DataBank (left) */}
             {leftPanelCollapsed ? (
               <GlowButton
+                data-tour="data-panel-open"
                 size="sm"
                 variant="primary"
                 onClick={toggleLeftPanel}
@@ -536,7 +537,8 @@ export default function DatasetBuilderPage() {
                 🗃️ Data-Panel
               </GlowButton>
             ) : (
-              <div className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
+              // data-canvas-avoid: click-to-add must not drop new blocks underneath this panel.
+              <div data-canvas-avoid className="absolute top-4 left-4 z-20 h-[calc(100%-2rem)] flex flex-col" style={{ width: dataBankWidth }}>
                 <button
                   onClick={toggleLeftPanel}
                   title="Hide Data Bank"

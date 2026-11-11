@@ -231,6 +231,23 @@ const CHEAT_SHEET: Array<[string, string]> = [
   ['Change the **Motion Sensor** to **Motion Detected**', 'motion button'],
   ['Move the slider to 35', 'sensor slider'],
   ['Go to the **Text Input** and type: **MONEY**', 'text typed'],
+  ['Upload all **20 images** into the **Data Bank**.', 'Data Bank count'],
+  ['Open the **Datasets** tab.  /  Open the **Data Bank** tab.', 'panel tab open'],
+  ['From the **Datasets** menu, drag a **🏷️ Labelled** block onto the canvas.', 'block is added'],
+  ['Double-click the **new** / **second** **Labelled** block.', 'that block opened'],
+  ['Create two labels:  then  - **Cat**  - **Dog**', 'labels made'],
+  ['Drag the selected images into the **Items** section …', 'items added'],
+  ['Assign the correct label to every item.', 'nothing unlabelled'],
+  ['Under **Save Dataset**, enter the dataset name: **My Dataset**', 'name typed'],
+  ['Click **💾 Save Data**.  /  Click **💾 Save Name**.', 'saved with that name'],
+  ['Drag **My Dataset** onto the canvas.', 'saved dataset placed'],
+  ['… drag from the violet dot on **My Dataset** to the teal dot on the **Image Supervised Model**.', 'dataset → model wire'],
+  ['Under **2 · Train**, click: 🚀 **Train Model**  /  Wait for the training to complete.', 'training started / done'],
+  ['Tap **📋 Copy table** to copy … (a | table | right under it)', 'table copied'],
+  ['In the **Items** section, click **📋 Paste**. … click **Import 12 rows**.', 'sentences pasted'],
+  ['Drag from the **lower amber dot** on **My Test Data** to the **amber dot** on the model.', 'test data linked'],
+  ['Under **4 · Test Model**, click **🔬 Run Test**.  /  Wait for the testing to finish.', 'test started / done'],
+  ['Click **↗ Expand Results**.', 'results opened'],
 ]
 
 function GuideCheck({ instruction }: { instruction: string }) {

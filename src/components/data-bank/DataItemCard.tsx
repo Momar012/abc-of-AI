@@ -31,6 +31,8 @@ export default function DataItemCard({ item, isOverlay = false }: DataItemCardPr
   return (
     <motion.div
       ref={isOverlay ? undefined : setNodeRef}
+      data-bank-item={isOverlay ? undefined : ''}
+      data-selected={!isOverlay && isSelected ? 'true' : undefined}
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: isDragging && !isOverlay ? 0.3 : 1, scale: 1 }}

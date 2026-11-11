@@ -221,7 +221,14 @@ export default function MissionCard() {
 
   return createPortal(
     <>
-      <HintOverlay view={wonStars === null ? hintView : null} playKey={playKey} />
+      <HintOverlay
+        view={wonStars === null ? hintView : null}
+        playKey={playKey}
+        onClose={() => {
+          setHintFor(null)
+          setHintView(null)
+        }}
+      />
 
       <motion.div
         ref={cardRef}

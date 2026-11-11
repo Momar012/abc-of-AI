@@ -21,6 +21,8 @@ export default function DataBank() {
       {/* Tab bar */}
       <div className="flex border-b border-white/10">
         <button
+          data-tour="tab-bank"
+          data-active={activeTab === 'bank'}
           onClick={() => setActiveTab('bank')}
           className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'bank'
@@ -32,6 +34,8 @@ export default function DataBank() {
           <span className="flex-shrink-0 text-white/40">{bankItems.length}</span>
         </button>
         <button
+          data-tour="tab-saved"
+          data-active={activeTab === 'saved'}
           onClick={() => setActiveTab('saved')}
           className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'saved'
@@ -47,6 +51,8 @@ export default function DataBank() {
           )}
         </button>
         <button
+          data-tour="tab-models"
+          data-active={activeTab === 'models'}
           onClick={() => setActiveTab('models')}
           className={`flex-1 min-w-0 flex items-center justify-center gap-1 py-2.5 px-0.5 text-xs font-heading font-semibold transition-colors ${
             activeTab === 'models'

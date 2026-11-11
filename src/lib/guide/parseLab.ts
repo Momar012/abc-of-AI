@@ -9,14 +9,57 @@ import { GuideKind, KINDS, kindFromName } from './blocks'
 export type LabAction =
   | { type: 'add'; kind: GuideKind; n: number }
   | { type: 'connect'; from: GuideKind; to: GuideKind; n: number }
-  | { type: 'props'; kind: GuideKind }
+  /** Settings are open on this kind of block. n = which one this lab made (2 = "the second / new one"); 0 = any. */
+  | { type: 'props'; kind: GuideKind; n?: number }
   | { type: 'switch'; on: boolean; n: number }
   | { type: 'motion'; detected: boolean }
   | { type: 'sensorValue'; kind: GuideKind; value: number }
   | { type: 'text'; value: string }
   | { type: 'condOp'; op: string; value?: string | number | boolean }
   | { type: 'condValue'; value: string | number | boolean }
+  // ── data & model labs ──
+  /** "Open ABITA": already true. */
+  | { type: 'auto' }
+  /** A tab of the left Data Panel is showing. */
+  | { type: 'tab'; tab: DataTab }
+  /** The Data Bank holds at least n items. */
+  | { type: 'bank'; n: number }
+  /** A Label Data block has these labels. */
+  | { type: 'labels'; names: string[] }
+  /** Some Data Bank items are selected (or already dragged into a Label Data block). */
+  | { type: 'select' }
+  /** A Label Data block holds at least n items. */
+  | { type: 'items'; n: number }
+  /** A Label Data block's items all have a label. */
+  | { type: 'allLabelled' }
+  /** The dataset / model name box holds this name (or it's already saved under it). */
+  | { type: 'name'; what: 'dataset' | 'model'; value: string }
+  /** A dataset / model is saved with this name ('save' = the Save button step, 'list' = find it in the panel). */
+  | { type: 'saved'; what: 'dataset' | 'model'; name: string; via: 'save' | 'list' }
+  /** A saved dataset was dragged from the Datasets tab onto the canvas. */
+  | { type: 'dsCanvas'; name: string }
+  /** A model has started training (done = finished). */
+  | { type: 'train'; done: boolean }
+  // ── text labs: paste a table, then test the model ──
+  /** The kid copied the step's table (📋 Copy table, or Ctrl + C). */
+  | { type: 'copy' }
+  /** k new Labelled blocks hold at least n pasted sentences, every one with a label (k = 1st / 2nd paste). */
+  | { type: 'paste'; n: number; k: number }
+  /** A dataset is plugged into a model's amber test dot. */
+  | { type: 'testLink' }
+  /** The model's test has started (done = finished). */
+  | { type: 'runTest'; done: boolean }
+  /** ↗ Expand Results is open. */
+  | { type: 'results' }
   | { type: 'manual' }
+
+/** A table shown under its step (e.g. sentences to copy and paste). */
+export interface LabTable {
+  head: string[]
+  rows: string[][]
+}
+
+export type DataTab = 'bank' | 'saved' | 'models'
 
 export interface LabLine {
   /** The line as kids read it (markdown bold removed). */
@@ -25,8 +68,24 @@ export interface LabLine {
   md: string
   /** Follow-up lines of the same step ("Observe the result. The Alarm should stay silent."), shown smaller. */
   note?: string
+  /** A table that belongs to this step, shown under it with a 📋 Copy table button. */
+  table?: LabTable
   action: LabAction
 }
+
+/** "| a | b |" → ["a", "b"]. */
+const tableCells = (line: string) =>
+  line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
+
+/** Markdown table lines → head + rows (the "|---|---|" line dropped). */
+function toTable(lines: string[]): LabTable | undefined {
+  const rows = lines.filter((l) => !/^[\s|:-]+$/.test(l)).map(tableCells)
+  if (rows.length < 2) return undefined
+  return { head: rows[0], rows: rows.slice(1) }
+}
+
+/** Spreadsheet-style text (tab between columns) for the clipboard, so 📋 Paste reads it. */
+export const tableToTsv = (t: LabTable) => t.rows.map((r) => r.join('\t')).join('\n')
 
 const bolds = (line: string) => Array.from(line.matchAll(/\*\*(.+?)\*\*/g)).map((m) => m[1].trim())
 const plain = (line: string) => line.replace(/\*\*/g, '').replace(/\s+/g, ' ').trim()
@@ -34,7 +93,9 @@ const plain = (line: string) => line.replace(/\*\*/g, '').replace(/\s+/g, ' ').t
 const tidy = (line: string) =>
   line
     .replace(/\s*(?:-->|—>|–>|->|→)\s*/g, ' → ')
-    .replace(/\*\*([^*]+?)\*\*(?=[A-Za-z])/g, '**$1** ')
+    // "**Cat**s" → "**Cat** s"-style spacing, matching bold spans in order so "**Cat** or **Dog**"
+    // isn't mis-paired as "** or **".
+    .replace(/\*\*([^*]+?)\*\*/g, (m, _s, off: number, str: string) => (/[A-Za-z]/.test(str[off + m.length] ?? '') ? `${m} ` : m))
     .replace(/\s+/g, ' ')
     .trim()
 
@@ -50,11 +111,13 @@ export interface LabSections {
   expected: string[]
   /** One item per line of "What You Learned". */
   learned: string[]
+  /** 🤔 / 👉 lines under "Expected Result": thoughts for the finish card, not things to test. */
+  outro: string[]
   /** Every other section (Learning Tip, Think Like an AI Engineer, …), as markdown with its heading. */
   rest: string
 }
 
-type SectionKey = 'goal' | 'problem' | 'instructions' | 'expected' | 'learned'
+type SectionKey = 'goal' | 'problem' | 'instructions' | 'expected' | 'criteria' | 'learned'
 
 /** "## 🎯 Goal" / "## Objective" → 'goal', "## ✅ Success Criteria" → 'expected', … */
 function sectionKey(heading: string): SectionKey | null {
@@ -62,7 +125,8 @@ function sectionKey(heading: string): SectionKey | null {
   if (h === 'goal' || h === 'objective' || h === 'goals' || h === 'objectives') return 'goal'
   if (h === 'problem') return 'problem'
   if (h === 'instructions') return 'instructions'
-  if (/^(expected results?|success criteria)$/.test(h)) return 'expected'
+  if (/^expected results?$/.test(h)) return 'expected'
+  if (h === 'success criteria') return 'criteria'
   if (h === 'what you learned') return 'learned'
   return null
 }
@@ -75,7 +139,7 @@ const listItems = (body: string) =>
 
 /** Split a Guided Lab's markdown into the parts the lab card shows in its own places. */
 export function splitLab(md: string): LabSections {
-  const bodies: Record<SectionKey, string[]> = { goal: [], problem: [], instructions: [], expected: [], learned: [] }
+  const bodies: Record<SectionKey, string[]> = { goal: [], problem: [], instructions: [], expected: [], criteria: [], learned: [] }
   const intro: string[] = []
   const rest: string[] = []
   let cur: string[] = intro
@@ -96,29 +160,39 @@ export function splitLab(md: string): LabSections {
   }
   // Lessons often have runs of blank lines; one blank line is enough on a kid's screen.
   const join = (a: string[]) => a.join('\n').replace(/\n[ \t]*(\n[ \t]*)+/g, '\n\n').trim()
+  // With a "Success Criteria" list, that's what kids test, and "Expected Result" is just thoughts.
+  const criteria = listItems(join(bodies.criteria))
+  const expectedRaw = listItems(join(bodies.expected))
+  const isThought = (t: string) => criteria.length > 0 || /^(🤔|👉)/u.test(t)
+  const expected = [...criteria, ...expectedRaw]
   return {
     intro: join(intro),
     goal: join(bodies.goal),
     problem: join(bodies.problem),
     instructions: join(bodies.instructions),
-    expected: listItems(join(bodies.expected)),
+    expected: criteria.length ? criteria : expectedRaw.filter((t) => !isThought(t)),
     learned: listItems(join(bodies.learned)),
+    outro: expectedRaw.filter(isThought).map((t) => t.replace(/^(🤔|👉)\s*/u, '')),
     rest: join(rest),
   }
 }
 
 /** Lines that start a new action, even in the middle of a Step. */
 const ACTION_START =
-  /^(drag|add|connect|double-click|configure|set|type|enter|turn|click|go to|now type|change|trigger|move|select|open|rename|press)\b/i
+  /^(drag|add|connect|double-click|configure|set|type|enter|turn|click|go to|now type|change|trigger|move|select|open|rename|press|create)\b/i
 
 /** One instruction: a line of text, or the arrows of a ```diagram block ("Switch → OR Gate"). */
-type RawInstruction = { line: string; note?: string } | { arrows: Array<[string, string]> }
+type RawInstruction = { line: string; note?: string; table?: string[] } | { arrows: Array<[string, string]> }
 
 /** Pull just the instruction lines out of the lab markdown. */
 function instructionLines(md: string): RawInstruction[] {
   const out: RawInstruction[] = []
   let fence: Array<[string, string]> | null = null
   let joinNext = false
+  /** The line being joined onto is a list ("Create two labels:" + "- Cat" + "- Dog"). */
+  let listJoin = false
+  /** Where a joined line goes: the step's own line, or its 👀 note. */
+  let joinInto: 'line' | 'note' = 'line'
   /** Lines pushed since the last "**Step N:**" marker (-1 = the lab has no Step markers). */
   let inStep = -1
   for (const raw of splitLab(md).instructions.split('\n')) {
@@ -142,6 +216,14 @@ function instructionLines(md: string): RawInstruction[] {
       continue
     }
     if (!l || l.startsWith('✅')) continue
+    // A table belongs to the step above it ("Tap 📋 Copy table to copy the sentences below.").
+    if (l.startsWith('|')) {
+      const owner = out.at(-1)
+      if (owner && 'line' in owner) (owner.table ??= []).push(l)
+      joinNext = false
+      continue
+    }
+    const isItem = /^[-*]\s+/.test(l)
     // "**Step 1:**" on its own line, or "**Step 1:** Drag …" — keep only the instruction text.
     const body = l
       .replace(/^[-*]\s+/, '')
@@ -170,14 +252,28 @@ function instructionLines(md: string): RawInstruction[] {
     // "Configure the **IF Condition**:" + "**Light Level > 70%**" on the next line → one step.
     // Inside a Step, "Observe the result." / "The Alarm should …" just add to the step's line.
     const followUp = inStep > 0 && last && 'line' in last && !ACTION_START.test(plain(body))
-    if (joinNext && last && 'line' in last) last.line = `${last.line} ${body}`
-    else if (followUp && last && 'line' in last) last.note = last.note ? `${last.note} ${body}` : body
-    else out.push({ line: body })
-    joinNext = /(:|→|->)\s*\**$/.test(body)
+    const joining: boolean = !!(joinNext && last && 'line' in last)
+    if (joining && joinInto === 'note' && last && 'line' in last) last.note = `${last.note ?? ''}${listJoin ? ',' : ''} ${body}`.trim()
+    else if (joining && last && 'line' in last) last.line = `${last.line}${listJoin ? ',' : ''} ${body}`
+    else if (followUp && last && 'line' in last) {
+      last.note = last.note ? `${last.note} ${body}` : body
+      joinInto = 'note'
+    } else {
+      out.push({ line: body })
+      joinInto = 'line'
+    }
+    // A list right after "…:" belongs to that line, item after item.
+    listJoin = joining && isItem
+    joinNext = /(:|→|->)\s*\**$/.test(body) || listJoin
     if (inStep >= 0) inStep++
   }
   return out
 }
+
+/** Which block a "Double-click the … X" step means: "first" = 1, "second" = 2, "new"/"another" = the
+ *  latest one this lab added, plain "the X" = 0 (any X). */
+const whichOne = (s: string, added: number) =>
+  /\bfirst\b/i.test(s) ? 1 : /\bsecond\b/i.test(s) ? 2 : /\bthird\b/i.test(s) ? 3 : /\b(new|another)\b/i.test(s) ? added : 0
 
 const countWord = (s: string) =>
   /\ball three\b|\bthree\b/i.test(s) ? 3 : /\bboth\b|\btwo\b/i.test(s) ? 2 : 1
@@ -196,7 +292,121 @@ function parseCondition(expr: string): { op: string; value: string | number | bo
   return { op, value: Number.isNaN(num) ? m[2].replace(/[°C]+$/g, '').trim() : num }
 }
 
+/** "From the Models menu, drag…" / "Under 2 · Train, click…" → "drag…" / "click…". */
+const LEAD_IN = /^(from|under|in) (the )?[^,]{1,40},\s*/i
+
+interface DataCtx {
+  bankN: number
+  dataset?: string
+  model?: string
+  lastConnect?: LabAction
+  /** Rows in the last table a step showed (how many sentences the next paste should bring). */
+  tableRows?: number
+  /** Pastes so far (the 2nd paste must land in a 2nd Labelled block). */
+  pastes: number
+}
+
+const numberIn = (s: string) => {
+  const m = s.match(/\b(\d+)\b/)
+  return m ? Number(m[1]) : null
+}
+
+/**
+ * Data & model lab lines (Data Bank, Label Data, saving, training). Returns null for anything
+ * else, so rule-based labs parse exactly as before.
+ */
+function dataAction(
+  text: string,
+  t: string,
+  names: string[],
+  kinds: Array<GuideKind | null>,
+  ctx: DataCtx,
+  connect: (from: GuideKind, to: GuideKind) => LabAction
+): LabAction | null {
+  if (/^open abita\.?$/i.test(t)) return { type: 'auto' }
+  // ── text labs ──
+  if (/\bcopy table\b|^copy the\b.*\btable\b/i.test(t)) return { type: 'copy' }
+  if (/\bclick\b.*\bpaste\b/i.test(t) && ctx.tableRows) {
+    ctx.pastes += 1
+    return { type: 'paste', n: ctx.tableRows, k: ctx.pastes }
+  }
+  // "Drag from the amber dot on **Test Data** to the amber dot on the **Model**": the test link.
+  if (/^drag from the (lower |bottom )?amber dot\b/i.test(t)) return { type: 'testLink' }
+  if (/^click\b.*\brun test\b/i.test(t)) return { type: 'runTest', done: false }
+  if (/^wait for the test(ing)?\b/i.test(t)) return { type: 'runTest', done: true }
+  if (/^click\b.*\bexpand results\b/i.test(t)) return { type: 'results' }
+  if (/^(go to|open) the data (panel|bank)\b/i.test(t)) return { type: 'tab', tab: 'bank' }
+  if (/^open the datasets tab\b/i.test(t)) return { type: 'tab', tab: 'saved' }
+  if (/^open the (my )?models tab\b/i.test(t)) return { type: 'tab', tab: 'models' }
+  if (/^click:? add data\b/i.test(t)) return { type: 'bank', n: 1 }
+  if (/^upload\b.*\bdata bank\b/i.test(t)) {
+    ctx.bankN = numberIn(t) ?? ctx.bankN
+    return { type: 'bank', n: Math.max(1, ctx.bankN) }
+  }
+  if (/^check that .*\bappear in the data bank\b/i.test(t)) return { type: 'bank', n: Math.max(1, ctx.bankN) }
+  if (/^create (\w+ )?labels?\b/i.test(t)) {
+    const labelNames = names.filter((n) => !kindFromName(n))
+    return labelNames.length ? { type: 'labels', names: labelNames } : null
+  }
+  if (/^select\b.*\bdata bank\b/i.test(t)) return { type: 'select' }
+  if (/\binto the items\b/i.test(t)) return { type: 'items', n: 2 }
+  if (/assign the correct label to every|every (image|item) has been labell?ed/i.test(t)) return { type: 'allLabelled' }
+
+  // "Under Save Dataset, enter the dataset name:" / "In the Save Dataset section, enter the name:"
+  const nameAsk = text.match(/\benter the (dataset |model )?name\b/i)
+  if (nameAsk && names.length && (nameAsk[1] || /\bsave (dataset|data|to my models)\b/i.test(text))) {
+    const what = /model/i.test(nameAsk[1] ?? text) ? 'model' : 'dataset'
+    const value = names.at(-1)!
+    ctx[what] = value
+    return { type: 'name', what, value }
+  }
+  if (/^click:?\b.*\bsave data(set)?\b/i.test(t))
+    return ctx.dataset ? { type: 'saved', what: 'dataset', name: ctx.dataset, via: 'save' } : null
+  if (/^click:?\b.*\bsave name\b/i.test(t)) return ctx.model ? { type: 'saved', what: 'model', name: ctx.model, via: 'save' } : null
+  const listed = t.match(/^check that (.+?) appears in the (list of saved |)(datasets|models)\b/i)
+  if (listed) {
+    const what = /dataset/i.test(listed[3]) ? 'dataset' : 'model'
+    const name = names[0] ?? listed[1]
+    ctx[what] = name
+    return { type: 'saved', what, name, via: 'list' }
+  }
+  if (/^locate\b/i.test(t) && names.length) {
+    ctx.dataset = names.at(-1)!
+    return { type: 'saved', what: 'dataset', name: ctx.dataset, via: 'list' }
+  }
+  // "Drag **CatDog Labelled Dataset** onto the canvas" (a saved dataset, not a block from a menu)
+  const inT = names.filter((n) => t.includes(n))
+  if (/^drag\b.*\bonto the canvas\b/i.test(t) && inT.length && !inT.some((n) => kindFromName(n))) {
+    const name = inT.find((n) => /dataset/i.test(n) || n === ctx.dataset)
+    if (name) {
+      ctx.dataset = name
+      return { type: 'dsCanvas', name }
+    }
+  }
+  // "drag from the violet dot on **X Dataset** to the teal dot on the **Image Supervised Model**"
+  const dots = t.match(/drag from the .*?dot on (.+?) to the .*?dot on (.+)$/i)
+  if (dots) {
+    const side = (raw: string): GuideKind | null => {
+      const n = names.find((x) => raw.includes(x) && !/dot$/i.test(x)) ?? raw
+      const k = kindFromName(n)
+      if (k) return k
+      if (/unlabell?ed/i.test(n)) return 'unlabelled'
+      return /dataset/i.test(n) ? 'labelled' : null
+    }
+    const from = side(dots[1])
+    const to = side(dots[2])
+    if (from && to) return (ctx.lastConnect = connect(from, to))
+  }
+  if (/^verify\b.*\bconnected\b/i.test(t) && ctx.lastConnect) return ctx.lastConnect
+  if (/^click\b.*\btrain model\b/i.test(t)) return { type: 'train', done: false }
+  if (/^observe the training\b/i.test(t)) return { type: 'train', done: false }
+  if (/^wait for the training\b/i.test(t) || (/^verify\b/i.test(t) && /training complete/i.test(t))) return { type: 'train', done: true }
+  if (/^scroll to\b.*\bsave to my models\b/i.test(t)) return { type: 'train', done: true }
+  return null
+}
+
 export function parseLab(md: string): LabLine[] {
+  const ctx: DataCtx = { bankN: 0, pastes: 0 }
   const adds: Partial<Record<GuideKind, number>> = {}
   const links: Record<string, number> = {}
   const result: LabLine[] = []
@@ -226,11 +436,17 @@ export function parseLab(md: string): LabLine[] {
 
     const line = tidy(item.line)
     const text = plain(line)
+    const table = item.table ? toTable(item.table) : undefined
+    if (table) ctx.tableRows = table.rows.length
     const names = bolds(line)
     const kinds = names.map(kindFromName)
     let action: LabAction = { type: 'manual' }
+    const t = text.replace(LEAD_IN, '')
+    const data = dataAction(text, t, names, kinds, ctx, (from, to) => connect(from, to))
 
-    if (/^(drag|add)\b/i.test(text) && kinds.some(Boolean)) {
+    if (data) {
+      action = data
+    } else if (/^(drag|add)\b/i.test(t) && kinds.some(Boolean)) {
       const kind = kinds.find(Boolean)!
       adds[kind] = (adds[kind] ?? 0) + 1
       action = { type: 'add', kind, n: adds[kind]! }
@@ -268,14 +484,14 @@ export function parseLab(md: string): LabLine[] {
       const kind = kinds.find(Boolean)
       if (/no motion/i.test(text)) action = { type: 'motion', detected: false }
       else if (/motion detected/i.test(text)) action = { type: 'motion', detected: true }
-      else if (kind) action = { type: 'props', kind }
+      else if (kind) action = { type: 'props', kind, n: whichOne(text, adds[kind] ?? 0) }
     } else if (/^configure\b/i.test(text) && names.length) {
       // "Configure the IF Condition --> Temperature > 30°C" / "Configure it as: Contains: MONEY" set the
       // condition; plain "Configure the IF Condition" just opens it.
       const kind = kinds.find(Boolean)
       const c = names.length > 1 || !kind ? parseCondition(names.at(-1)!) : null
       if (c) action = { type: 'condOp', op: c.op, value: c.value }
-      else if (kind) action = { type: 'props', kind }
+      else if (kind) action = { type: 'props', kind, n: whichOne(text, adds[kind] ?? 0) }
     } else if (/^turn\b/i.test(text) && /switch/i.test(text)) {
       const on = /\bON\b/.test(text)
       action = { type: 'switch', on, n: on ? countWord(text) : 1 }
@@ -304,10 +520,12 @@ export function parseLab(md: string): LabLine[] {
       action = { type: 'condOp', op: 'is', value: /^motion detected$/i.test(text) }
     }
 
-    result.push({ text, md: line, note: item.note ? tidy(item.note) : undefined, action })
+    result.push({ text, md: line, note: item.note ? tidy(item.note) : undefined, table, action })
   }
   return result
 }
+
+export const TAB_LABEL: Record<DataTab, string> = { bank: '📁 Data', saved: '📋 Datasets', models: '🤖 Models' }
 
 /** A lab only gets the guide if most of its lines are checkable. */
 export const isGuidable = (lines: LabLine[]) =>
@@ -338,6 +556,38 @@ export function describeAction(a: LabAction): string {
       return `${L(a.kind)} slider is at ${a.value}`
     case 'text':
       return `Text Input holds “${a.value}”`
+    case 'auto':
+      return 'Ticks by itself (nothing to check)'
+    case 'tab':
+      return `The ${TAB_LABEL[a.tab]} tab of the Data Panel is open`
+    case 'bank':
+      return `The Data Bank has at least ${a.n} item${a.n > 1 ? 's' : ''}`
+    case 'labels':
+      return `A Label Data block has the labels ${a.names.map((n) => `“${n}”`).join(' and ')}`
+    case 'select':
+      return 'Some Data Bank items are selected'
+    case 'items':
+      return `A Label Data block holds at least ${a.n} items`
+    case 'allLabelled':
+      return 'Every item in the Label Data block has a label'
+    case 'name':
+      return `The ${a.what} name box says “${a.value}”`
+    case 'saved':
+      return `A ${a.what} called “${a.name}” is saved${a.via === 'list' ? ` (shown in the ${a.what === 'dataset' ? 'Datasets' : 'Models'} tab)` : ''}`
+    case 'dsCanvas':
+      return `The saved dataset “${a.name}” is on the canvas`
+    case 'train':
+      return a.done ? 'A model shows Training complete' : 'A model has started training'
+    case 'copy':
+      return 'Kid copied the table (📋 Copy table or Ctrl + C)'
+    case 'paste':
+      return `${a.k > 1 ? `${a.k} new Labelled blocks each hold` : 'A new Labelled block holds'} at least ${a.n} pasted sentences, all labelled`
+    case 'testLink':
+      return "A dataset is plugged into a model's amber test dot"
+    case 'runTest':
+      return a.done ? 'The model has finished testing' : 'The model has started testing'
+    case 'results':
+      return '↗ Expand Results is open'
     case 'manual':
       return 'Manual: kid taps “✓ I did it”'
   }

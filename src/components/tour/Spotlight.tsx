@@ -51,6 +51,11 @@ export function useTrackedBoxes(view: StepView | null) {
   const [boxes, setBoxes] = useState<ReturnType<typeof measureView>>({ targetBox: null, dragToBox: null, avoidBox: null })
   useEffect(() => {
     if (!view) { setBoxes({ targetBox: null, dragToBox: null, avoidBox: null }); return }
+    // A button further down the settings panel (e.g. 💾 Save Name) may be scrolled out of sight:
+    // bring it into view once, so the ring isn't drawn around something half off the screen.
+    // Only inside the panel — the canvas pans with transforms and must not be scrolled.
+    const el = view.target ? document.querySelector(view.target) : null
+    if (el?.closest('[data-properties-panel], [data-tour="label-modal"]')) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     const tick = () => {
       const next = measureView(view)
       setBoxes((prev) =>

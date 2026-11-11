@@ -32,6 +32,7 @@ function DraggableModelCard({ model, onDelete, onSaveFile }: { model: TrainedMod
   return (
     <div
       ref={setNodeRef}
+      data-tour={`saved-model-${model.id}`}
       {...listeners}
       {...attributes}
       className="glass-card p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-opacity"

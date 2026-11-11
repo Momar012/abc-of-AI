@@ -27,6 +27,7 @@ function DraggableDatasetCard({ ds, onDelete }: { ds: SavedDataset; onDelete: ()
   return (
     <div
       ref={setNodeRef}
+      data-tour={`saved-ds-${ds.id}`}
       {...listeners}
       {...attributes}
       className="glass-card rounded-xl p-3 flex flex-col gap-2 cursor-grab active:cursor-grabbing"

@@ -50,6 +50,7 @@ export default function TestResultsModal() {
       onClick={closeTestResultsModal}
     >
       <div
+        data-tour="test-results"
         className="glass-card w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
         style={{ border: '1px solid rgba(245,158,11,0.3)' }}
         onClick={(e) => e.stopPropagation()}

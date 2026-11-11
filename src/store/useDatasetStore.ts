@@ -148,11 +148,14 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
     set((s) => ({
       labelledBlocks: s.labelledBlocks.map((b) => {
         if (b.id !== blockId) return b
-        const colorIndex = b.labels.length % LABEL_PALETTE.length
+        // First colour no other label uses, so deleting "cat" and adding "Cat" doesn't give
+        // two labels the same colour (kids tell labels apart by colour).
+        const used = new Set(b.labels.map((l) => l.color))
+        const color = LABEL_PALETTE.find((c) => !used.has(c)) ?? LABEL_PALETTE[b.labels.length % LABEL_PALETTE.length]
         const labelName = name?.trim() || `Label ${b.labels.length + 1}`
         return {
           ...b,
-          labels: [...b.labels, { id: uuid(), name: labelName, color: LABEL_PALETTE[colorIndex], itemIds: [] }],
+          labels: [...b.labels, { id: uuid(), name: labelName, color, itemIds: [] }],
         }
       }),
     })),

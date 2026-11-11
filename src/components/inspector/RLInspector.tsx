@@ -411,6 +411,7 @@ export default function RLInspector() {
           </div>
         </div>
         <button
+          data-tour="inspector-close"
           onClick={clearSelectedBlock}
           className="w-7 h-7 rounded-full bg-white/10 text-white/50 hover:text-white hover:bg-white/20 text-sm flex items-center justify-center transition-all"
         >

@@ -81,6 +81,7 @@ export default function LabellingModal() {
       onClick={closeLabellingModal}
     >
       <div
+        data-tour="label-modal"
         className="glass-card w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
         style={{ border: '1px solid rgba(139,92,246,0.3)' }}
         onClick={(e) => e.stopPropagation()}
@@ -258,6 +259,8 @@ export default function LabellingModal() {
                             />
                           )}
                           <select
+                            data-tour="label-select"
+                            data-unlabelled={assignedLabelId ? 'false' : 'true'}
                             value={assignedLabelId ?? ''}
                             onChange={(e) => {
                               const val = e.target.value
@@ -292,6 +295,7 @@ export default function LabellingModal() {
             Click a card to select · hover for delete (×)
           </p>
           <button
+            data-tour="label-modal-done"
             onClick={closeLabellingModal}
             className="px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-heading font-semibold transition-colors"
           >

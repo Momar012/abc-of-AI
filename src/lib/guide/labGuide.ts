@@ -1,13 +1,21 @@
 import { useRuleStore } from '@/store/useRuleStore'
 import { useUIStore } from '@/store/useUIStore'
+import { useDatasetStore } from '@/store/useDatasetStore'
+import { useModelStore } from '@/store/useModelStore'
 import type { StepView } from '@/lib/tour/steps'
-import { allBlocks, GuideKind, handleSel, KINDS, MENU_LABEL, MENU_SEL, nodeSel, paletteSel } from './blocks'
-import type { LabAction, LabLine } from './parseLab'
+import { allBlocks, type AnyBlock, GuideKind, handleSel, isModelKind, KINDS, MENU_LABEL, MENU_SEL, nodeSel, paletteSel } from './blocks'
+import { TAB_LABEL, type DataTab, type LabAction, type LabLine } from './parseLab'
 
-/** Which blocks already existed when the kid opened the lab card (so old blocks don't count). */
+/**
+ * Which blocks and Data Bank items already existed when the kid opened the lab card, so old work
+ * doesn't count (e.g. "Upload 20 new images" when the bank already holds last lab's pictures).
+ */
 export type LabSnapshot = string[]
 
-export const takeSnapshot = (): LabSnapshot => allBlocks().map((b) => b.id)
+export const takeSnapshot = (): LabSnapshot => [
+  ...allBlocks().map((b) => b.id),
+  ...useDatasetStore.getState().bankItems.map((i) => i.id),
+]
 
 const isVisible = (sel: string) => {
   const el = document.querySelector(sel)
@@ -16,10 +24,87 @@ const isVisible = (sel: string) => {
   return r.width > 0 && r.height > 0
 }
 
+/** The element is on screen and not covered (e.g. by the settings panel), so a kid can grab it. */
+const reachable = (sel: string | null) => {
+  const el = sel ? document.querySelector(sel) : null
+  if (!el) return false
+  const r = el.getBoundingClientRect()
+  if (!r.width || !r.height) return false
+  const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+  // The hint overlay itself may sit on top; only a real covering panel counts.
+  return !hit || el === hit || el.contains(hit) || !hit.closest('[data-properties-panel], [data-canvas-avoid]')
+}
+
+// ── data & model labs: reading the panels ─────────────────────────────────────
+
+/** Names match if they only differ in capitals, spaces or punctuation ("CatDog Model" = "catdogmodel"). */
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+const sameName = (a: string | undefined, b: string) => !!a && norm(a) === norm(b)
+
+const tabOpen = (tab: DataTab) => isVisible(`[data-tour="tab-${tab}"][data-active="true"]`)
+const inputValue = (sel: string) => (document.querySelector(sel) as HTMLInputElement | null)?.value ?? ''
+const savedNames = (what: 'dataset' | 'model') =>
+  what === 'dataset'
+    ? useDatasetStore.getState().savedDatasets.map((d) => d.name)
+    : useModelStore.getState().trainedModels.map((m) => m.name)
+const isSaved = (what: 'dataset' | 'model', name: string) => savedNames(what).some((n) => sameName(n, name))
+const allLabelBlocks = () => allBlocks().filter((b) => b.kind === 'labelled')
+/** Labelled blocks made in this lab: last lab's "Cat"/"Dog" block mustn't tick this lab's label steps. */
+const labelBlocks = (snap: LabSnapshot) => {
+  const fresh = isNew(snap)
+  return allLabelBlocks().filter((b) => fresh(b.id))
+}
+const modelBlocks = () => allBlocks().filter((b) => isModelKind(b.kind))
+/** New Labelled blocks holding at least n sentences, every one with a label (what 📋 Paste makes). */
+const pastedBlocks = (snap: LabSnapshot, n: number) =>
+  labelBlocks(snap).filter((b) => (b.items ?? 0) >= n && b.unassigned === 0 && (b.labels?.length ?? 0) > 0)
+/** Models with test data on their amber dot, made or linked in this lab. */
+const testedModels = (snap: LabSnapshot) => {
+  const fresh = isNew(snap)
+  return modelBlocks().filter((b) => !!b.testInput && (fresh(b.id) || fresh(b.testInput)))
+}
+/** The button's own words ("📝 Train Model" for text models, "🚀 Train Model" for images). */
+const buttonText = (sel: string, fallback: string) =>
+  document.querySelector(sel)?.textContent?.replace(/\s+/g, ' ').trim() || fallback
+
+/** Data Bank items added since the lab started. */
+const newBankItems = (snap: LabSnapshot) => {
+  const fresh = isNew(snap)
+  return useDatasetStore.getState().bankItems.filter((i) => fresh(i.id)).length
+}
+
+/**
+ * Labels must match exactly: the model compares test labels with training labels letter by
+ * letter, so "cat" here and "Cat" in the test data would count every cat as wrong.
+ */
+const sameLabel = (a: string | undefined, b: string) => !!a && a.trim() === b.trim()
+const nearLabel = (a: string | undefined, b: string) => !!a && !sameLabel(a, b) && a.trim().toLowerCase() === b.trim().toLowerCase()
+/** "Your label says cat but this lab needs Cat" for a label that's only wrong in capitals. */
+function labelCaseTip(b: AnyBlock | undefined, names: string[]): string | null {
+  for (const n of names) {
+    if (b?.labels?.some((l) => sameLabel(l, n))) continue
+    const near = b?.labels?.find((l) => nearLabel(l, n))
+    if (near) return `Your label says **${near}**, but this lab needs **${n}**. Capital letters matter! Tap × on **${near}** and add **${n}**.`
+  }
+  return null
+}
+/** What to call a Labelled block in a hint: its own name once it has a real one. */
+const labelledName = (b: AnyBlock | null | undefined) =>
+  b?.name && !/^dataset \d+$/i.test(b.name.trim()) ? `“${b.name}”` : 'the 🏷️ Labelled block'
+/** The Properties Panel is open on a block of this sort. */
+const inspecting = (type: 'labelled' | 'model') =>
+  useUIStore.getState().selectedBlockType === type && isVisible('[data-properties-panel]')
+
 // ── "it just happened" events (for experiment steps like "Turn ON the switch") ─────────────
 
 let lastOn = new Map<string, boolean>()
 const switchOnEvents: number[] = []
+const copyEvents: number[] = []
+
+/** The kid copied something (📋 Copy table, or Ctrl + C on the page). */
+export function recordCopy() {
+  copyEvents.push(Date.now())
+}
 
 /** Call every tick: notices switches being flipped on. */
 export function recordEvents() {
@@ -66,7 +151,13 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
       return links(a.from, a.to, snap).length >= a.n
     case 'props': {
       const sel = useUIStore.getState().selectedBlockId
-      return !!sel && blocks.some((b) => b.id === sel && b.kind === a.kind)
+      if (!sel) return false
+      const same = blocks.filter((b) => b.kind === a.kind)
+      // "Double-click the new / second Labelled block": only that block (or a later one) counts, so an
+      // old block that's still selected can't tick this step before the new block even exists.
+      if (!a.n) return same.some((b) => b.id === sel)
+      const made = same.filter((b) => fresh(b.id))
+      return made.length >= a.n && made.slice(a.n - 1).some((b) => b.id === sel)
     }
     case 'condOp':
       return blocks.some((b) => b.kind === 'condition' && b.operator === a.op && (a.value === undefined || sameValue(b.threshold, a.value)))
@@ -82,6 +173,46 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
       return blocks.some((b) => b.kind === a.kind && Number(b.value) === a.value)
     case 'text':
       return blocks.some((b) => b.kind === 'sensor-text' && String(b.value ?? '').trim() === a.value)
+    case 'auto':
+      return true
+    case 'tab':
+      return tabOpen(a.tab)
+    case 'bank':
+      return newBankItems(snap) >= a.n
+    case 'labels':
+      return labelBlocks(snap).some((b) => a.names.every((n) => b.labels?.some((l) => sameLabel(l, n))))
+    case 'select':
+      return useUIStore.getState().selectedBankItemIds.length > 0 || labelBlocks(snap).some((b) => (b.items ?? 0) > 0)
+    case 'items':
+      return labelBlocks(snap).some((b) => (b.items ?? 0) >= a.n)
+    case 'allLabelled':
+      return labelBlocks(snap).some((b) => (b.items ?? 0) >= 2 && b.unassigned === 0 && (b.labels?.length ?? 0) > 0)
+    case 'name':
+      return (
+        sameName(inputValue(`[data-tour="${a.what}-name"]`), a.value) ||
+        isSaved(a.what, a.value) ||
+        (a.what === 'dataset' ? allLabelBlocks() : modelBlocks()).some((b) => sameName(b.name, a.value))
+      )
+    case 'saved':
+      return isSaved(a.what, a.name)
+    case 'dsCanvas':
+      return blocks.some((b) => (b.kind === 'labelled' || b.kind === 'unlabelled') && fresh(b.id) && sameName(b.name, a.name))
+    case 'train': {
+      const ok = a.done ? ['trained'] : ['loading', 'training', 'trained']
+      return modelBlocks().some((b) => fresh(b.id) && ok.includes(b.status ?? ''))
+    }
+    case 'copy':
+      return copyEvents.length > 0
+    case 'paste':
+      return pastedBlocks(snap, a.n).length >= a.k
+    case 'testLink':
+      return testedModels(snap).length > 0
+    case 'runTest': {
+      const ok = a.done ? ['done'] : ['running', 'done']
+      return testedModels(snap).some((b) => ok.includes(b.testStatus ?? ''))
+    }
+    case 'results':
+      return isVisible('[data-tour="test-results"]')
     case 'manual':
       return false
   }
@@ -93,13 +224,20 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
  * because the first switch is still on from the step before.
  */
 export function isDone(a: LabAction, snap: LabSnapshot, since: number): boolean {
+  if (a.type === 'copy') return copyEvents.some((t) => t >= since)
   if (!matches(a, snap)) return false
   if (a.type === 'switch' && a.on) return switchOnEvents.some((t) => t >= since)
   return true
 }
 
 /** Steps whose result is about the canvas layout (can tick even when they aren't the current step). */
-export const isStructural = (a: LabAction) => ['add', 'connect', 'props', 'condOp', 'condValue'].includes(a.type)
+export const isStructural = (a: LabAction) =>
+  ['add', 'connect', 'props', 'condOp', 'condValue', 'auto', 'bank', 'labels', 'items', 'allLabelled', 'name', 'saved', 'dsCanvas', 'train', 'paste', 'testLink', 'runTest'].includes(a.type)
+
+/** Steps from the data & model labs (for wording the 👎 answer). */
+const isDataStep = (a: LabAction) =>
+  ['bank', 'labels', 'select', 'items', 'allLabelled', 'name', 'saved', 'dsCanvas', 'train', 'tab', 'paste', 'testLink', 'runTest', 'results'].includes(a.type) ||
+  ((a.type === 'add' || a.type === 'props') && (a.kind === 'labelled' || a.kind === 'unlabelled' || isModelKind(a.kind)))
 
 // ── hints (what 👆 Show me points at) ────────────────────────────────────────
 
@@ -143,16 +281,33 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
       if (!pick) {
         return { target: null, gesture: 'none', text: `Add the blocks first, then connect ${KINDS[a.from].label} to ${KINDS[a.to].label}.` }
       }
+      const fromSel = handleSel(pick.s, KINDS[a.from].out ?? 'rule-out')
+      const toSel = handleSel(pick.t, freeInHandle(pick.t, a.to))
+      // A dot hidden under the settings panel can't be dragged: close the panel first.
+      if ((!reachable(fromSel) || !reachable(toSel)) && isVisible('[data-tour="inspector-close"]')) {
+        return {
+          target: '[data-tour="inspector-close"]',
+          gesture: 'tap',
+          text: 'The settings panel is covering a dot. Close it with ×, then connect the dots.',
+        }
+      }
+      const dataLink = (a.from === 'labelled' || a.from === 'unlabelled') && isModelKind(a.to)
+      const src = blocks.find((b) => b.id === pick!.s)
       return {
-        target: handleSel(pick.s, KINDS[a.from].out ?? 'rule-out'),
+        target: fromSel,
         gesture: 'drag',
-        dragTo: handleSel(pick.t, freeInHandle(pick.t, a.to)) ?? undefined,
+        dragTo: toSel ?? undefined,
         avoid: [nodeSel(pick.s), nodeSel(pick.t)],
-        text: `Drag from the dot on the right of ${KINDS[a.from].label} to the dot on the left of ${KINDS[a.to].label}.`,
+        text: dataLink
+          ? `Drag from the violet dot on ${a.from === 'labelled' ? labelledName(src) : KINDS[a.from].label} to the teal dot on the ${KINDS[a.to].label}.`
+          : `Drag from the dot on the right of ${KINDS[a.from].label} to the dot on the left of ${KINDS[a.to].label}.`,
       }
     }
     case 'props': {
-      const b = newestOf(a.kind, snap)
+      // "the first / second / new one": point at that block, not just the newest.
+      const fresh = isNew(snap)
+      const made = allBlocks().filter((x) => x.kind === a.kind && fresh(x.id))
+      const b = (a.n ? made[a.n - 1] : undefined) ?? newestOf(a.kind, snap)
       return { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${KINDS[a.kind].label} to open its settings.` }
     }
     case 'condOp':
@@ -188,12 +343,294 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
       const b = newestOf('sensor-text', snap)
       return { target: nodeSel(b?.id), gesture: 'tap', text: `Type “${a.value}” into the Text Input and press Send.` }
     }
+    case 'auto':
+      return { target: null, gesture: 'none', text: lineText }
+    case 'tab':
+      return openTab(a.tab) ?? { target: `[data-tour="tab-${a.tab}"]`, gesture: 'none', text: `The ${TAB_LABEL[a.tab]} tab is open ✔` }
+    case 'bank': {
+      const have = newBankItems(snap)
+      const count = a.n > 1 ? ` You've added ${have} of ${a.n}.` : ''
+      return (
+        openTab('bank') ?? {
+          target: '[data-tour="add-data"]',
+          gesture: 'tap',
+          text: `Click Add Data and pick your pictures (you can choose lots at once).${count}`,
+        }
+      )
+    }
+    case 'labels': {
+      const b = labelBlocks(snap).at(-1)
+      if (!b) return { target: MENU_SEL.data, gesture: 'tap', text: `Add a new ${KINDS.labelled.label} block first. It's in ${MENU_LABEL.data}.` }
+      const missing = a.names.filter((n) => !b.labels?.some((l) => sameLabel(l, n)))
+      const next = missing[0] ?? a.names[0]
+      // Hint bubbles are plain text: show the **words** in quotes instead.
+      const tip = labelCaseTip(b, a.names)?.replace(/\*\*(.+?)\*\*/g, '“$1”')
+      return inspecting('labelled')
+        ? { target: '[data-tour="label-creator"]', gesture: 'tap', prefer: 'side', text: tip ?? `Type “${next}” in the Labels box and press + Add.` }
+        : { target: nodeSel(b.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} to open its settings.` }
+    }
+    case 'select':
+      return openTab('bank') ?? { target: '[data-tour="bank-select-all"]', gesture: 'tap', text: 'Tap Select all, or tap each picture you want.' }
+    case 'items': {
+      const b = newestOf('labelled', snap)
+      if (!inspecting('labelled')) {
+        return { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} so its Items box shows.` }
+      }
+      const picked = '[data-tour="bank-grid"] [data-selected="true"]'
+      return (
+        openTab('bank') ?? {
+          target: isVisible(picked) ? picked : '[data-tour="bank-grid"] [data-bank-item]',
+          gesture: 'drag',
+          dragTo: '[data-tour="label-items"]',
+          text: 'Drag the selected pictures into the Items box on the right.',
+        }
+      )
+    }
+    case 'allLabelled': {
+      const b = biggestLabelBlock(snap)
+      const left = b?.unassigned ?? 0
+      // Inside Expand View: point at the next picture's drop-down, one picture at a time.
+      if (isVisible('[data-tour="label-modal"]')) {
+        const next = '[data-tour="label-modal"] [data-tour="label-select"][data-unlabelled="true"]'
+        const choices = (b?.labels ?? []).map((l) => `“${l}”`).join(' or ') || 'a label'
+        return isVisible(next)
+          ? {
+              target: next,
+              gesture: 'tap',
+              text: `Tap the drop-down that says “no label”, then pick ${choices}, whichever the picture shows. Keep going! ${left} left.`,
+            }
+          : { target: '[data-tour="label-modal-done"]', gesture: 'tap', text: 'Every picture has a label ✔ Tap Done ✓.' }
+      }
+      return inspecting('labelled')
+        ? {
+            target: '[data-tour="expand-view"]',
+            gesture: 'tap',
+            prefer: 'side',
+            text:
+              left === 1
+                ? '1 item still needs a label. Tap ↗ Expand View and find the one with no label.'
+                : `${left} items still need a label. Tap ↗ Expand View to label them quickly.`,
+          }
+        : { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} to see which items still need a label.` }
+    }
+    case 'name': {
+      const typed = inputValue(`[data-tour="${a.what}-name"]`).trim()
+      const ask = typed
+        ? `The box says “${typed}”, but this lab needs “${a.value}”. Change it to “${a.value}”.`
+        : `Type “${a.value}” in the ${a.what === 'model' ? 'model name' : 'Save Dataset'} box.`
+      if (a.what === 'model') return modelHint('[data-tour="model-name"]', ask, snap)
+      return inspecting('labelled')
+        ? { target: '[data-tour="dataset-name"]', gesture: 'tap', prefer: 'side', text: ask }
+        : { target: nodeSel(newestOf('labelled', snap)?.id), gesture: 'dblclick', text: `Double-click ${labelledName(newestOf('labelled', snap))} to find the Save Dataset box.` }
+    }
+    case 'saved':
+      if (a.via === 'list') return listHint(a.what, a.name, 'tap', `There it is: “${a.name}” ✔`)
+      if (a.what === 'model') return modelHint('[data-tour="model-save"]', `Check the name says “${a.name}”, then click 💾 Save Name.`, snap)
+      return inspecting('labelled')
+        ? { target: '[data-tour="dataset-save"]', gesture: 'tap', prefer: 'side', text: `Check the name says “${a.name}”, then click 💾 Save Data.` }
+        : { target: nodeSel(newestOf('labelled', snap)?.id), gesture: 'dblclick', text: `Double-click ${labelledName(newestOf('labelled', snap))} to find the 💾 Save Data button.` }
+    case 'dsCanvas':
+      return listHint('dataset', a.name, 'drag', `Drag “${a.name}” onto the canvas.`)
+    case 'train':
+      return a.done
+        ? { target: '[data-tour="model-train"]', gesture: 'none', prefer: 'side', text: 'Training takes a few seconds. Wait for ✓ Training complete!' }
+        : modelHint('[data-tour="model-train"]', `Click ${buttonText('[data-tour="model-train"]', '🚀 Train Model')}.`, snap)
+    case 'copy':
+      return {
+        target: '[data-tour="lab-copy-table"]',
+        gesture: 'tap',
+        prefer: 'side',
+        text: 'Tap 📋 Copy table. It copies every sentence for you, ready to paste.',
+      }
+    case 'paste':
+      return pasteHint(a, snap)
+    case 'testLink':
+      return testLinkHint(snap)
+    case 'runTest':
+      return a.done
+        ? { target: '[data-tour="model-run-test"]', gesture: 'none', prefer: 'side', text: 'Testing takes a moment. Wait for the % accurate score.' }
+        : modelHint(
+            '[data-tour="model-run-test"]',
+            'Click 🔬 Run Test.',
+            snap,
+            'Scroll down to 4 · Test Model. If 🔬 Run Test isn’t there, connect the amber dots first.'
+          )
+    case 'results':
+      return isVisible('[data-tour="test-results"]')
+        ? { target: '[data-tour="test-results"]', gesture: 'none', text: 'Here are all the predictions ✔' }
+        : modelHint(
+            '[data-tour="model-expand-results"]',
+            'Click ↗ Expand Results to see what the AI guessed for every sentence.',
+            snap,
+            'Run the test first, then scroll down to ↗ Expand Results.'
+          )
     case 'manual':
-      return { target: null, gesture: 'none', text: `${lineText} When you've done it, tap ✓ Done.` }
+      return { target: null, gesture: 'none', text: `${lineText} When you've done it, tap ✓ I did it.` }
   }
 }
 
+/** This lab's Labelled block with the most items (any Labelled block if none is new yet). */
+const biggestLabelBlock = (snap: LabSnapshot) => {
+  const pool = labelBlocks(snap).length ? labelBlocks(snap) : allLabelBlocks()
+  return [...pool].sort((x, y) => (y.items ?? 0) - (x.items ?? 0))[0]
+}
+
+/** 📋 Paste, one click at a time: open the block → 📋 Paste → Ctrl + V in the box → Import. */
+function pasteHint(a: Extract<LabAction, { type: 'paste' }>, snap: LabSnapshot): StepView {
+  const fresh = labelBlocks(snap)
+  if (fresh.length < a.k) {
+    return { target: MENU_SEL.data, gesture: 'tap', text: `Add a new ${KINDS.labelled.label} block first. It's in ${MENU_LABEL.data}.` }
+  }
+  const done = new Set(pastedBlocks(snap, a.n).map((b) => b.id))
+  const b = fresh.filter((x) => !done.has(x.id)).at(-1) ?? fresh.at(-1)!
+  if (isVisible('[data-tour="paste-modal"]')) {
+    return inputValue('[data-tour="paste-input"]').trim()
+      ? {
+          target: '[data-tour="paste-import"]',
+          gesture: 'tap',
+          text: `Now tap ${buttonText('[data-tour="paste-import"]', 'Import')} to add the sentences.`,
+        }
+      : { target: '[data-tour="paste-input"]', gesture: 'tap', text: 'Click in this box, then press Ctrl + V to paste the sentences.' }
+  }
+  if (!inspecting('labelled') || useUIStore.getState().selectedBlockId !== b.id) {
+    return { target: nodeSel(b.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} to open its settings.` }
+  }
+  const have = b.items ?? 0
+  return {
+    target: '[data-tour="label-paste"]',
+    gesture: 'tap',
+    prefer: 'side',
+    text:
+      have > 0 && have < a.n
+        ? `This block has ${have} sentences, but the table has ${a.n}. Copy the table again and paste the rest.`
+        : 'Tap 📋 Paste in the Items section.',
+  }
+}
+
+/** Test data → the model's amber test dot (the lower amber dot on the dataset). */
+function testLinkHint(snap: LabSnapshot): StepView {
+  const fresh = isNew(snap)
+  const models = modelBlocks()
+  const m = models.filter((x) => fresh(x.id)).at(-1) ?? models.at(-1)
+  // The test data is a new Labelled block that isn't the one the model learned from.
+  const trainedOn = new Set(models.flatMap((x) => x.inputs))
+  const src = labelBlocks(snap).filter((x) => !trainedOn.has(x.id)).at(-1)
+  if (!m || !src) return { target: null, gesture: 'none', text: 'You need a trained model and your new test dataset on the canvas first.' }
+  const fromSel = handleSel(src.id, 'test-out')
+  const toSel = handleSel(m.id, 'test-in')
+  if ((!reachable(fromSel) || !reachable(toSel)) && isVisible('[data-tour="inspector-close"]')) {
+    return { target: '[data-tour="inspector-close"]', gesture: 'tap', text: 'The settings panel is covering a dot. Close it with ×, then connect the dots.' }
+  }
+  return {
+    target: fromSel,
+    gesture: 'drag',
+    dragTo: toSel ?? undefined,
+    avoid: [nodeSel(src.id), nodeSel(m.id)],
+    text: `Drag from the lower amber dot on ${labelledName(src)} to the amber dot on the ${KINDS[m.kind].label}.`,
+  }
+}
+
+/** Point at a Data Panel tab (opening the panel first). null = that tab is already showing. */
+function openTab(tab: DataTab): StepView | null {
+  if (tabOpen(tab)) return null
+  if (!isVisible('[data-tour="tab-bank"]')) {
+    return { target: '[data-tour="data-panel-open"]', gesture: 'tap', text: 'Tap 🗃️ Data-Panel to open it.' }
+  }
+  return { target: `[data-tour="tab-${tab}"]`, gesture: 'tap', text: `Tap the ${TAB_LABEL[tab]} tab.` }
+}
+
+/** A button in the model's settings (opening them first). `hidden` = what to say when it isn't showing yet. */
+function modelHint(
+  sel: string,
+  text: string,
+  snap: LabSnapshot,
+  hidden = 'Train the model first, then scroll down in its settings.'
+): StepView {
+  const fresh = isNew(snap)
+  const list = modelBlocks()
+  const m = list.filter((b) => fresh(b.id)).at(-1) ?? list.at(-1)
+  if (!m) return { target: null, gesture: 'none', text: 'Add the model to the canvas first.' }
+  if (!inspecting('model')) return { target: nodeSel(m.id), gesture: 'dblclick', text: 'Double-click the model to open its settings.' }
+  if (!m.inputs.length) {
+    return { target: nodeSel(m.id), gesture: 'none', text: 'Connect your dataset to the model first: violet dot → teal dot.' }
+  }
+  if (!isVisible(sel)) {
+    return { target: '[data-properties-panel]', gesture: 'none', prefer: 'side', text: hidden }
+  }
+  return { target: sel, gesture: 'tap', prefer: 'side', text }
+}
+
+/** A saved dataset / model in its Data Panel tab. */
+function listHint(what: 'dataset' | 'model', name: string, gesture: 'tap' | 'drag', text: string): StepView {
+  const tab: DataTab = what === 'dataset' ? 'saved' : 'models'
+  const open = openTab(tab)
+  if (open) return open
+  const list: Array<{ id: string; name: string }> =
+    what === 'dataset' ? useDatasetStore.getState().savedDatasets : useModelStore.getState().trainedModels
+  const hit = list.find((x) => sameName(x.name, name))
+  if (!hit) {
+    return {
+      target: `[data-tour="tab-${tab}"]`,
+      gesture: 'none',
+      text: `No ${what} called “${name}” yet. Save it first (look back at the last lab) and check the name.`,
+    }
+  }
+  const sel = `[data-tour="saved-${what === 'dataset' ? 'ds' : 'model'}-${hit.id}"]`
+  return gesture === 'drag' ? { target: sel, gesture: 'drag', dragTo: '[data-tour="canvas"]', text } : { target: sel, gesture: 'none', text }
+}
+
 // ── "No, it didn't work" → what to fix ─────────────────────────────────────────
+
+/** If a data step fails, say exactly what's different. */
+function dataMismatch(a: LabAction, snap: LabSnapshot): string | null {
+  switch (a.type) {
+    case 'bank': {
+      const have = newBankItems(snap)
+      return `You've added **${have}** new item${have === 1 ? '' : 's'} to the Data Bank, but this lab needs **${a.n}**.`
+    }
+    case 'labels': {
+      const b = labelBlocks(snap).at(-1)
+      if (!b) return `Add a new **🏷️ Labelled** block for this lab, then give it the labels ${a.names.map((n) => `**${n}**`).join(' and ')}.`
+      const tip = labelCaseTip(b, a.names)
+      if (tip) return tip
+      const missing = a.names.filter((n) => !b.labels?.some((l) => sameLabel(l, n)))
+      if (!missing.length) return null
+      return `Your Labelled block still needs the label${missing.length > 1 ? 's' : ''} ${missing.map((n) => `**${n}**`).join(' and ')}.`
+    }
+    case 'allLabelled': {
+      const b = biggestLabelBlock(snap)
+      if (!b?.items) return 'Your Labelled block has no items yet. Drag your pictures into it.'
+      if (!b.unassigned) return null
+      return `**${b.unassigned}** item${b.unassigned === 1 ? ' still has' : 's still have'} no label.`
+    }
+    case 'name':
+    case 'saved': {
+      const name = a.type === 'name' ? a.value : a.name
+      const last = savedNames(a.what)[0]
+      return last
+        ? `Your ${a.what} is saved as **${last}**, but this lab needs **${name}**.`
+        : `No ${a.what} is saved yet. Save it with the name **${name}**.`
+    }
+    case 'dsCanvas':
+      return `**${a.name}** isn't on the canvas yet. Drag it from the 📋 Datasets tab.`
+    case 'train':
+      return a.done ? "The model hasn't finished training yet. Wait for ✓ Training complete." : "The model hasn't been trained yet."
+    case 'paste': {
+      const blocks = labelBlocks(snap)
+      if (blocks.length < a.k) return 'Add a new **🏷️ Labelled** block, then paste the sentences into it.'
+      const b = blocks.filter((x) => !pastedBlocks(snap, a.n).some((p) => p.id === x.id)).at(-1)
+      if (!b) return null
+      if ((b.items ?? 0) < a.n) return `Your block has **${b.items ?? 0}** sentences, but the table has **${a.n}**. Copy the table again and paste.`
+      return `**${b.unassigned}** sentence${b.unassigned === 1 ? ' has' : 's have'} no label. Give ${b.unassigned === 1 ? 'it' : 'each one'} a label.`
+    }
+    case 'testLink':
+      return 'Your test dataset isn’t on the model’s amber dot yet. Drag from its **lower amber dot** to the model’s **amber dot**.'
+    case 'runTest':
+      return a.done ? 'The test hasn’t finished yet. Wait for the **% accurate** score.' : 'The model hasn’t been tested yet. Click **🔬 Run Test**.'
+    default:
+      return null
+  }
+}
 
 const showValue = (op: string | undefined, v: unknown) =>
   op === 'is' ? (v ? 'Motion Detected' : 'No Motion') : `${op ?? ''} ${String(v ?? '').trim() || '(empty)'}`.trim()
@@ -242,21 +679,61 @@ export interface Diagnosis {
   text: string
 }
 
+/** "Alarm remains OFF for messages that do not contain MONEY" → a "should NOT happen" check. */
+const NEGATIVE = /\b(off|not|don'?t|doesn'?t|won'?t|never|other|stays? silent|remains? silent)\b/i
+/** Does the check's text mention exactly this typed value (capitals count: MONEY ≠ mOneY)? */
+const mentions = (text: string, value: string) =>
+  new RegExp(`(^|[^A-Za-z0-9])${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}([^A-Za-z0-9]|$)`).test(text.replace(/\*\*/g, ''))
+
+/**
+ * Which experiment step to suggest for the check the kid said 👎 to. For typed-text labs, pick
+ * the word that check is about ("contains MONEY" → type MONEY; "OFF for other words" → the word
+ * no check mentions, like mOneY). Otherwise the last experiment, as before.
+ */
+function experimentFor(lines: LabLine[], expected?: { text: string; all: string[] }): number {
+  const exps = lines.map((l, i) => ({ a: l.action, i })).filter((x) => isExperiment(x.a))
+  if (!exps.length) return -1
+  const texts = exps.filter((x): x is { a: Extract<LabAction, { type: 'text' }>; i: number } => x.a.type === 'text')
+  if (expected && texts.length) {
+    if (NEGATIVE.test(expected.text)) {
+      const unmentioned = texts.find((x) => !expected.all.some((t) => mentions(t, x.a.value)))
+      if (unmentioned) return unmentioned.i
+    } else {
+      const hit = texts.find((x) => mentions(expected.text, x.a.value))
+      if (hit) return hit.i
+    }
+  }
+  return exps.at(-1)!.i
+}
+
 /** The kid says an Expected Result didn't happen: find the most likely reason. */
-export function diagnose(lines: LabLine[], snap: LabSnapshot): Diagnosis {
+export function diagnose(lines: LabLine[], snap: LabSnapshot, expected?: { text: string; all: string[] }): Diagnosis {
   for (let i = 0; i < lines.length; i++) {
     const a = lines[i].action
     if (!isStructural(a) || a.type === 'props') continue
     if (matches(a, snap)) continue
     return {
       stepIndex: i,
-      text: conditionMismatch(a, lines.filter((_, j) => j !== i).map((l) => l.action)) ?? `Step ${i + 1} isn't right any more: **${lines[i].text}**`,
+      text:
+        conditionMismatch(a, lines.filter((_, j) => j !== i).map((l) => l.action)) ??
+        dataMismatch(a, snap) ??
+        `Step ${i + 1} isn't right any more: **${lines[i].text}**`,
     }
   }
-  let exp = -1
-  lines.forEach((l, i) => {
-    if (isExperiment(l.action)) exp = i
-  })
+  const exp = experimentFor(lines, expected)
+  if (exp >= 0 && expected && NEGATIVE.test(expected.text) && lines[exp].action.type === 'text') {
+    const t = lines[exp].action as Extract<LabAction, { type: 'text' }>
+    if (expected.all.some((x) => mentions(x, t.value))) {
+      // Every typed word in this lab should set it off: try a word the rule doesn't know.
+      return {
+        stepIndex: null,
+        text: 'Your build looks right ✔ Type a word your rule does **not** look for, like **hello**, press Send, and watch the output block.',
+      }
+    }
+  }
+  if (exp < 0 && lines.some((l) => isDataStep(l.action))) {
+    return { stepIndex: null, text: 'Every step checks out ✔ Look carefully once more. If something is missing, fix it, then tap 👍.' }
+  }
   return exp >= 0
     ? { stepIndex: exp, text: `Your build looks right ✔ Try it again slowly: **${lines[exp].text}** Then watch the output block.` }
     : { stepIndex: null, text: 'Your build looks right ✔ Change the inputs again, one at a time, and watch the output block.' }

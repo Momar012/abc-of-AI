@@ -88,6 +88,7 @@ export default function ConditionInspector() {
           </div>
         </div>
         <button
+          data-tour="inspector-close"
           onClick={clearSelectedBlock}
           className="w-6 h-6 rounded-full bg-white/10 text-white/40 hover:text-white hover:bg-white/20 text-xs flex items-center justify-center transition-all"
         >

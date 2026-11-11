@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { LabLine, LabSections } from '@/lib/guide/parseLab'
-import { diagnose, Diagnosis, hintFor, isDone, isStructural, matches, recordEvents, takeSnapshot } from '@/lib/guide/labGuide'
+import { tableToTsv, type LabLine, type LabSections, type LabTable } from '@/lib/guide/parseLab'
+import { diagnose, Diagnosis, hintFor, isDone, isStructural, matches, recordCopy, recordEvents, takeSnapshot } from '@/lib/guide/labGuide'
 import { useLabComplete, useLabGuideStore } from '@/store/useLabGuideStore'
 import { useMissionStore } from '@/store/useMissionStore'
 import { useTourStore } from '@/store/useTourStore'
@@ -21,6 +21,69 @@ const PEEK = 2
 const CARD = 'rounded-2xl bg-white/[0.045] p-3.5'
 const TITLE = 'text-[13px] font-heading font-extrabold text-white/90'
 const BTN = 'min-h-[34px] px-3 rounded-xl text-[12px] font-heading font-bold transition-colors'
+
+/** Put text on the clipboard; falls back to the old way where the Clipboard API isn't allowed (plain http). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    const ok = document.execCommand('copy')
+    ta.remove()
+    return ok
+  }
+}
+
+/** A step's table (sentences to paste), with one big button that copies it, so kids don't have to
+ *  drag-select a table with a mouse. Copies rows only (no header), tab-separated for 📋 Paste. */
+function CopyTable({ table }: { table: LabTable }) {
+  const [copied, setCopied] = useState(false)
+  const onCopy = async () => {
+    if (await copyText(tableToTsv(table))) {
+      recordCopy()
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2500)
+    }
+  }
+  return (
+    <div className="mt-2.5">
+      <div className="max-h-44 overflow-y-auto rounded-lg ring-1 ring-white/10">
+        <table className="w-full text-[11.5px] font-body">
+          <thead className="sticky top-0 bg-[#1b1840]">
+            <tr>
+              {table.head.map((h, i) => (
+                <th key={i} className="text-left px-2 py-1 font-heading font-bold text-white/60">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {table.rows.map((r, i) => (
+              <tr key={i} className="border-t border-white/5">
+                {r.map((c, j) => (
+                  <td key={j} className={`px-2 py-1 ${j === r.length - 1 ? 'text-teal-200 font-semibold whitespace-nowrap' : 'text-white/80'}`}>{c}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
+        data-tour="lab-copy-table"
+        onClick={onCopy}
+        className={`${BTN} mt-2 w-full ${copied ? 'text-emerald-950 bg-emerald-300' : 'text-violet-50 bg-violet-500/40 hover:bg-violet-500/55'}`}
+      >
+        {copied ? `✓ Copied ${table.rows.length} rows!` : '📋 Copy table'}
+      </button>
+    </div>
+  )
+}
 
 interface Props {
   stepId: string
@@ -68,6 +131,13 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
   const busy = missionActive || tourActive
 
   useEffect(() => setMounted(true), [])
+
+  // Ctrl + C (or right-click → Copy) counts for "copy the table" steps too, not just 📋 Copy table.
+  useEffect(() => {
+    if (preview) return
+    document.addEventListener('copy', recordCopy)
+    return () => document.removeEventListener('copy', recordCopy)
+  }, [preview])
 
   // Snapshot the canvas the first time this lab is opened.
   useEffect(() => {
@@ -138,6 +208,11 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
     setPlayKey((k) => k + 1)
     lastProgressRef.current = Date.now()
   }
+  /** Put the hint away (× on the bubble, Escape, or tapping "Hide hint"). Show me brings it back. */
+  const hideHint = () => {
+    setHintStep(null)
+    setHintView(null)
+  }
   const startOver = () => {
     useLabGuideStore.getState().restart(stepId, takeSnapshot())
     setDiag(null)
@@ -146,7 +221,7 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
   }
   const sayNo = (test: number) => {
     const snap = useLabGuideStore.getState().snapshots[stepId] ?? []
-    setDiag({ test, ...diagnose(lines, snap) })
+    setDiag({ test, ...diagnose(lines, snap, { text: expected[test] ?? '', all: expected }) })
   }
   const sayYes = (test: number) => {
     useLabGuideStore.getState().confirm(stepId, test)
@@ -157,7 +232,8 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
   const goal = [parts.intro, parts.goal].filter(Boolean).join('\n\n')
   const goalIsShort = goal && !goal.includes('\n') && goal.length < 220
   const problemShown = problemOpen ?? count === 0
-  const upcoming = stepsDone ? [] : lines.map((l, i) => ({ l, i })).filter(({ i }) => i > current)
+  // Steps already ticked out of order (e.g. a block connected early) are in "done" — don't list them twice.
+  const upcoming = stepsDone ? [] : lines.map((l, i) => ({ l, i })).filter(({ i }) => i > current && !tickedSet.has(i))
   const peek = showAllNext ? upcoming : upcoming.slice(0, PEEK)
   const cur = current >= 0 ? lines[current] : null
 
@@ -272,8 +348,11 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
             animate={{ opacity: 1, y: 0 }}
             className="rounded-xl bg-teal-400/[0.09] ring-1 ring-teal-300/40 p-3"
           >
+            {/* The number, so the list above and below reads 13 → 14 → 15 with no gap. */}
+            <p className="text-[10.5px] font-heading font-bold uppercase tracking-wider text-teal-200/70 mb-0.5">Step {current + 1}</p>
             <p className="text-[14px] leading-relaxed font-body text-white">{renderInline(cur.md)}</p>
             {cur.note && <p className="mt-1 text-[12px] leading-snug font-body text-white/50">👀 {renderInline(cur.note)}</p>}
+            {cur.table && <CopyTable table={cur.table} />}
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
               {cur.action.type === 'manual' ? (
                 <button
@@ -288,14 +367,14 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
                   {!busy && (
                     <button
                       type="button"
-                      onClick={() => showMe(current)}
+                      onClick={() => (hintStep === current ? hideHint() : showMe(current))}
                       className={`${BTN} ${
                         stuck
                           ? 'text-amber-950 bg-amber-300 shadow-[0_0_14px_rgba(252,211,77,0.55)]'
                           : 'text-cyan-50 bg-cyan-500/20 hover:bg-cyan-500/30'
                       }`}
                     >
-                      👆 Show me
+                      {hintStep === current ? '🙈 Hide hint' : '👆 Show me'}
                     </button>
                   )}
                   <span className={`text-[11.5px] font-body ${stuck ? 'text-amber-200 font-bold' : 'text-white/40'}`}>
@@ -356,7 +435,11 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
                 {confirmed.length} of {expected.length}
               </span>
             </div>
-            <p className="text-[12px] font-body text-white/45 mb-1">Try each one on the canvas. Did it happen?</p>
+            <p className="text-[12px] font-body text-white/45 mb-1">
+              {lines.some((l) => ['switch', 'motion', 'sensorValue', 'text'].includes(l.action.type))
+                ? 'Try each one on the canvas. Did it happen?'
+                : 'Check each one. Is it true?'}
+            </p>
             <ul className="flex flex-col">
               {expected.map((e, i) => {
                 const ok = confirmed.includes(i)
@@ -452,12 +535,30 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
                 ))}
               </ul>
             )}
+            {parts.outro.length > 0 && (
+              <ul className="mt-3 flex flex-col gap-1.5 text-left">
+                {parts.outro.map((t, i) => (
+                  <motion.li
+                    key={i}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + (learned.length + i) * 0.15 }}
+                    className="flex gap-2 text-[12.5px] leading-snug font-body text-white/75"
+                  >
+                    <span className="flex-shrink-0">🤔</span>
+                    <span>{renderInline(t)}</span>
+                  </motion.li>
+                ))}
+              </ul>
+            )}
             <p className="mt-3 text-[12.5px] font-heading font-bold text-teal-200">Press Next → when you&apos;re ready.</p>
           </motion.section>
         )}
       </AnimatePresence>
 
-      {!busy && !preview && <HintOverlay view={hintStep !== null && !complete ? hintView : null} playKey={playKey} />}
+      {!busy && !preview && (
+        <HintOverlay view={hintStep !== null && !complete ? hintView : null} playKey={playKey} onClose={hideHint} />
+      )}
     </div>
   )
 }
