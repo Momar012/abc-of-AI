@@ -679,6 +679,38 @@ export interface Diagnosis {
   text: string
 }
 
+/**
+ * Motion / switch checks: tell the kid which state to try, from the check's own words.
+ * "When No Motion is detected, the bulb remains OFF" → set it to No Motion (not the last step,
+ * which may be "Click the No Motion button" = trigger motion). Several switches → null (no one action).
+ */
+function stateTip(lines: LabLine[], check: string): Diagnosis | null {
+  const c = check.replace(/\*\*/g, '')
+  if (/\bmotion\b/i.test(c) && lines.some((l) => l.action.type === 'motion')) {
+    const want = !/\bno motion\b/i.test(c)
+    const i = lines.findIndex((l) => l.action.type === 'motion' && l.action.detected === want)
+    return {
+      stepIndex: i >= 0 ? i : null,
+      text: `Your build looks right ✔ Click the Motion Sensor's button so it says **${want ? 'Motion Detected' : 'No Motion'}**, then watch the output block.`,
+    }
+  }
+  // "When the temperature is 32°C, the Fan turns ON" → the "Move the slider to 32°C" step.
+  const numbers = (c.match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
+  const slider = lines.findIndex((l) => l.action.type === 'sensorValue' && numbers.includes(l.action.value))
+  if (slider >= 0) {
+    return { stepIndex: slider, text: `Your build looks right ✔ Try it again slowly: **${lines[slider].text}** Then watch the output block.` }
+  }
+  if (/\bswitch\b/i.test(c) && !/\b(both|either|one|two|three|all|switches)\b/i.test(c) && lines.some((l) => l.action.type === 'switch')) {
+    const off = /\bswitch (is|was) off\b|\bturn(ed)? off the switch\b|\bswitch off\b/i.test(c)
+    const i = lines.findIndex((l) => l.action.type === 'switch' && l.action.on === !off)
+    return {
+      stepIndex: i >= 0 ? i : null,
+      text: `Your build looks right ✔ Turn the switch **${off ? 'OFF' : 'ON'}**, then watch the output block.`,
+    }
+  }
+  return null
+}
+
 /** "Alarm remains OFF for messages that do not contain MONEY" → a "should NOT happen" check. */
 const NEGATIVE = /\b(off|not|don'?t|doesn'?t|won'?t|never|other|stays? silent|remains? silent)\b/i
 /** Does the check's text mention exactly this typed value (capitals count: MONEY ≠ mOneY)? */
@@ -720,6 +752,8 @@ export function diagnose(lines: LabLine[], snap: LabSnapshot, expected?: { text:
         `Step ${i + 1} isn't right any more: **${lines[i].text}**`,
     }
   }
+  const tip = expected ? stateTip(lines, expected.text) : null
+  if (tip) return tip
   const exp = experimentFor(lines, expected)
   if (exp >= 0 && expected && NEGATIVE.test(expected.text) && lines[exp].action.type === 'text') {
     const t = lines[exp].action as Extract<LabAction, { type: 'text' }>
