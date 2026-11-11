@@ -4,7 +4,7 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { useModelStore } from '@/store/useModelStore'
 import type { StepView } from '@/lib/tour/steps'
 import { allBlocks, type AnyBlock, GuideKind, handleSel, isModelKind, KINDS, MENU_LABEL, MENU_SEL, nodeSel, paletteSel } from './blocks'
-import { TAB_LABEL, type DataTab, type LabAction, type LabLine } from './parseLab'
+import { blockWords, TAB_LABEL, type DataTab, type LabAction, type LabLine } from './parseLab'
 
 /**
  * Which blocks and Data Bank items already existed when the kid opened the lab card, so old work
@@ -137,6 +137,40 @@ function links(from: GuideKind, to: GuideKind, snap: LabSnapshot) {
   return pairs
 }
 
+/** An IF Condition with this sensor wired into it ("the Humidity IF"). */
+const fedBy = (b: AnyBlock, via: GuideKind, blocks: AnyBlock[]) =>
+  b.inputs.some((id) => blocks.find((x) => x.id === id)?.kind === via)
+
+/**
+ * Is this block the one a lesson means: "the second AND" (n = 2nd of its kind made in this lab;
+ * older blocks count only if the lab hasn't made enough) and/or "the Light IF" (fed by that sensor)?
+ */
+function isThe(id: string, kind: GuideKind, n: number | undefined, via: GuideKind | undefined, snap: LabSnapshot, blocks = allBlocks()) {
+  if (n) {
+    const all = blocks.filter((b) => b.kind === kind)
+    const made = all.filter((b) => isNew(snap)(b.id))
+    if ((made.length >= n ? made : all)[n - 1]?.id !== id) return false
+  }
+  if (via) {
+    const b = blocks.find((x) => x.id === id)
+    if (!b || !fedBy(b, via, blocks)) return false
+  }
+  return true
+}
+
+/** The links a connect step asks for, narrowed to the blocks the lesson named. */
+function specLinks(a: Extract<LabAction, { type: 'connect' }>, snap: LabSnapshot) {
+  const pairs = links(a.from, a.to, snap)
+  const s = a.spec
+  if (!s) return pairs
+  const blocks = allBlocks()
+  return pairs.filter((p) => isThe(p.source, a.from, s.fromN, s.fromVia, snap, blocks) && isThe(p.target, a.to, s.toN, s.toVia, snap, blocks))
+}
+
+/** Does this IF Condition hold what a settings step asks for? */
+const condHolds = (b: AnyBlock, a: Extract<LabAction, { type: 'condOp' }>) =>
+  b.operator === a.op && (a.value === undefined || sameValue(b.threshold, a.value))
+
 const sameValue = (a: unknown, b: unknown) =>
   typeof b === 'number' ? Number(a) === b : typeof b === 'boolean' ? a === b : String(a ?? '').trim() === String(b).trim()
 
@@ -148,7 +182,8 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
     case 'add':
       return blocks.filter((b) => b.kind === a.kind && fresh(b.id)).length >= a.n
     case 'connect':
-      return links(a.from, a.to, snap).length >= a.n
+      // "Connect Switch C to the second AND": only that link counts, not any Switch → AND.
+      return a.spec ? specLinks(a, snap).length >= a.spec.k : links(a.from, a.to, snap).length >= a.n
     case 'props': {
       const sel = useUIStore.getState().selectedBlockId
       if (!sel) return false
@@ -160,7 +195,8 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
       return made.length >= a.n && made.slice(a.n - 1).some((b) => b.id === sel)
     }
     case 'condOp':
-      return blocks.some((b) => b.kind === 'condition' && b.operator === a.op && (a.value === undefined || sameValue(b.threshold, a.value)))
+      // "Humidity > 70%" must be set on the Humidity IF, not typed into the Temperature one.
+      return blocks.some((b) => b.kind === 'condition' && condHolds(b, a) && (!a.via || fedBy(b, a.via, blocks)))
     case 'condValue':
       return blocks.some((b) => b.kind === 'condition' && String(b.threshold ?? '').trim().toLowerCase() === String(a.value).toLowerCase())
     case 'switch': {
@@ -269,8 +305,17 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
       const blocks = allBlocks()
       const fresh = isNew(snap)
       const already = new Set(links(a.from, a.to, snap).map((l) => `${l.source}>${l.target}`))
-      const sources = blocks.filter((b) => b.kind === a.from).sort((x, y) => Number(fresh(y.id)) - Number(fresh(x.id)))
-      const targets = blocks.filter((b) => b.kind === a.to).sort((x, y) => Number(fresh(y.id)) - Number(fresh(x.id)))
+      const s = a.spec
+      // A block whose dot isn't wired anywhere yet is the likelier one ("Switch 3", not Switch 1 again).
+      const used = new Set(blocks.flatMap((b) => b.inputs))
+      const sources = blocks
+        .filter((b) => b.kind === a.from && isThe(b.id, a.from, s?.fromN, s?.fromVia, snap, blocks))
+        .sort((x, y) => Number(used.has(x.id)) - Number(used.has(y.id)) || Number(fresh(y.id)) - Number(fresh(x.id)))
+      const targets = blocks
+        .filter((b) => b.kind === a.to && isThe(b.id, a.to, s?.toN, s?.toVia, snap, blocks))
+        .sort((x, y) => Number(fresh(y.id)) - Number(fresh(x.id)))
+      const fromName = s ? blockWords(a.from, s.fromN, s.fromVia) : KINDS[a.from].label
+      const toName = s ? blockWords(a.to, s.toN, s.toVia) : KINDS[a.to].label
       let pick: { s: string; t: string } | null = null
       for (const t of targets) {
         const full = (KINDS[t.kind].in?.length ?? 1) <= t.inputs.length
@@ -279,7 +324,7 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
         if (s) { pick = { s: s.id, t: t.id }; break }
       }
       if (!pick) {
-        return { target: null, gesture: 'none', text: `Add the blocks first, then connect ${KINDS[a.from].label} to ${KINDS[a.to].label}.` }
+        return { target: null, gesture: 'none', text: `Add the blocks first, then connect ${fromName} to ${toName}.` }
       }
       const fromSel = handleSel(pick.s, KINDS[a.from].out ?? 'rule-out')
       const toSel = handleSel(pick.t, freeInHandle(pick.t, a.to))
@@ -300,7 +345,7 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
         avoid: [nodeSel(pick.s), nodeSel(pick.t)],
         text: dataLink
           ? `Drag from the violet dot on ${a.from === 'labelled' ? labelledName(src) : KINDS[a.from].label} to the teal dot on the ${KINDS[a.to].label}.`
-          : `Drag from the dot on the right of ${KINDS[a.from].label} to the dot on the left of ${KINDS[a.to].label}.`,
+          : `Drag from the dot on the right of ${fromName} to the dot on the left of ${toName}.`,
       }
     }
     case 'props': {
@@ -320,9 +365,27 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
           : a.op === 'is'
           ? `pick “${a.value ? 'Motion Detected' : 'No Motion'}”`
           : `choose “${a.op}”${a.value !== undefined ? ` and set the value to ${a.value}` : ''}`
-      return open
-        ? { target: '[data-properties-panel]', gesture: 'tap', prefer: 'side', text: `In the IF Condition settings, ${want}.` }
-        : { target: nodeSel(newestOf('condition', snap)?.id), gesture: 'dblclick', text: `Double-click the IF Condition first, then ${want}.` }
+      // "Humidity > 70%" belongs on the Humidity IF. If another IF's settings are open (still open from
+      // the last step), send the kid to the right IF instead of letting them type into the wrong one.
+      const blocks = allBlocks()
+      const conds = blocks.filter((b) => b.kind === 'condition')
+      const via = a.type === 'condOp' ? a.via : undefined
+      const theOnes = via ? conds.filter((b) => fedBy(b, via, blocks)) : []
+      const pool = theOnes.length ? theOnes : conds
+      const name = theOnes.length ? blockWords('condition', undefined, via) : 'the IF Condition'
+      if (open && pool.some((b) => b.id === ui.selectedBlockId)) {
+        return { target: '[data-properties-panel]', gesture: 'tap', prefer: 'side', text: `In the IF Condition settings, ${want}.` }
+      }
+      const fresh = isNew(snap)
+      const ordered = [...pool].sort((x, y) => Number(fresh(y.id)) - Number(fresh(x.id)))
+      const next = (a.type === 'condOp' ? ordered.find((b) => !condHolds(b, a)) : undefined) ?? ordered[0] ?? newestOf('condition', snap)
+      return {
+        target: nodeSel(next?.id),
+        gesture: 'dblclick',
+        text: open
+          ? `These settings are for a different IF Condition. Double-click ${name}, then ${want}.`
+          : `Double-click ${name} first, then ${want}.`,
+      }
     }
     case 'switch': {
       const sw = allBlocks().filter((b) => b.kind === 'switch')
@@ -647,9 +710,15 @@ function conditionMismatch(a: LabAction, others: LabAction[]): string | null {
         String(b.threshold ?? '').trim() === String(o.value).trim() &&
         (o.type === 'condValue' || b.operator === o.op)
     )
-  const all = allBlocks().filter((b) => b.kind === 'condition')
+  const blocks = allBlocks()
+  const via = a.type === 'condOp' ? a.via : undefined
+  const everyIf = blocks.filter((b) => b.kind === 'condition')
+  // "Humidity > 70%": judge the Humidity IF, not whichever IF happens to be closest.
+  const viaIfs = via ? everyIf.filter((b) => fedBy(b, via, blocks)) : []
+  const all = viaIfs.length ? viaIfs : everyIf
   const conds = all.filter((b) => !takenBy(b)).length ? all.filter((b) => !takenBy(b)) : all
   if (!conds.length) return null
+  const yourIf = viaIfs.length ? `Your IF Condition for ${KINDS[via!].label}` : 'Your IF Condition'
   const want = a.value
   const wantOp = a.type === 'condOp' ? a.op : undefined
   // Same words, different capitals: the classic password mistake.
@@ -658,7 +727,7 @@ function conditionMismatch(a: LabAction, others: LabAction[]): string | null {
     if (near) return `You typed **${String(near.threshold).trim()}** but this lab needs **${want}**. Capital letters matter!`
   }
   if (wantOp && wantOp !== 'is' && !conds.some((b) => b.operator === wantOp)) {
-    return `Your IF Condition uses **${conds.at(-1)!.operator ?? '?'}**, but this lab needs **${wantOp}**.`
+    return `${yourIf} uses **${conds.at(-1)!.operator ?? '?'}**, but this lab needs **${wantOp}**.`
   }
   if (want === undefined) return null
   const same = conds.filter((b) => !wantOp || b.operator === wantOp)
@@ -667,7 +736,7 @@ function conditionMismatch(a: LabAction, others: LabAction[]): string | null {
       ? [...same].sort((x, y) => Math.abs(Number(x.threshold) - want) - Math.abs(Number(y.threshold) - want))[0]
       : same.at(-1)
   if (!pick) return null
-  return `Your IF Condition says **${showValue(pick.operator, pick.threshold)}**, but this lab needs **${showValue(wantOp ?? pick.operator, want)}**.`
+  return `${yourIf} says **${showValue(pick.operator, pick.threshold)}**, but this lab needs **${showValue(wantOp ?? pick.operator, want)}**.`
 }
 
 const isExperiment = (a: LabAction) => ['switch', 'motion', 'sensorValue', 'text'].includes(a.type)
