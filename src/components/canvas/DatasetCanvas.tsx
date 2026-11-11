@@ -5,6 +5,8 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Controls,
+  ControlButton,
+  getRectOfNodes,
   Node,
   Edge,
   NodeChange,
@@ -110,6 +112,86 @@ function findFreeSpot(
     candidates.find((c) => isFree(c.x, c.y) && isVisible(c.x, c.y)) ??
     candidates.find((c) => isFree(c.x, c.y)) ??
     start
+  )
+}
+
+/**
+ * When a block's settings open, the panel floats over the right of the canvas and hides any blocks
+ * there (a kid can't click them). Slide the canvas left just enough to uncover them, without pushing
+ * blocks off the left edge; if they can't all fit, at least uncover the block being edited.
+ */
+function KeepBlocksClearOfSettings({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
+  const selectedBlockId = useUIStore((s) => s.selectedBlockId)
+  const { getViewport, setViewport } = useReactFlow()
+
+  useEffect(() => {
+    if (!selectedBlockId || !canvasRef.current) return
+    // The panel mounts right after the selection changes.
+    const t = window.setTimeout(() => {
+      const panel = document.querySelector('[data-properties-panel]')?.getBoundingClientRect()
+      const canvas = canvasRef.current?.getBoundingClientRect()
+      if (!panel || !canvas) return
+      const GAP = 16
+      const edge = panel.left - GAP
+      // The left edge of the free canvas: past the Data Panel when it's open.
+      const dataPanel = document.querySelector('[data-data-panel]')?.getBoundingClientRect()
+      const leftLimit = Math.max(canvas.left, dataPanel?.right ?? 0) + GAP
+
+      const rects = Array.from(document.querySelectorAll<HTMLElement>('.react-flow__node')).map((el) => ({
+        id: el.dataset.id,
+        r: el.getBoundingClientRect(),
+      }))
+      const hidden = rects.filter(({ r }) => r.right > edge && r.left < panel.right && r.bottom > panel.top && r.top < panel.bottom)
+      if (!hidden.length) return
+      const needed = Math.max(...hidden.map(({ r }) => r.right - edge))
+      const room = Math.max(0, Math.min(...rects.map(({ r }) => r.left)) - leftLimit)
+      let shift = Math.min(needed, room)
+      const sel = rects.find((x) => x.id === selectedBlockId)
+      if (sel && sel.r.right - shift > edge) shift = sel.r.right - edge
+      if (shift <= 1) return
+      const vp = getViewport()
+      setViewport({ x: vp.x - shift, y: vp.y, zoom: vp.zoom }, { duration: 300 })
+    }, 80)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBlockId])
+
+  return null
+}
+
+/**
+ * "Fit to view" that fits blocks into the canvas area kids can actually see: below the toolbar,
+ * right of the Data Panel and left of the settings panel (the built-in fit used the whole canvas,
+ * so top blocks ended up tucked under the toolbar).
+ */
+function FitToFreeSpaceButton({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
+  const { getNodes, setViewport } = useReactFlow()
+  const fit = () => {
+    const canvas = canvasRef.current?.getBoundingClientRect()
+    const nodes = getNodes().filter((n) => !n.hidden && n.width && n.height)
+    if (!canvas || !nodes.length) return
+    const rectOf = (sel: string) => document.querySelector(sel)?.getBoundingClientRect()
+    const GAP = 16
+    const toolbar = rectOf('[data-canvas-toolbar]')
+    const dataPanel = rectOf('[data-data-panel]')
+    const settings = rectOf('[data-properties-panel]')
+    const top = (toolbar ? toolbar.bottom - canvas.top : 0) + GAP
+    const left = (dataPanel ? dataPanel.right - canvas.left : 0) + GAP
+    const right = (settings ? settings.left - canvas.left : canvas.width) - GAP
+    const bottom = canvas.height - GAP
+    const b = getRectOfNodes(nodes)
+    const PAD = 24
+    const zoom = Math.max(0.2, Math.min(1, (right - left - PAD * 2) / b.width, (bottom - top - PAD * 2) / b.height))
+    const x = left + (right - left - b.width * zoom) / 2 - b.x * zoom
+    const y = top + (bottom - top - b.height * zoom) / 2 - b.y * zoom
+    setViewport({ x, y, zoom }, { duration: 300 })
+  }
+  return (
+    <ControlButton onClick={fit} title="Fit all blocks into view" aria-label="Fit all blocks into view">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 30" aria-hidden>
+        <path d="M3.692 4.63c0-.53.4-.938.939-.938h5.215V0H4.708C2.13 0 0 2.054 0 4.63v5.216h3.692V4.631zM27.354 0h-5.2v3.692h5.17c.53 0 .984.4.984.939v5.215H32V4.631A4.624 4.624 0 0027.354 0zm.954 24.83c0 .532-.4.94-.939.94h-5.215v3.768h5.215c2.577 0 4.631-2.13 4.631-4.707v-5.139h-3.692v5.139zm-23.677.94c-.531 0-.939-.4-.939-.94v-5.138H0v5.139c0 2.577 2.13 4.707 4.708 4.707h5.138V25.77H4.631z" />
+      </svg>
+    </ControlButton>
   )
 }
 
@@ -1163,11 +1245,15 @@ export default function DatasetCanvas() {
         <Controls
           position="bottom-left"
           showInteractive={false}
+          showFitView={false}
           className="!bg-white/10 !border-white/10 !rounded-xl !bottom-4 transition-[left] duration-200 ease-out"
           // Sit just right of the Data Bank, which is left-4 + its resizable width.
           style={{ left: leftPanelCollapsed ? '4.5rem' : dataBankWidth + 32 }}
-        />
+        >
+          <FitToFreeSpaceButton canvasRef={canvasRef} />
+        </Controls>
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
+        <KeepBlocksClearOfSettings canvasRef={canvasRef} />
       </ReactFlow>
       {textDragRect && (
         <div

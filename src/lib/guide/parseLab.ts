@@ -147,6 +147,13 @@ export function splitLab(md: string): LabSections {
   for (const raw of md.split('\n')) {
     if (raw.trim().startsWith('```')) inFence = !inFence
     const m = !inFence && raw.match(/^##\s+(.+)$/)
+    // Some lessons write a heading as a bold line ("**What You Learned**"); only known sections count,
+    // so "**MONEY**" or "**Step 1:**" stay ordinary lines.
+    const bold = !inFence && !m && raw.trim().match(/^\*\*([^*]+?)\*\*:?$/)
+    if (bold && sectionKey(bold[1])) {
+      cur = bodies[sectionKey(bold[1])!]
+      continue
+    }
     if (m) {
       const key = sectionKey(m[1])
       if (key) cur = bodies[key]

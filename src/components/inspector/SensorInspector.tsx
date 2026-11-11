@@ -27,6 +27,8 @@ export default function SensorInspector() {
   const sensorBlocks = useRuleStore((s) => s.sensorBlocks)
   const updateSensorBlock = useRuleStore((s) => s.updateSensorBlock)
   const evaluateGraph = useRuleStore((s) => s.evaluateGraph)
+  // Is this sensor already plugged into an IF block? (Then "connect it" is the wrong tip.)
+  const connected = useRuleStore((s) => s.conditionBlocks.some((c) => c.linkedSensorId === selectedBlockId))
 
   const block = sensorBlocks.find((b) => b.id === selectedBlockId)
 
@@ -116,7 +118,11 @@ export default function SensorInspector() {
       {/* Hint */}
       <div className="rounded-xl bg-orange-500/10 border border-orange-500/20 p-3">
         <p className="text-xs text-orange-200/80 font-body leading-relaxed">
-          💡 Connect this sensor&apos;s output to an <strong>IF</strong> block, then set a condition. When the condition is true, the connected action (Door, Fan, Bulb…) will activate!
+          {connected ? (
+            <>💡 This sensor is connected to an <strong>IF</strong> block. Change its value and watch the IF block and its action react!</>
+          ) : (
+            <>💡 Connect this sensor&apos;s output to an <strong>IF</strong> block, then set a condition. When the condition is true, the connected action (Door, Fan, Bulb…) will activate!</>
+          )}
         </p>
       </div>
     </div>

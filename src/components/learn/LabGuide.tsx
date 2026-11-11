@@ -22,6 +22,14 @@ const CARD = 'rounded-2xl bg-white/[0.045] p-3.5'
 const TITLE = 'text-[13px] font-heading font-extrabold text-white/90'
 const BTN = 'min-h-[34px] px-3 rounded-xl text-[12px] font-heading font-bold transition-colors'
 
+/** A short fingerprint of a lab's steps and checks (changes when the lesson is edited). */
+function labVersion(lines: LabLine[], expected: string[]): string {
+  const s = [...lines.map((l) => l.text), '|', ...expected].join('\n')
+  let h = 5381
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0
+  return `${lines.length}.${expected.length}.${(h >>> 0).toString(36)}`
+}
+
 /** Put text on the clipboard; falls back to the old way where the Clipboard API isn't allowed (plain http). */
 async function copyText(text: string): Promise<boolean> {
   try {
@@ -143,6 +151,13 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
   useEffect(() => {
     if (!preview) useLabGuideStore.getState().ensureSnapshot(stepId, takeSnapshot())
   }, [stepId, preview])
+
+  // Ticks are step numbers: if the lesson's steps or checks were edited since, start the ticks over
+  // (steps already built on the canvas tick again by themselves).
+  const version = labVersion(lines, expected)
+  useEffect(() => {
+    if (!preview) useLabGuideStore.getState().syncVersion(stepId, version)
+  }, [stepId, version, preview])
 
   // A new current step: restart its clock, drop the hint and the nudge.
   useEffect(() => {

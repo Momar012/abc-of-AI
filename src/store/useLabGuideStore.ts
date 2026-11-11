@@ -9,8 +9,13 @@ interface LabGuideState {
   ticked: Record<string, number[]>
   /** Expected Results the kid said 👍 to (indexes into the lab's expected items). */
   confirmed: Record<string, number[]>
+  /** A fingerprint of each lab's steps when its progress was saved (ticks are step numbers). */
+  versions: Record<string, string>
 
   ensureSnapshot: (stepId: string, ids: string[]) => void
+  /** The lesson's steps changed since this progress was saved: drop the ticks (they'd land on the
+   *  wrong steps) but keep the snapshot, so steps already built on the canvas tick again by themselves. */
+  syncVersion: (stepId: string, version: string) => void
   tick: (stepId: string, index: number) => void
   confirm: (stepId: string, index: number) => void
   restart: (stepId: string, ids: string[]) => void
@@ -27,8 +32,22 @@ export const useLabGuideStore = create<LabGuideState>()(
       snapshots: {},
       ticked: {},
       confirmed: {},
+      versions: {},
       ensureSnapshot: (stepId, ids) =>
         set((s) => (s.snapshots[stepId] ? s : { snapshots: { ...s.snapshots, [stepId]: ids } })),
+      syncVersion: (stepId, version) =>
+        set((s) => {
+          const was = s.versions[stepId]
+          if (was === version) return s
+          const versions = { ...s.versions, [stepId]: version }
+          // No fingerprint yet (progress saved before this existed): trust it, just remember the steps.
+          if (was === undefined) return { versions }
+          return {
+            versions,
+            ticked: { ...s.ticked, [stepId]: [] },
+            confirmed: { ...s.confirmed, [stepId]: [] },
+          }
+        }),
       tick: (stepId, index) =>
         set((s) => {
           const next = add(s.ticked, stepId, index)
@@ -48,9 +67,9 @@ export const useLabGuideStore = create<LabGuideState>()(
     }),
     {
       name: 'abcai_labguide_v1',
-      version: 2,
-      // v1 had no `confirmed`; keep the kid's ticked steps.
-      migrate: (old) => ({ confirmed: {}, ...(old as object) }) as LabGuideState,
+      version: 3,
+      // v1 had no `confirmed`, v2 no `versions`; keep the kid's ticked steps.
+      migrate: (old) => ({ confirmed: {}, versions: {}, ...(old as object) }) as LabGuideState,
     }
   )
 )
