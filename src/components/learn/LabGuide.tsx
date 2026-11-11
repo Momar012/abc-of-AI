@@ -461,8 +461,9 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
                 const d = diag?.test === i ? diag : null
                 return (
                   <li key={i} className="py-2 border-t border-white/[0.05] first:border-t-0">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`flex-1 text-[13px] leading-snug font-body ${ok ? 'text-teal-100/55' : 'text-white/80'}`}>
+                    {/* In a narrow panel the 👍/👎 drop below the sentence instead of squeezing it to one word a line. */}
+                    <div className="flex flex-wrap items-center justify-end gap-x-2.5 gap-y-1.5">
+                      <span className={`flex-1 min-w-[150px] text-[13px] leading-snug font-body ${ok ? 'text-teal-100/55' : 'text-white/80'}`}>
                         {ok && '✅ '}
                         {renderInline(e)}
                       </span>

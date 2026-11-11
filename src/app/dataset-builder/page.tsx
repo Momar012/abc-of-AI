@@ -261,6 +261,8 @@ export default function DatasetBuilderPage() {
       const clampedBank = Math.max(180, Math.min(maxW, dataBankWidth))
       if (clampedBank !== dataBankWidth) setDataBankWidth(clampedBank)
     }
+    // Also on load: a saved (or default) width may not fit this screen.
+    clampPanelWidths()
     window.addEventListener('resize', clampPanelWidths)
     return () => window.removeEventListener('resize', clampPanelWidths)
   }, [panelWidth, dataBankWidth, setPanelWidth, setDataBankWidth])

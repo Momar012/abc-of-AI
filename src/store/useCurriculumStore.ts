@@ -22,7 +22,8 @@ export const useCurriculumStore = create<CurriculumState>()(
       currentModuleId: 'ch1-teach-an-ai',
       currentStepIndex: 0,
       completedStepIds: [],
-      panelWidth: 240,
+      // 240 was too narrow on a Chromebook: lab steps and checks wrapped almost one word a line.
+      panelWidth: 300,
 
       goToStep: (index) => set({ currentStepIndex: index }),
 
@@ -53,6 +54,12 @@ export const useCurriculumStore = create<CurriculumState>()(
     }),
     {
       name: 'abcai_curriculum_v1',
+      version: 1,
+      // v0 started at 240px: widen anyone still that narrow once (the page re-clamps to the screen).
+      migrate: (old) => {
+        const s = old as Partial<CurriculumState>
+        return { ...s, panelWidth: Math.max(s.panelWidth ?? 300, 300) } as CurriculumState
+      },
       partialize: (s) => ({
         currentModuleId: s.currentModuleId,
         currentStepIndex: s.currentStepIndex,
