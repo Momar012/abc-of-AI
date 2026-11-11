@@ -55,11 +55,12 @@ import DatasetEdge from './edges/DatasetEdge'
 import TestEdge from './edges/TestEdge'
 import WorkflowEdge from './edges/WorkflowEdge'
 import RuleEdge from './edges/RuleEdge'
+import { bestViewport, REVEAL_EVENT, requestReveal, type RevealRequest } from '@/lib/canvas/reveal'
 
 // Rough footprint assumed for a block that hasn't rendered yet (flow units),
 // used to find a free spot so click-added blocks land side by side.
 const NEW_BLOCK_W = 280
-const NEW_BLOCK_H = 220
+const NEW_BLOCK_H = 240
 const NEW_BLOCK_GAP = 40
 
 /**
@@ -99,9 +100,10 @@ function findFreeSpot(
       }
     }
   }
-  // Within a ring: same row first, then nearest rows; right before left.
+  // Keep building along the same row (nearest first, right before left) before starting a row above
+  // or below: the canvas is much wider than it is tall on a Chromebook, and rules wire left → right,
+  // so a row keeps connected blocks close enough to show together.
   offsets.sort((a, b) =>
-    Math.max(Math.abs(a[0]), Math.abs(a[1])) - Math.max(Math.abs(b[0]), Math.abs(b[1])) ||
     Math.abs(a[1]) - Math.abs(b[1]) || Math.abs(a[0]) - Math.abs(b[0]) || b[0] - a[0] || a[1] - b[1])
 
   const candidates = offsets.map(([dx, dy]) => ({
@@ -160,6 +162,52 @@ function KeepBlocksClearOfSettings({ canvasRef }: { canvasRef: React.RefObject<H
 }
 
 /**
+ * Pans the canvas when something asks for blocks or dots to be shown (👆 Show me, a block just added
+ * by tapping), so they land in the free area and not under the toolbar, a panel or the zoom buttons.
+ * Elements that haven't rendered yet (a brand-new block) are waited for briefly.
+ */
+function RevealOnRequest({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
+  // The listener lives as long as the canvas, so read the viewport functions fresh each time
+  // (ones captured on the first render can point at a stale viewport).
+  const flow = useReactFlow()
+  const flowRef = useRef(flow)
+  flowRef.current = flow
+  useEffect(() => {
+    let timer = 0
+    const onReveal = (e: Event) => {
+      const { selectors = [], pair = false } = (e as CustomEvent<RevealRequest>).detail ?? {}
+      window.clearTimeout(timer)
+      let tries = 0
+      const attempt = () => {
+        const canvas = canvasRef.current?.getBoundingClientRect()
+        const boxes = selectors
+          .map((sel) => document.querySelector(sel)?.getBoundingClientRect())
+          .filter((r): r is DOMRect => !!r && (r.width > 0 || r.height > 0))
+        if (!canvas || boxes.length < selectors.length) {
+          // Not all there yet: wait a little, then make do with what has rendered.
+          if (tries++ < 6) {
+            timer = window.setTimeout(attempt, 60)
+            return
+          }
+          if (!canvas || !boxes.length) return
+        }
+        const next = bestViewport(boxes, canvas, flowRef.current.getViewport(), pair)
+        if (next) flowRef.current.setViewport(next, { duration: 300 })
+      }
+      // Let a menu close or a panel open first, so the free area is measured as the kid will see it.
+      timer = window.setTimeout(attempt, 80)
+    }
+    window.addEventListener(REVEAL_EVENT, onReveal)
+    return () => {
+      window.removeEventListener(REVEAL_EVENT, onReveal)
+      window.clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return null
+}
+
+/**
  * "Fit to view" that fits blocks into the canvas area kids can actually see: below the toolbar,
  * right of the Data Panel and left of the settings panel (the built-in fit used the whole canvas,
  * so top blocks ended up tucked under the toolbar).
@@ -196,7 +244,7 @@ function FitToFreeSpaceButton({ canvasRef }: { canvasRef: React.RefObject<HTMLDi
 }
 
 function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HTMLDivElement> }) {
-  const { project, getNodes, getViewport, setViewport } = useReactFlow()
+  const { project, getNodes } = useReactFlow()
   const addLabelledBlock = useDatasetStore((s) => s.addLabelledBlock)
   const addUnlabelledBlock = useDatasetStore((s) => s.addUnlabelledBlock)
   const addModelBlockWithType = useModelStore((s) => s.addModelBlockWithType)
@@ -301,8 +349,8 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
     const topLeft = project({ x: 16, y: 80 })
     const bottomRight = project({ x: bounds.width - 16, y: bounds.height - 16 })
     const visible = { minX: topLeft.x, minY: topLeft.y, maxX: bottomRight.x, maxY: bottomRight.y }
-    // Don't drop new blocks underneath floating panels (anything tagged data-canvas-avoid).
-    const covered = Array.from(document.querySelectorAll('[data-canvas-avoid]')).map((el) => {
+    // Don't drop new blocks underneath floating panels (anything tagged data-canvas-avoid) or the zoom buttons.
+    const covered = Array.from(document.querySelectorAll('[data-canvas-avoid], .react-flow__controls')).map((el) => {
       const r = el.getBoundingClientRect()
       const a = project({ x: r.left - bounds.left, y: r.top - bounds.top })
       const b = project({ x: r.right - bounds.left, y: r.bottom - bounds.top })
@@ -310,15 +358,13 @@ function CanvasPaletteDropHandler({ canvasRef }: { canvasRef: React.RefObject<HT
     })
     const pos = findFreeSpot(project({ x: bounds.width / 2, y: bounds.height / 2 }), getNodes(), visible, covered)
     const id = addBlockByType(quickAddRequest.blockType, pos)
-    // The only free spot may be partly off-screen on a small Chromebook
-    // screen — slide the view just enough to show the whole new block.
-    const shiftX = pos.x < visible.minX ? pos.x - visible.minX : Math.max(0, pos.x + NEW_BLOCK_W - visible.maxX)
-    const shiftY = pos.y < visible.minY ? pos.y - visible.minY : Math.max(0, pos.y + NEW_BLOCK_H - visible.maxY)
-    if (shiftX || shiftY) {
-      const vp = getViewport()
-      setViewport({ x: vp.x - shiftX * vp.zoom, y: vp.y - shiftY * vp.zoom, zoom: vp.zoom }, { duration: 300 })
+    // The only free spot may be partly off-screen on a small Chromebook screen: once the block has
+    // rendered (real size, not a guess), slide the view just enough to show all of it, dots included.
+    if (id) {
+      // The new block first; the rest of the build too if it all fits without shrinking much.
+      requestReveal([`.react-flow__node[data-id="${id}"]`, ...getNodes().map((n) => `.react-flow__node[data-id="${n.id}"]`)])
+      flashBlock(id)
     }
-    if (id) flashBlock(id)
     clearQuickAddRequest()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickAddRequest])
@@ -1254,6 +1300,7 @@ export default function DatasetCanvas() {
         </Controls>
         <CanvasPaletteDropHandler canvasRef={canvasRef} />
         <KeepBlocksClearOfSettings canvasRef={canvasRef} />
+        <RevealOnRequest canvasRef={canvasRef} />
       </ReactFlow>
       {textDragRect && (
         <div

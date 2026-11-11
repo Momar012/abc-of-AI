@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { StepView } from '@/lib/tour/steps'
 import GhostHand from './GhostHand'
+import { requestReveal } from '@/lib/canvas/reveal'
 
 // Shared by the Getting Started tour and mission hints.
 
@@ -53,10 +54,28 @@ export function useTrackedBoxes(view: StepView | null) {
     if (!view) { setBoxes({ targetBox: null, dragToBox: null, avoidBox: null }); return }
     // A button further down the settings panel (e.g. 💾 Save Name) may be scrolled out of sight:
     // bring it into view once, so the ring isn't drawn around something half off the screen.
-    // Only inside the panel — the canvas pans with transforms and must not be scrolled.
+    // Only inside panels — the canvas pans with transforms and must not be scrolled.
     const el = view.target ? document.querySelector(view.target) : null
     if (el?.closest('[data-properties-panel], [data-tour="label-modal"]')) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    // ¬ NOT / ∨ OR at the bottom of a toolbar menu: the menu only gets its scroll limit after it has
+    // opened, so keep checking while the hint shows and scroll the item up whenever it's cut off.
+    const keepMenuItemInView = () => {
+      const item = view.target ? document.querySelector(view.target) : null
+      const menu = item?.closest('[data-menu-dropdown]')
+      if (!item || !menu) return
+      const a = item.getBoundingClientRect()
+      const m = menu.getBoundingClientRect()
+      if (a.bottom > m.bottom + 1 || a.top < m.top - 1) item.scrollIntoView({ block: 'nearest' })
+    }
+    // Blocks and dots on the canvas: ask the canvas to pan them out from under the screen edge,
+    // the toolbar, a panel or the zoom buttons.
+    const onCanvas = (sel: string | null | undefined) => !!sel && !!document.querySelector(sel)?.closest('.react-flow__viewport')
+    // A drag hint's dot and its destination belong together: both must be on screen.
+    requestReveal([view.target, view.dragTo, ...(view.avoid ?? [])].filter(onCanvas), {
+      pair: view.gesture === 'drag' && onCanvas(view.target) && onCanvas(view.dragTo),
+    })
     const tick = () => {
+      keepMenuItemInView()
       const next = measureView(view)
       setBoxes((prev) =>
         sameBox(prev.targetBox, next.targetBox) && sameBox(prev.dragToBox, next.dragToBox) && sameBox(prev.avoidBox, next.avoidBox)
