@@ -130,6 +130,17 @@ export default function DatasetBuilderPage() {
 
   // Hydrate from localStorage on mount
   const hydrated = useRef(false)
+  // Dev only: editing a store file hot-reloads it as a brand-new, EMPTY store while this page stays
+  // mounted, and the save below would then write that empty state over everyone's saved work.
+  // When a store object changes, load the saved data into it again instead. (Never happens in prod.)
+  const storeSet = [useDatasetStore, useModelStore, useRuleStore, useWorkflowStore, useRLStore, useCanvasStore, useUIStore]
+  const storesRef = useRef(storeSet)
+  const storeGen = useRef(0)
+  if (storesRef.current.some((s, i) => s !== storeSet[i])) {
+    storesRef.current = storeSet
+    storeGen.current += 1
+    hydrated.current = false
+  }
   useEffect(() => {
     if (hydrated.current) return
     hydrated.current = true
@@ -195,7 +206,9 @@ export default function DatasetBuilderPage() {
       }
     }
     // First-visit welcome is now the Getting Started WelcomeCard (driven by useTourStore).
-  }, [])
+    // Re-runs only when a store was hot-reloaded (see storeGen above).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeGen.current])
 
   // On a tablet-width window, start with the Curriculum sidebar tucked away
   // (it already collapses to a 48px icon strip) so the canvas has room —

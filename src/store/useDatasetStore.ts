@@ -505,16 +505,31 @@ export const useDatasetStore = create<DatasetState>((set, get) => ({
       const saved = s.savedDatasets.find((d) => d.id === id)
       if (!saved) return s
 
+      // Pictures/texts already in the Data Bank are reused, not copied again: loading a dataset that
+      // was built from the bank used to double it (20 → 40 → 60), and "Select all" in a later lab then
+      // grabbed the old training pictures too. Each bank item is reused once per load, so a file
+      // uploaded twice still gives the dataset two items.
+      const unused = new Map<string, string[]>()
+      for (const b of s.bankItems) {
+        const key = `${b.type}:${b.content}`
+        unused.set(key, [...(unused.get(key) ?? []), b.id])
+      }
       const itemIdMap: Record<string, string> = {}
-      const newBankItems: DataItem[] = saved.bankItems.map((item) => {
+      const newBankItems: DataItem[] = []
+      for (const item of saved.bankItems) {
+        const reuse = item.content ? unused.get(`${item.type}:${item.content}`)?.shift() : undefined
+        if (reuse) {
+          itemIdMap[item.id] = reuse
+          continue
+        }
         const newId = uuid()
         itemIdMap[item.id] = newId
         let thumbnailUrl: string | undefined
         if (item.type === 'image' && item.content) {
           try { thumbnailUrl = URL.createObjectURL(base64ToBlob(item.content, 'image/jpeg')) } catch {}
         }
-        return { ...item, id: newId, addedAt: Date.now(), thumbnailUrl }
-      })
+        newBankItems.push({ ...item, id: newId, addedAt: Date.now(), thumbnailUrl })
+      }
 
       const n = s.labelledBlocks.length + s.unlabelledBlocks.length
       const offset = { x: n * 50, y: n * 30 }
