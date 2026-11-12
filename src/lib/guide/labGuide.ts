@@ -95,10 +95,8 @@ const labelledName = (b: AnyBlock | null | undefined) =>
 const inspecting = (type: 'labelled' | 'model') =>
   useUIStore.getState().selectedBlockType === type && isVisible('[data-properties-panel]')
 
-// ── "it just happened" events (for experiment steps like "Turn ON the switch") ─────────────
+// ── "it just happened" events (for steps like "Copy the table") ─────────────
 
-let lastOn = new Map<string, boolean>()
-const switchOnEvents: number[] = []
 const copyEvents: number[] = []
 
 /** The kid copied something (📋 Copy table, or Ctrl + C on the page). */
@@ -106,16 +104,11 @@ export function recordCopy() {
   copyEvents.push(Date.now())
 }
 
-/** Call every tick: notices switches being flipped on. */
-export function recordEvents() {
-  const now = Date.now()
-  const next = new Map<string, boolean>()
-  for (const b of allBlocks()) {
-    if (b.kind !== 'switch') continue
-    next.set(b.id, !!b.isOn)
-    if (b.isOn && lastOn.get(b.id) === false) switchOnEvents.push(now)
-  }
-  lastOn = next
+/** The switches a lab made, in the order it made them ("the second Switch" = [1]); older ones if it made none. */
+function labSwitches(snap: LabSnapshot, blocks = allBlocks()) {
+  const all = blocks.filter((b) => b.kind === 'switch')
+  const made = all.filter((b) => isNew(snap)(b.id))
+  return made.length ? made : all
 }
 
 // ── done checks ──────────────────────────────────────────────────────────────
@@ -200,8 +193,14 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
     case 'condValue':
       return blocks.some((b) => b.kind === 'condition' && String(b.threshold ?? '').trim().toLowerCase() === String(a.value).toLowerCase())
     case 'switch': {
-      const sw = blocks.filter((b) => b.kind === 'switch')
-      return a.on ? sw.filter((b) => b.isOn).length >= a.n : sw.some((b) => !b.isOn)
+      const sw = labSwitches(snap, blocks)
+      if (a.which) {
+        // "Turn ON only the second Switch": that one ON, and (with "only") every other one OFF.
+        const it = sw[a.which - 1]
+        return !!it && !!it.isOn === a.on && (!a.only || sw.every((b) => b.id === it.id || !b.isOn))
+      }
+      // "Turn ON both Switches" / "Turn OFF both Switches": that many in that state.
+      return sw.filter((b) => !!b.isOn === a.on).length >= a.n
     }
     case 'motion':
       return blocks.some((b) => b.kind === 'sensor-motion' && Boolean(b.value) === a.detected)
@@ -255,15 +254,13 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
 }
 
 /**
- * Done check for the step the kid is on. `since` = when this step became the current one.
- * "Turn ON" steps need a fresh flip, so "Turn ON only the second Switch" doesn't pass just
- * because the first switch is still on from the step before.
+ * Done check for the step the kid is on. `since` = when this step became the current one (for
+ * "Copy the table", which must happen now). Switch steps check which switch is in which state
+ * ("only the second Switch ON"), so a switch left on from the step before can't pass them early.
  */
 export function isDone(a: LabAction, snap: LabSnapshot, since: number): boolean {
   if (a.type === 'copy') return copyEvents.some((t) => t >= since)
-  if (!matches(a, snap)) return false
-  if (a.type === 'switch' && a.on) return switchOnEvents.some((t) => t >= since)
-  return true
+  return matches(a, snap)
 }
 
 /** Steps whose result is about the canvas layout (can tick even when they aren't the current step). */
@@ -317,11 +314,17 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
       const fromName = s ? blockWords(a.from, s.fromN, s.fromVia) : KINDS[a.from].label
       const toName = s ? blockWords(a.to, s.toN, s.toVia) : KINDS[a.to].label
       let pick: { s: string; t: string } | null = null
-      for (const t of targets) {
-        const full = (KINDS[t.kind].in?.length ?? 1) <= t.inputs.length
-        if (full) continue
-        const s = sources.find((s) => s.id !== t.id && !already.has(`${s.id}>${t.id}`) && !t.inputs.includes(s.id))
-        if (s) { pick = { s: s.id, t: t.id }; break }
+      let replaces = false
+      // First a free dot; else a one-dot block that's already wired (the Alarm from last lab): a new
+      // wire simply replaces the old one.
+      for (const allowFull of [false, true]) {
+        for (const t of targets) {
+          const slots = KINDS[t.kind].in?.length ?? 1
+          if (slots <= t.inputs.length && (!allowFull || slots > 1)) continue
+          const s = sources.find((s) => s.id !== t.id && !already.has(`${s.id}>${t.id}`) && !t.inputs.includes(s.id))
+          if (s) { pick = { s: s.id, t: t.id }; replaces = allowFull; break }
+        }
+        if (pick) break
       }
       if (!pick) {
         return { target: null, gesture: 'none', text: `Add the blocks first, then connect ${fromName} to ${toName}.` }
@@ -345,7 +348,7 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
         avoid: [nodeSel(pick.s), nodeSel(pick.t)],
         text: dataLink
           ? `Drag from the violet dot on ${a.from === 'labelled' ? labelledName(src) : KINDS[a.from].label} to the teal dot on the ${KINDS[a.to].label}.`
-          : `Drag from the dot on the right of ${fromName} to the dot on the left of ${toName}.`,
+          : `Drag from the dot on the right of ${fromName} to the dot on the left of ${toName}.${replaces ? ' The new wire replaces the old one.' : ''}`,
       }
     }
     case 'props': {
@@ -388,10 +391,32 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
       }
     }
     case 'switch': {
-      const sw = allBlocks().filter((b) => b.kind === 'switch')
-      const pickSw = sw.find((b) => (a.on ? !b.isOn : b.isOn)) ?? sw.at(-1)
-      const n = nodeSel(pickSw?.id)
-      return { target: n ? `${n} [data-tour="switch-toggle"]` : null, gesture: 'tap', text: `Click the switch to turn it ${a.on ? 'ON' : 'OFF'}, then watch what happens.` }
+      const sw = labSwitches(snap)
+      const toggle = (b: AnyBlock | undefined) => (b ? `${nodeSel(b.id)} [data-tour="switch-toggle"]` : null)
+      const state = a.on ? 'ON' : 'OFF'
+      const many = sw.length > 1
+      if (a.which) {
+        const it = sw[a.which - 1]
+        const name = many ? blockWords('switch', a.which) : 'the switch'
+        if (it && !!it.isOn !== a.on) return { target: toggle(it), gesture: 'tap', text: `Click ${name} to turn it ${state}, then watch what happens.` }
+        // Right switch, but "only" means the others must be OFF.
+        const other = sw.find((b) => b.id !== it?.id && b.isOn)
+        if (a.only && other) {
+          const n = sw.indexOf(other) + 1
+          return { target: toggle(other), gesture: 'tap', text: `Now turn ${blockWords('switch', n)} OFF, so only ${name} is ON.` }
+        }
+        return { target: toggle(it), gesture: 'none', text: `${name[0].toUpperCase()}${name.slice(1)} is ${state} ✔ Watch what happens.` }
+      }
+      // "Turn ON both Switches": point at one that isn't ON yet, never at one that already is.
+      const next = sw.find((b) => !!b.isOn !== a.on)
+      const n = next ? sw.indexOf(next) + 1 : 0
+      return {
+        target: toggle(next ?? sw.at(-1)),
+        gesture: next ? 'tap' : 'none',
+        text: next
+          ? `Click ${many ? blockWords('switch', n) : 'the switch'} to turn it ${state}, then watch what happens.`
+          : `The ${many ? 'switches are' : 'switch is'} ${state} ✔ Watch what happens.`,
+      }
     }
     case 'motion': {
       const b = newestOf('sensor-motion', snap)
@@ -769,15 +794,34 @@ function stateTip(lines: LabLine[], check: string): Diagnosis | null {
   if (slider >= 0) {
     return { stepIndex: slider, text: `Your build looks right ✔ Try it again slowly: **${lines[slider].text}** Then watch the output block.` }
   }
-  if (/\bswitch\b/i.test(c) && !/\b(both|either|one|two|three|all|switches)\b/i.test(c) && lines.some((l) => l.action.type === 'switch')) {
-    const off = /\bswitch (is|was) off\b|\bturn(ed)? off the switch\b|\bswitch off\b/i.test(c)
-    const i = lines.findIndex((l) => l.action.type === 'switch' && l.action.on === !off)
-    return {
-      stepIndex: i >= 0 ? i : null,
-      text: `Your build looks right ✔ Turn the switch **${off ? 'OFF' : 'ON'}**, then watch the output block.`,
-    }
-  }
+  const sw = switchStepFor(lines, c)
+  if (typeof sw === 'string') return { stepIndex: null, text: `Your build looks right ✔ ${sw}, then watch the output block.` }
+  if (sw >= 0) return { stepIndex: sw, text: `Your build looks right ✔ Try it again slowly: **${lines[sw].text}** Then watch the output block.` }
   return null
+}
+
+/**
+ * The switch step a check is about. "When only one Switch is ON" → "Turn ON only the first Switch";
+ * "When both Switches are OFF" → "Turn OFF both Switches"; "When the second Switch is ON" → that one.
+ * The state is the word right after "Switch is / Switches are", not the device's ("…the AC remains OFF").
+ */
+function switchStepFor(lines: LabLine[], check: string): number | string {
+  const said = check.match(/\bswitch(?:es)?\s+(?:is|are|was|were)\s+(on|off)\b/i) ?? check.match(/\bswitch(?:es)?\s+(on|off)\b/i)
+  if (!said) return -1
+  const on = said[1].toUpperCase() === 'ON'
+  const steps = lines.map((l, i) => ({ a: l.action, i })).filter((x): x is { a: Extract<LabAction, { type: 'switch' }>; i: number } => x.a.type === 'switch' && x.a.on === on)
+  if (!steps.length) return -1
+  const which = /\bfirst\b/i.test(check) ? 1 : /\bsecond\b/i.test(check) ? 2 : /\bthird\b/i.test(check) ? 3 : 0
+  const all = /\b(both|all|three)\b/i.test(check)
+  // "When both Switches are ON" but no step turns them all ON: say it in words instead of a wrong step.
+  if (all && !steps.some((x) => x.a.n > 1)) return `Turn **${/\bthree\b/i.test(check) ? 'all three' : 'both'}** Switches **${on ? 'ON' : 'OFF'}**`
+  const pick =
+    (which && steps.find((x) => x.a.which === which)) ||
+    (all && steps.find((x) => x.a.n > 1)) ||
+    (/\b(only one|any one|any|one)\b/i.test(check) && steps.find((x) => x.a.which || x.a.n === 1)) ||
+    steps.find((x) => x.a.n === 1) ||
+    steps[0]
+  return pick.i
 }
 
 /** "Alarm remains OFF for messages that do not contain MONEY" → a "should NOT happen" check. */
@@ -799,12 +843,23 @@ function experimentFor(lines: LabLine[], expected?: { text: string; all: string[
     if (NEGATIVE.test(expected.text)) {
       const unmentioned = texts.find((x) => !expected.all.some((t) => mentions(t, x.a.value)))
       if (unmentioned) return unmentioned.i
+      // "When the text is Good morning everyone, the Bulb remains OFF": that sentence.
+      const named = texts.find((x) => mentions(expected.text, x.a.value))
+      if (named) return named.i
     } else {
       const hit = texts.find((x) => mentions(expected.text, x.a.value))
       if (hit) return hit.i
     }
   }
   return exps.at(-1)!.i
+}
+
+/** A harmless word to type that none of the canvas's text rules look for (not "hello" in the hello lab). */
+function wordTheRuleIgnores(): string {
+  const words = allBlocks()
+    .filter((b) => b.kind === 'condition' && typeof b.threshold === 'string' && b.threshold.trim())
+    .map((b) => String(b.threshold).trim().toLowerCase())
+  return ['pizza', 'hello', 'sunshine', 'robot'].find((w) => !words.some((r) => w.includes(r) || r.includes(w))) ?? 'pizza'
 }
 
 /** The kid says an Expected Result didn't happen: find the most likely reason. */
@@ -826,11 +881,11 @@ export function diagnose(lines: LabLine[], snap: LabSnapshot, expected?: { text:
   const exp = experimentFor(lines, expected)
   if (exp >= 0 && expected && NEGATIVE.test(expected.text) && lines[exp].action.type === 'text') {
     const t = lines[exp].action as Extract<LabAction, { type: 'text' }>
-    if (expected.all.some((x) => mentions(x, t.value))) {
-      // Every typed word in this lab should set it off: try a word the rule doesn't know.
+    if (!mentions(expected.text, t.value) && expected.all.some((x) => mentions(x, t.value))) {
+      // Every typed word in this lab should set it off: try a word the rule doesn't look for.
       return {
         stepIndex: null,
-        text: 'Your build looks right ✔ Type a word your rule does **not** look for, like **hello**, press Send, and watch the output block.',
+        text: `Your build looks right ✔ Type a word your rule does **not** look for, like **${wordTheRuleIgnores()}**, press Send, and watch the output block.`,
       }
     }
   }

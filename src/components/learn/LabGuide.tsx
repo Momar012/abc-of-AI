@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { tableToTsv, type LabLine, type LabSections, type LabTable } from '@/lib/guide/parseLab'
-import { diagnose, Diagnosis, hintFor, isDone, isStructural, matches, recordCopy, recordEvents, takeSnapshot } from '@/lib/guide/labGuide'
+import { diagnose, Diagnosis, hintFor, isDone, isStructural, matches, recordCopy, takeSnapshot } from '@/lib/guide/labGuide'
 import { useLabComplete, useLabGuideStore } from '@/store/useLabGuideStore'
 import { useMissionStore } from '@/store/useMissionStore'
 import { useTourStore } from '@/store/useTourStore'
@@ -179,7 +179,6 @@ export default function LabGuide({ stepId, lines, parts, preview = false }: Prop
   useEffect(() => {
     if (!mounted || preview) return
     const id = window.setInterval(() => {
-      recordEvents()
       const store = useLabGuideStore.getState()
       const snap = store.snapshots[stepId] ?? []
       const have = new Set(store.ticked[stepId] ?? [])

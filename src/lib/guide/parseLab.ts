@@ -12,7 +12,8 @@ export type LabAction =
   | { type: 'connect'; from: GuideKind; to: GuideKind; n: number; spec?: LinkSpec }
   /** Settings are open on this kind of block. n = which one this lab made (2 = "the second / new one"); 0 = any. */
   | { type: 'props'; kind: GuideKind; n?: number }
-  | { type: 'switch'; on: boolean; n: number }
+  /** n = how many switches ("both" = 2). which = "the first / second Switch"; only = every other switch OFF. */
+  | { type: 'switch'; on: boolean; n: number; which?: number; only?: boolean }
   | { type: 'motion'; detected: boolean }
   | { type: 'sensorValue'; kind: GuideKind; value: number }
   | { type: 'text'; value: string }
@@ -561,7 +562,11 @@ export function parseLab(md: string): LabLine[] {
       else if (kind) action = { type: 'props', kind, n: whichOne(text, adds[kind] ?? 0) }
     } else if (/^turn\b/i.test(text) && /switch/i.test(text)) {
       const on = /\bON\b/.test(text)
-      action = { type: 'switch', on, n: on ? countWord(text) : 1 }
+      // "Turn ON only the second Switch": that switch ON and the others OFF.
+      const which = whichOne(text, 0)
+      action = which
+        ? { type: 'switch', on, n: 1, which, ...(/\bonly\b/i.test(text) ? { only: true } : {}) }
+        : { type: 'switch', on, n: countWord(text) }
     } else if (/^(change|trigger|click)\b/i.test(text) && /motion/i.test(text)) {
       // "Change the Motion Sensor to Motion Detected", "Trigger Motion", "Click the No Motion button…"
       action = { type: 'motion', detected: !/to\s+no motion/i.test(text) }
@@ -629,8 +634,11 @@ export function describeAction(a: LabAction): string {
     }
     case 'condValue':
       return `IF Condition value is ${a.value}`
-    case 'switch':
-      return a.on ? `A Switch is turned ON${a.n > 1 ? ` (${a.n} switches)` : ''}` : 'A Switch is turned OFF'
+    case 'switch': {
+      const state = a.on ? 'ON' : 'OFF'
+      if (a.which) return `${blockWords('switch', a.which)} is ${state}${a.only ? ', the others OFF' : ''}`
+      return a.n > 1 ? `${a.n} Switches are ${state}` : `A Switch is ${state}`
+    }
     case 'motion':
       return `Motion Sensor shows ${a.detected ? 'Motion Detected' : 'No Motion'}`
     case 'sensorValue':
