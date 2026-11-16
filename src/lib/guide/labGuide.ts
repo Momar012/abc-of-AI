@@ -295,7 +295,7 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
     case 'add': {
       const info = KINDS[a.kind]
       return isVisible(paletteSel(a.kind))
-        ? { target: paletteSel(a.kind), gesture: 'drag', dragTo: '[data-tour="canvas"]', prefer: 'side', text: `Drag ${info.label} onto the canvas.` }
+        ? { target: paletteSel(a.kind), gesture: 'drag', dragTo: '[data-tour="canvas"]', prefer: 'side', text: `Drag ${info.label} onto the canvas, or just tap it.` }
         : { target: MENU_SEL[info.menu], gesture: 'tap', text: `Open ${MENU_LABEL[info.menu]} in the toolbar. ${info.label} is in there.` }
     }
     case 'connect': {
@@ -366,8 +366,8 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
         a.type === 'condValue'
           ? `type “${a.value}” in the value box`
           : a.op === 'is'
-          ? `pick “${a.value ? 'Motion Detected' : 'No Motion'}”`
-          : `choose “${a.op}”${a.value !== undefined ? ` and set the value to ${a.value}` : ''}`
+          ? `pick “${motionOption(!!a.value)}”`
+          : `choose “${OP_LABEL[a.op] ?? a.op}”${a.value !== undefined ? ` and set the value to ${a.value}` : ''}`
       // "Humidity > 70%" belongs on the Humidity IF. If another IF's settings are open (still open from
       // the last step), send the kid to the right IF instead of letting them type into the wrong one.
       const blocks = allBlocks()
@@ -720,8 +720,37 @@ function dataMismatch(a: LabAction, snap: LabSnapshot): string | null {
   }
 }
 
+/** The IF Condition's operator as its drop-down shows it ("==" is listed as "= equals"). */
+const OP_LABEL: Record<string, string> = {
+  '>': '> greater than',
+  '<': '< less than',
+  '>=': '≥ greater or equal',
+  '<=': '≤ less or equal',
+  '==': '= equals',
+  '!=': '≠ not equals',
+  contains: '∋ contains',
+}
+/** The Motion IF's drop-down options, word for word. */
+const motionOption = (detected: boolean) => (detected ? 'true (motion detected)' : 'false (no motion)')
+
+const DEVICES: GuideKind[] = ['bulb', 'fan', 'door', 'ac', 'alarm']
+/** What a kid should watch: "the 💡 Bulb", "the 🌀 Fan and the ❄️ AC" — the devices this lab uses. */
+function outputOf(lines: LabLine[]): string {
+  const added = DEVICES.filter((k) => lines.some((l) => l.action.type === 'add' && l.action.kind === k))
+  // A lab that reuses last lab's Alarm adds no device: look at the canvas instead.
+  const kinds = added.length ? added : DEVICES.filter((k) => allBlocks().some((b) => b.kind === k))
+  if (!kinds.length) return 'what happens'
+  return kinds.map((k) => `the ${KINDS[k].label}`).join(' and ')
+}
+
+/** "Try it again slowly: …", spelling out Send for typed words (the step kids forget most). */
+const tryAgain = (line: LabLine) =>
+  line.action.type === 'text'
+    ? `Try it again slowly: type **${line.action.value}** in the 📝 Text Input and press **Send**.`
+    : `Try it again slowly: **${line.text}**`
+
 const showValue = (op: string | undefined, v: unknown) =>
-  op === 'is' ? (v ? 'Motion Detected' : 'No Motion') : `${op ?? ''} ${String(v ?? '').trim() || '(empty)'}`.trim()
+  op === 'is' ? motionOption(!!v) : `${op ?? ''} ${String(v ?? '').trim() || '(empty)'}`.trim()
 
 /** If a condition step fails, compare it with the IF Conditions actually on the canvas. */
 function conditionMismatch(a: LabAction, others: LabAction[]): string | null {
@@ -785,18 +814,18 @@ function stateTip(lines: LabLine[], check: string): Diagnosis | null {
     const i = lines.findIndex((l) => l.action.type === 'motion' && l.action.detected === want)
     return {
       stepIndex: i >= 0 ? i : null,
-      text: `Your build looks right ✔ Click the Motion Sensor's button so it says **${want ? 'Motion Detected' : 'No Motion'}**, then watch the output block.`,
+      text: `Your build looks right ✔ Click the Motion Sensor's button so it says **${want ? 'Motion Detected' : 'No Motion'}**, then watch ${outputOf(lines)}.`,
     }
   }
   // "When the temperature is 32°C, the Fan turns ON" → the "Move the slider to 32°C" step.
   const numbers = (c.match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
   const slider = lines.findIndex((l) => l.action.type === 'sensorValue' && numbers.includes(l.action.value))
   if (slider >= 0) {
-    return { stepIndex: slider, text: `Your build looks right ✔ Try it again slowly: **${lines[slider].text}** Then watch the output block.` }
+    return { stepIndex: slider, text: `Your build looks right ✔ ${tryAgain(lines[slider])} Then watch ${outputOf(lines)}.` }
   }
   const sw = switchStepFor(lines, c)
-  if (typeof sw === 'string') return { stepIndex: null, text: `Your build looks right ✔ ${sw}, then watch the output block.` }
-  if (sw >= 0) return { stepIndex: sw, text: `Your build looks right ✔ Try it again slowly: **${lines[sw].text}** Then watch the output block.` }
+  if (typeof sw === 'string') return { stepIndex: null, text: `Your build looks right ✔ ${sw}, then watch ${outputOf(lines)}.` }
+  if (sw >= 0) return { stepIndex: sw, text: `Your build looks right ✔ ${tryAgain(lines[sw])} Then watch ${outputOf(lines)}.` }
   return null
 }
 
@@ -885,7 +914,7 @@ export function diagnose(lines: LabLine[], snap: LabSnapshot, expected?: { text:
       // Every typed word in this lab should set it off: try a word the rule doesn't look for.
       return {
         stepIndex: null,
-        text: `Your build looks right ✔ Type a word your rule does **not** look for, like **${wordTheRuleIgnores()}**, press Send, and watch the output block.`,
+        text: `Your build looks right ✔ Type a word your rule does **not** look for, like **${wordTheRuleIgnores()}**, press **Send**, and watch ${outputOf(lines)}.`,
       }
     }
   }
@@ -893,6 +922,6 @@ export function diagnose(lines: LabLine[], snap: LabSnapshot, expected?: { text:
     return { stepIndex: null, text: 'Every step checks out ✔ Look carefully once more. If something is missing, fix it, then tap 👍.' }
   }
   return exp >= 0
-    ? { stepIndex: exp, text: `Your build looks right ✔ Try it again slowly: **${lines[exp].text}** Then watch the output block.` }
-    : { stepIndex: null, text: 'Your build looks right ✔ Change the inputs again, one at a time, and watch the output block.' }
+    ? { stepIndex: exp, text: `Your build looks right ✔ ${tryAgain(lines[exp])} Then watch ${outputOf(lines)}.` }
+    : { stepIndex: null, text: `Your build looks right ✔ Change the inputs again, one at a time, and watch ${outputOf(lines)}.` }
 }
