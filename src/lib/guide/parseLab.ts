@@ -37,8 +37,9 @@ export type LabAction =
   | { type: 'allLabelled' }
   /** The dataset / model name box holds this name (or it's already saved under it). */
   | { type: 'name'; what: 'dataset' | 'model'; value: string }
-  /** A dataset / model is saved with this name ('save' = the Save button step, 'list' = find it in the panel). */
-  | { type: 'saved'; what: 'dataset' | 'model'; name: string; via: 'save' | 'list' }
+  /** A dataset / model is saved with this name ('save' = the Save button step, 'list' = find it in the panel).
+   *  Only ones saved in this lab count, except `earlier` ones ("Locate: CatDog Labelled Dataset" = last lab's). */
+  | { type: 'saved'; what: 'dataset' | 'model'; name: string; via: 'save' | 'list'; earlier?: true }
   /** A saved dataset was dragged from the Datasets tab onto the canvas. */
   | { type: 'dsCanvas'; name: string }
   /** A model has started training (done = finished). */
@@ -433,7 +434,7 @@ function dataAction(
   }
   if (/^locate\b/i.test(t) && names.length) {
     ctx.dataset = names.at(-1)!
-    return { type: 'saved', what: 'dataset', name: ctx.dataset, via: 'list' }
+    return { type: 'saved', what: 'dataset', name: ctx.dataset, via: 'list', earlier: true }
   }
   // "Drag **CatDog Labelled Dataset** onto the canvas" (a saved dataset, not a block from a menu)
   const inT = names.filter((n) => t.includes(n))

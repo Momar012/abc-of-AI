@@ -7,14 +7,17 @@ import { allBlocks, type AnyBlock, GuideKind, handleSel, isModelKind, KINDS, MEN
 import { blockWords, TAB_LABEL, type DataTab, type LabAction, type LabLine } from './parseLab'
 
 /**
- * Which blocks and Data Bank items already existed when the kid opened the lab card, so old work
- * doesn't count (e.g. "Upload 20 new images" when the bank already holds last lab's pictures).
+ * Which blocks, Data Bank items, saved datasets and saved models already existed when the kid opened
+ * the lab card, so old work doesn't count (e.g. "Upload 20 new images" when the bank already holds
+ * last lab's pictures, or "Save it as CatDogModel" when last week's CatDogModel is still in My Models).
  */
 export type LabSnapshot = string[]
 
 export const takeSnapshot = (): LabSnapshot => [
   ...allBlocks().map((b) => b.id),
   ...useDatasetStore.getState().bankItems.map((i) => i.id),
+  ...useDatasetStore.getState().savedDatasets.map((d) => d.id),
+  ...useModelStore.getState().trainedModels.map((m) => m.id),
 ]
 
 const isVisible = (sel: string) => {
@@ -43,11 +46,15 @@ const sameName = (a: string | undefined, b: string) => !!a && norm(a) === norm(b
 
 const tabOpen = (tab: DataTab) => isVisible(`[data-tour="tab-${tab}"][data-active="true"]`)
 const inputValue = (sel: string) => (document.querySelector(sel) as HTMLInputElement | null)?.value ?? ''
-const savedNames = (what: 'dataset' | 'model') =>
-  what === 'dataset'
-    ? useDatasetStore.getState().savedDatasets.map((d) => d.name)
-    : useModelStore.getState().trainedModels.map((m) => m.name)
-const isSaved = (what: 'dataset' | 'model', name: string) => savedNames(what).some((n) => sameName(n, name))
+/** Datasets / models saved since the lab started, newest first (an old "CatDogModel" doesn't count). */
+const savedNames = (what: 'dataset' | 'model', snap: LabSnapshot) => {
+  const fresh = isNew(snap)
+  const list: Array<{ id: string; name: string }> =
+    what === 'dataset' ? useDatasetStore.getState().savedDatasets : useModelStore.getState().trainedModels
+  return list.filter((x) => fresh(x.id)).map((x) => x.name)
+}
+const isSaved = (what: 'dataset' | 'model', name: string, snap: LabSnapshot) =>
+  savedNames(what, snap).some((n) => sameName(n, name))
 const allLabelBlocks = () => allBlocks().filter((b) => b.kind === 'labelled')
 /** Labelled blocks made in this lab: last lab's "Cat"/"Dog" block mustn't tick this lab's label steps. */
 const labelBlocks = (snap: LabSnapshot) => {
@@ -225,11 +232,11 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
     case 'name':
       return (
         sameName(inputValue(`[data-tour="${a.what}-name"]`), a.value) ||
-        isSaved(a.what, a.value) ||
-        (a.what === 'dataset' ? allLabelBlocks() : modelBlocks()).some((b) => sameName(b.name, a.value))
+        isSaved(a.what, a.value, snap) ||
+        (a.what === 'dataset' ? allLabelBlocks() : modelBlocks()).some((b) => fresh(b.id) && sameName(b.name, a.value))
       )
     case 'saved':
-      return isSaved(a.what, a.name)
+      return isSaved(a.what, a.name, a.earlier ? [] : snap)
     case 'dsCanvas':
       return blocks.some((b) => (b.kind === 'labelled' || b.kind === 'unlabelled') && fresh(b.id) && sameName(b.name, a.name))
     case 'train': {
@@ -694,10 +701,10 @@ function dataMismatch(a: LabAction, snap: LabSnapshot): string | null {
     case 'name':
     case 'saved': {
       const name = a.type === 'name' ? a.value : a.name
-      const last = savedNames(a.what)[0]
+      const last = savedNames(a.what, a.type === 'saved' && a.earlier ? [] : snap)[0]
       return last
         ? `Your ${a.what} is saved as **${last}**, but this lab needs **${name}**.`
-        : `No ${a.what} is saved yet. Save it with the name **${name}**.`
+        : `You haven't saved a ${a.what} in this lab yet. Save it with the name **${name}**.`
     }
     case 'dsCanvas':
       return `**${a.name}** isn't on the canvas yet. Drag it from the 📋 Datasets tab.`

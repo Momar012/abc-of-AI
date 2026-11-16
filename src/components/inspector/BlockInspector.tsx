@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useDroppable } from '@dnd-kit/core'
 import { useUIStore } from '@/store/useUIStore'
 import { useDatasetStore } from '@/store/useDatasetStore'
+import { keepDatasetNameUnique } from '@/lib/uniqueNames'
 import LabelTableRow from '@/components/blocks/LabelTableRow'
 import LabelCreator from '@/components/blocks/LabelCreator'
 import DroppedItemChip from '@/components/blocks/DroppedItemChip'
@@ -225,6 +226,7 @@ export default function BlockInspector() {
     if (selectedBlockType === 'labelled') renameLabelledBlock(selectedBlockId, name)
     else renameUnlabelledBlock(selectedBlockId, name)
     saveCurrentDataset(selectedBlockId, selectedBlockType as 'labelled' | 'unlabelled')
+    keepDatasetNameUnique(selectedBlockId)
     addToast(isOverwrite ? `🔄 "${name}" updated!` : `💾 "${name}" saved!`, 'success')
   }
 

@@ -8,6 +8,7 @@ import { useDatasetStore } from '@/store/useDatasetStore'
 import { trainImageSupervisedModel, runInference, clusterImages, ClusterImagesResult, runClusterImageInference } from '@/lib/trainModel'
 import { trainTextCorpus, queryTextCorpus, trainTextSupervisedModel, runTextInference, clusterTexts, ClusterTextsResult, runClusterTextInference } from '@/lib/textLearner'
 import { MODEL_CATALOG } from '@/lib/modelCatalog'
+import { keepModelNameUnique } from '@/lib/uniqueNames'
 import { TrainedModel, TestResult, ChatMessage } from '@/types/model'
 
 export default function ModelInspector() {
@@ -173,6 +174,7 @@ export default function ModelInspector() {
         clusterCentroids: centroids,
       }
       saveTrainedModel(trained)
+      keepModelNameUnique(trained.id)
       updateModelBlock(block.id, { status: 'trained', clusterResults: results, trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
       addToast(`🧩 Grouped ${imageItems.length} images into ${actualK} clusters!`, 'success')
     } catch (err) {
@@ -221,6 +223,7 @@ export default function ModelInspector() {
       }
 
       saveTrainedModel(trained)
+      keepModelNameUnique(trained.id)
       updateModelBlock(block.id, { status: 'trained', trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
       addToast(`🎉 "${trained.name}" trained successfully!`, 'success')
     } catch (err) {
@@ -290,6 +293,7 @@ export default function ModelInspector() {
         clusterIdfWeights: idfWeights,
       }
       saveTrainedModel(trained)
+      keepModelNameUnique(trained.id)
       updateModelBlock(block.id, { status: 'trained', clusterResults: results, trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
       addToast(`📝 Grouped ${textItems.length} texts into ${actualK} clusters!`, 'success')
     } catch (err) {
@@ -370,6 +374,7 @@ export default function ModelInspector() {
       }
 
       saveTrainedModel(trained)
+      keepModelNameUnique(trained.id)
       updateModelBlock(block.id, { status: 'trained', trainedModelId: trained.id, trainedLinkedBlockId: block.linkedBlockId })
       addToast(`🎉 "${trained.name}" trained successfully!`, 'success')
     } catch (err) {
@@ -897,7 +902,10 @@ export default function ModelInspector() {
               data-tour="model-save"
               onClick={() => {
                 const name = saveName.trim() || block.name
-                if (block.trainedModelId) renameTrainedModel(block.trainedModelId, name)
+                if (block.trainedModelId) {
+                  renameTrainedModel(block.trainedModelId, name)
+                  keepModelNameUnique(block.trainedModelId)
+                }
                 updateModelBlock(block.id, { name })
                 addToast(`💾 "${name}" saved!`, 'success')
               }}

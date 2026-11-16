@@ -6,6 +6,7 @@ import { useModelStore } from '@/store/useModelStore'
 import { useUIStore } from '@/store/useUIStore'
 import { TrainedModel } from '@/types/model'
 import { downloadTrainedModel, parseTrainedModelFile } from '@/lib/modelFile'
+import { keepModelNameUnique } from '@/lib/uniqueNames'
 
 const MODEL_TYPE_LABELS: Record<string, string> = {
   'image-supervised': 'Image Supervised',
@@ -106,6 +107,7 @@ export default function TrainedModelsList() {
     try {
       const model = parseTrainedModelFile(await file.text())
       saveTrainedModel(model)
+      keepModelNameUnique(model.id)
       addToast(`📂 Loaded "${model.name}" — drag it onto the canvas to use it!`, 'success')
     } catch (err) {
       addToast(`⚠️ ${err instanceof Error ? err.message : "Couldn't load that file."}`, 'warn')

@@ -7,6 +7,13 @@ import { useUIStore } from '@/store/useUIStore'
 import { MAX_BANK_ITEMS } from '@/lib/constants'
 import { downscaleImage, BANK_IMAGE_MAX_DIM } from '@/lib/downscaleImage'
 
+// Pictures saved from the web often arrive with no usable type ("application/octet-stream"):
+// Chrome on Windows saves Google Images JPEGs as .jfif, and .avif/.webp are common too.
+// Go by the name as well, and let the decoder decide whether it's really a picture.
+const IMAGE_EXT = /\.(jpe?g|jfif|pjpeg|pjp|png|gif|webp|avif|bmp|ico|svg)$/i
+const isImageFile = (file: File) => file.type.startsWith('image/') || IMAGE_EXT.test(file.name)
+const ACCEPT = 'image/*,.jpg,.jpeg,.jfif,.png,.gif,.webp,.avif,.bmp,.txt'
+
 export default function DataBankUploader() {
   const addBankItem = useDatasetStore((s) => s.addBankItem)
   const bankItems = useDatasetStore((s) => s.bankItems)
@@ -24,7 +31,7 @@ export default function DataBankUploader() {
           break
         }
 
-        if (file.type.startsWith('image/')) {
+        if (isImageFile(file)) {
           // Shrink before storing: a full-size phone photo alone can fill the
           // ~5 MB the browser allows for saving. Decoding here also catches files
           // the browser reports as images by extension but can't actually read —
@@ -95,7 +102,7 @@ export default function DataBankUploader() {
       <input
         id="bank-upload"
         type="file"
-        accept="image/*,.txt"
+        accept={ACCEPT}
         multiple
         className="hidden"
         onChange={handleFileInput}
