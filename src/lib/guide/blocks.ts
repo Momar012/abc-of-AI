@@ -99,6 +99,8 @@ export interface AnyBlock {
   labels?: string[]
   items?: number
   unassigned?: number
+  /** Dataset blocks: the Data Bank items they hold (to spot last lab's pictures in this lab's test set). */
+  itemIds?: string[]
   /** Models: idle / loading / training / trained / error. */
   status?: string
   /** Models: the dataset plugged into the amber test dot, and how testing is going (idle / running / done). */
@@ -142,9 +144,12 @@ export function allBlocks(): AnyBlock[] {
     out.push({
       id: b.id, kind: 'labelled', inputs: [], name: b.name,
       labels: b.labels.map((l) => l.name), items: b.itemIds.length + labelled, unassigned: b.itemIds.length,
+      itemIds: [...b.itemIds, ...b.labels.flatMap((l) => l.itemIds)],
     })
   })
-  d.unlabelledBlocks.forEach((b) => out.push({ id: b.id, kind: 'unlabelled', inputs: [], name: b.name, items: b.itemIds.length }))
+  d.unlabelledBlocks.forEach((b) =>
+    out.push({ id: b.id, kind: 'unlabelled', inputs: [], name: b.name, items: b.itemIds.length, itemIds: [...b.itemIds] })
+  )
   useModelStore.getState().modelBlocks.forEach((b) => {
     const kind = `model-${b.modelType}` as GuideKind
     if (KINDS[kind]) {

@@ -74,6 +74,18 @@ const testedModels = (snap: LabSnapshot) => {
 const buttonText = (sel: string, fallback: string) =>
   document.querySelector(sel)?.textContent?.replace(/\s+/g, ' ').trim() || fallback
 
+/** How many of the block's items were already in the Data Bank before this lab (e.g. last lab's training pictures). */
+const oldItemsIn = (b: AnyBlock | null | undefined, snap: LabSnapshot) => {
+  const before = new Set(snap)
+  return (b?.itemIds ?? []).filter((id) => before.has(id)).length
+}
+
+/** A few old pictures: take them out one by one. Lots (e.g. after Select all): quicker to start the block again. */
+const removeOld = (old: number) =>
+  old <= 5
+    ? `Remove ${old === 1 ? 'it' : 'them'} with ×.`
+    : 'Quickest fix: delete this Labelled block with ×, add a new one, and drag in only your new pictures.'
+
 /** Data Bank items added since the lab started. */
 const newBankItems = (snap: LabSnapshot) => {
   const fresh = isNew(snap)
@@ -223,12 +235,17 @@ export function matches(a: LabAction, snap: LabSnapshot): boolean {
       return newBankItems(snap) >= a.n
     case 'labels':
       return labelBlocks(snap).some((b) => a.names.every((n) => b.labels?.some((l) => sameLabel(l, n))))
-    case 'select':
-      return useUIStore.getState().selectedBankItemIds.length > 0 || labelBlocks(snap).some((b) => (b.items ?? 0) > 0)
+    case 'select': {
+      const picked = useUIStore.getState().selectedBankItemIds
+      const pickedOk = picked.length > 0 && (!a.newOnly || picked.every(fresh))
+      return pickedOk || labelBlocks(snap).some((b) => (b.items ?? 0) > 0 && (!a.newOnly || !oldItemsIn(b, snap)))
+    }
     case 'items':
-      return labelBlocks(snap).some((b) => (b.items ?? 0) >= a.n)
+      return labelBlocks(snap).some((b) => (b.items ?? 0) >= a.n && (!a.newOnly || !oldItemsIn(b, snap)))
     case 'allLabelled':
-      return labelBlocks(snap).some((b) => (b.items ?? 0) >= 2 && b.unassigned === 0 && (b.labels?.length ?? 0) > 0)
+      return labelBlocks(snap).some(
+        (b) => (b.items ?? 0) >= 2 && b.unassigned === 0 && (b.labels?.length ?? 0) > 0 && (!a.newOnly || !oldItemsIn(b, snap))
+      )
     case 'name':
       return (
         sameName(inputValue(`[data-tour="${a.what}-name"]`), a.value) ||
@@ -464,10 +481,41 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
         ? { target: '[data-tour="label-creator"]', gesture: 'tap', prefer: 'side', text: tip ?? `Type “${next}” in the Labels box and press + Add.` }
         : { target: nodeSel(b.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} to open its settings.` }
     }
-    case 'select':
-      return openTab('bank') ?? { target: '[data-tour="bank-select-all"]', gesture: 'tap', text: 'Tap Select all, or tap each picture you want.' }
+    case 'select': {
+      const tab = openTab('bank')
+      if (tab) return tab
+      if (!a.newOnly) return { target: '[data-tour="bank-select-all"]', gesture: 'tap', text: 'Tap Select all, or tap each picture you want.' }
+      // This lab's own pictures only: "Select all" would also grab last lab's training pictures.
+      const fresh = isNew(snap)
+      const picked = useUIStore.getState().selectedBankItemIds
+      const oldPicked = picked.filter((id) => !fresh(id)).length
+      if (oldPicked) {
+        return {
+          target: '[data-tour="bank-select-all"]',
+          gesture: 'tap',
+          text: `You picked ${oldPicked} old training picture${oldPicked === 1 ? '' : 's'} too. Tap Deselect all, then tap only your new pictures at the top.`,
+        }
+      }
+      const nextNew = useDatasetStore.getState().bankItems.find((i) => fresh(i.id) && !picked.includes(i.id))
+      return {
+        target: nextNew ? `[data-tour="bank-grid"] [data-bank-item="${nextNew.id}"]` : '[data-tour="bank-grid"]',
+        gesture: 'tap',
+        text: `Tap each of your ${newBankItems(snap)} new pictures. They're at the top. Don't use Select all: it would grab your old training pictures too.`,
+      }
+    }
     case 'items': {
       const b = newestOf('labelled', snap)
+      const old = a.newOnly ? oldItemsIn(b, snap) : 0
+      if (old) {
+        return inspecting('labelled')
+          ? {
+              target: '[data-tour="label-items"]',
+              gesture: 'none',
+              prefer: 'side',
+              text: `${old} old training picture${old === 1 ? ' is' : 's are'} in here. Test pictures must be new! ${removeOld(old)}`,
+            }
+          : { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)}: some old training pictures got in. Let's take them out.` }
+      }
       if (!inspecting('labelled')) {
         return { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)} so its Items box shows.` }
       }
@@ -484,6 +532,17 @@ export function hintFor(a: LabAction, snap: LabSnapshot, lineText: string): Step
     case 'allLabelled': {
       const b = biggestLabelBlock(snap)
       const left = b?.unassigned ?? 0
+      const old = a.newOnly ? oldItemsIn(b, snap) : 0
+      if (old && !left) {
+        return inspecting('labelled')
+          ? {
+              target: '[data-tour="label-items"]',
+              gesture: 'none',
+              prefer: 'side',
+              text: `${old} old training picture${old === 1 ? ' is' : 's are'} in here. Test pictures must be new! ${removeOld(old)}`,
+            }
+          : { target: nodeSel(b?.id), gesture: 'dblclick', text: `Double-click ${labelledName(b)}: some old training pictures got in. Let's take them out.` }
+      }
       // Inside Expand View: point at the next picture's drop-down, one picture at a time.
       if (isVisible('[data-tour="label-modal"]')) {
         const next = '[data-tour="label-modal"] [data-tour="label-select"][data-unlabelled="true"]'
@@ -692,8 +751,15 @@ function dataMismatch(a: LabAction, snap: LabSnapshot): string | null {
       if (!missing.length) return null
       return `Your Labelled block still needs the label${missing.length > 1 ? 's' : ''} ${missing.map((n) => `**${n}**`).join(' and ')}.`
     }
+    case 'select':
+    case 'items':
     case 'allLabelled': {
-      const b = biggestLabelBlock(snap)
+      const b = a.type === 'allLabelled' ? biggestLabelBlock(snap) : newestOf('labelled', snap)
+      const old = a.newOnly ? oldItemsIn(b, snap) : 0
+      if (old) {
+        return `**${old}** old training picture${old === 1 ? ' is' : 's are'} in your Labelled block. Test pictures must be **new**, ones the AI has never seen. ${removeOld(old)}`
+      }
+      if (a.type !== 'allLabelled') return null
       if (!b?.items) return 'Your Labelled block has no items yet. Drag your pictures into it.'
       if (!b.unassigned) return null
       return `**${b.unassigned}** item${b.unassigned === 1 ? ' still has' : 's still have'} no label.`

@@ -29,12 +29,14 @@ export type LabAction =
   | { type: 'bank'; n: number }
   /** A Label Data block has these labels. */
   | { type: 'labels'; names: string[] }
-  /** Some Data Bank items are selected (or already dragged into a Label Data block). */
-  | { type: 'select' }
+  /** Some Data Bank items are selected (or already dragged into a Label Data block).
+   *  `newOnly`: this lab uploaded its own pictures, so the dataset must use only those
+   *  (a test set must not contain last lab's training pictures). */
+  | { type: 'select'; newOnly?: true }
   /** A Label Data block holds at least n items. */
-  | { type: 'items'; n: number }
+  | { type: 'items'; n: number; newOnly?: true }
   /** A Label Data block's items all have a label. */
-  | { type: 'allLabelled' }
+  | { type: 'allLabelled'; newOnly?: true }
   /** The dataset / model name box holds this name (or it's already saved under it). */
   | { type: 'name'; what: 'dataset' | 'model'; value: string }
   /** A dataset / model is saved with this name ('save' = the Save button step, 'list' = find it in the panel).
@@ -359,6 +361,8 @@ const LEAD_IN = /^(from|under|in) (the )?[^,]{1,40},\s*/i
 
 interface DataCtx {
   bankN: number
+  /** An "Upload … into the Data Bank" step came earlier in this lab. */
+  uploaded?: boolean
   dataset?: string
   model?: string
   lastConnect?: LabAction
@@ -403,6 +407,7 @@ function dataAction(
   if (/^click:? add data\b/i.test(t)) return { type: 'bank', n: 1 }
   if (/^upload\b.*\bdata bank\b/i.test(t)) {
     ctx.bankN = numberIn(t) ?? ctx.bankN
+    ctx.uploaded = true
     return { type: 'bank', n: Math.max(1, ctx.bankN) }
   }
   if (/^check that .*\bappear in the data bank\b/i.test(t)) return { type: 'bank', n: Math.max(1, ctx.bankN) }
@@ -410,9 +415,10 @@ function dataAction(
     const labelNames = names.filter((n) => !kindFromName(n))
     return labelNames.length ? { type: 'labels', names: labelNames } : null
   }
-  if (/^select\b.*\bdata bank\b/i.test(t)) return { type: 'select' }
-  if (/\binto the items\b/i.test(t)) return { type: 'items', n: 2 }
-  if (/assign the correct label to every|every (image|item) has been labell?ed/i.test(t)) return { type: 'allLabelled' }
+  const newOnly = ctx.uploaded ? ({ newOnly: true } as const) : {}
+  if (/^select\b.*\bdata bank\b/i.test(t)) return { type: 'select', ...newOnly }
+  if (/\binto the items\b/i.test(t)) return { type: 'items', n: 2, ...newOnly }
+  if (/assign the correct label to every|every (image|item) has been labell?ed/i.test(t)) return { type: 'allLabelled', ...newOnly }
 
   // "Under Save Dataset, enter the dataset name:" / "In the Save Dataset section, enter the name:"
   const nameAsk = text.match(/\benter the (dataset |model )?name\b/i)
